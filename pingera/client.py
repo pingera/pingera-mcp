@@ -236,8 +236,9 @@ class PingeraClient:
             bool: True if connection is successful
         """
         try:
-            self.get_pages(per_page=1)
-            return True
+            # Use the root endpoint for a lightweight connection test
+            response = self._make_request("GET", "/")
+            return response.status_code == 200
         except Exception as e:
             self.logger.error(f"Connection test failed: {e}")
             return False
@@ -250,12 +251,16 @@ class PingeraClient:
             Dict containing API information
         """
         try:
-            # Try to get a small amount of data to test the connection
-            pages = self.get_pages(per_page=1)
+            # Query the root endpoint to get API status
+            response = self._make_request("GET", "/")
+            api_data = response.json()
+            
             return {
                 "connected": True,
                 "base_url": self.base_url,
-                "total_pages": pages.total or len(pages.pages),
+                "message": api_data.get("message", "Pingera.ru API"),
+                "authentication": api_data.get("authentication"),
+                "documentation": api_data.get("documentation"),
                 "api_version": "v1"
             }
         except Exception as e:

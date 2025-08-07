@@ -73,7 +73,10 @@ class TestMCPServer:
         mcp_server, mock_client = server
         mock_client.get_api_info.return_value = {
             "connected": True,
-            "version": "v1"
+            "message": "Pingera.ru API",
+            "authentication": "Create API token at https://app.pingera.ru to authorize and use this API",
+            "documentation": "https://docs.pingera.ru/api/overview",
+            "api_version": "v1"
         }
         
         # Get the resource function
@@ -90,6 +93,7 @@ class TestMCPServer:
         data = json.loads(result)
         assert data["mode"] == "read_only"
         assert data["api_info"]["connected"] is True
+        assert data["api_info"]["message"] == "Pingera.ru API"
         assert data["features"]["read_operations"] is True
         assert data["features"]["write_operations"] is False
     
@@ -120,7 +124,11 @@ class TestMCPServer:
         """Test connection test tool."""
         mcp_server, mock_client = server
         mock_client.test_connection.return_value = True
-        mock_client.get_api_info.return_value = {"connected": True}
+        mock_client.get_api_info.return_value = {
+            "connected": True,
+            "message": "Pingera.ru API",
+            "api_version": "v1"
+        }
         
         # Find the test_pingera_connection tool
         test_conn_tool = None
@@ -136,6 +144,7 @@ class TestMCPServer:
         data = json.loads(result)
         assert data["success"] is True
         assert data["data"]["connected"] is True
+        assert data["data"]["api_info"]["message"] == "Pingera.ru API"
     
     def test_read_write_mode_adds_write_tools(self, mock_config):
         """Test that read-write mode adds write operation tools."""

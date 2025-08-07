@@ -27,7 +27,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Monitoring",
-    "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Status Monitoring",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Communications",
 ]
 dependencies = [
     "mcp>=1.2.0",

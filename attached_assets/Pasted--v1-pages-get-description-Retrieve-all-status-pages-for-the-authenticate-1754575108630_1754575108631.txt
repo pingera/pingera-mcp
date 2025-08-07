@@ -1,0 +1,470 @@
+"/v1/pages": {
+      "get": {
+        "description": "Retrieve all status pages for the authenticated organization. Returns a list of all status pages including their configuration, branding settings, and metadata. This endpoint provides complete information about each page including custom domains, CSS styling, and notification preferences.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Page"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "",
+            "schema": {
+              "items": {
+                "$ref": "#/components/schemas/Page"
+              },
+              "type": "array"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required"
+          },
+          "500": {
+            "description": "Internal Server Error - Database error occurred"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "tags": [
+          "Status pages"
+        ]
+      },
+      "options": {
+        "description": "Retrieve all status pages for the authenticated organization. Returns a list of all status pages including their configuration, branding settings, and metadata. This endpoint provides complete information about each page including custom domains, CSS styling, and notification preferences.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Page"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "",
+            "schema": {
+              "items": {
+                "$ref": "#/components/schemas/Page"
+              },
+              "type": "array"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required"
+          },
+          "500": {
+            "description": "Internal Server Error - Database error occurred"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "tags": [
+          "Status pages"
+        ]
+      },
+      "post": {
+        "description": "Create a new status page for the organization. This endpoint allows you to create a status page with custom branding, domain configuration, and notification settings. The page can be configured as public or private, and supports custom CSS styling and subscriber management.",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Page"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Page"
+              }
+            }
+          },
+          "description": "Status page configuration data"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            },
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/Page"
+            }
+          },
+          "400": {
+            "description": "Bad Request - Validation error, invalid subdomain, or invalid domain"
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required"
+          },
+          "403": {
+            "description": "Forbidden - Plan limit exceeded for status pages, domains, CSS, or templates"
+          },
+          "500": {
+            "description": "Internal Server Error - Database error occurred"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "tags": [
+          "Status pages"
+        ]
+      }
+    },
+    "/v1/pages/{page_id}": {
+      "delete": {
+        "description": "Permanently delete a status page and all its associated data including components, incidents, subscribers, and historical data. This action cannot be undone. Only users from the same organization as the page can perform this operation.",
+        "parameters": [
+          {
+            "description": "The unique identifier of the status page to delete.",
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Status page deleted successfully. No content returned."
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required"
+          },
+          "403": {
+            "description": "Forbidden - Access denied to this page"
+          },
+          "404": {
+            "description": "Status page not found"
+          },
+          "500": {
+            "description": "Internal Server Error - Database error occurred"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "tags": [
+          "Status pages"
+        ]
+      },
+      "get": {
+        "description": "Retrieve a specific status page by its unique identifier. Returns complete page configuration including branding, domain settings, CSS customization, and notification preferences.\n\n    **Security Details:**\n    * **Public Pages:** If a page is configured for public access (viewers_must_be_team_members=false), it can be accessed **without any authentication token**. In this case, providing a bearer token or API key is **optional** and is primarily used to identify the requesting user for analytics or to apply user-specific preferences (if applicable).\n    * **Private Pages:** For pages that are not public, authentication is **mandatory**. You must provide either a `bearerAuth` token (JWT) or an `Authorization: <API_TOKEN>` header. Access will be granted only if the authenticated user belongs to the same organization as the requested page.\n    ",
+        "parameters": [
+          {
+            "description": "The unique identifier of the status page.",
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            },
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/Page"
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required for private pages"
+          },
+          "403": {
+            "description": "Forbidden - Access denied to this page"
+          },
+          "404": {
+            "description": "Status page not found"
+          },
+          "500": {
+            "description": "Internal Server Error - Database error occurred"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "tags": [
+          "Status pages"
+        ]
+      },
+      "options": {
+        "description": "Permanently delete a status page and all its associated data including components, incidents, subscribers, and historical data. This action cannot be undone. Only users from the same organization as the page can perform this operation.",
+        "parameters": [
+          {
+            "description": "The unique identifier of the status page to delete.",
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Status page deleted successfully. No content returned."
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required"
+          },
+          "403": {
+            "description": "Forbidden - Access denied to this page"
+          },
+          "404": {
+            "description": "Status page not found"
+          },
+          "500": {
+            "description": "Internal Server Error - Database error occurred"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "tags": [
+          "Status pages"
+        ]
+      },
+      "patch": {
+        "description": "Update a status page with new configuration settings. This endpoint supports both partial updates (PATCH) and full updates (PUT). You can update page branding, domain settings, CSS styling, notification preferences, and upload logo files. File uploads for logos should be sent as multipart/form-data, while other updates should be sent as JSON.",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Page1"
+            }
+          },
+          {
+            "description": "The unique identifier of the status page to update.",
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "type": "string"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Page"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "company_logo": {
+                    "description": "Company logo file upload",
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "favicon_logo": {
+                    "description": "Favicon logo file upload",
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Status page configuration data (partial updates allowed for PATCH)"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            },
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/Page"
+            }
+          },
+          "400": {
+            "description": "Bad Request - Validation error, invalid domain, subdomain, timezone, or file format"
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required"
+          },
+          "403": {
+            "description": "Forbidden - Access denied or plan limit exceeded"
+          },
+          "404": {
+            "description": "Status page not found"
+          },
+          "500": {
+            "description": "Internal Server Error - Database error occurred"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "tags": [
+          "Status pages"
+        ]
+      },
+      "put": {
+        "description": "Update a status page with new configuration settings. This endpoint supports both partial updates (PATCH) and full updates (PUT). You can update page branding, domain settings, CSS styling, notification preferences, and upload logo files. File uploads for logos should be sent as multipart/form-data, while other updates should be sent as JSON.",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Page1"
+            }
+          },
+          {
+            "description": "The unique identifier of the status page to update.",
+            "in": "path",
+            "name": "page_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "type": "string"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Page"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "company_logo": {
+                    "description": "Company logo file upload",
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "favicon_logo": {
+                    "description": "Favicon logo file upload",
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Status page configuration data (partial updates allowed for PATCH)"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page"
+                }
+              }
+            },
+            "description": "",
+            "schema": {
+              "$ref": "#/components/schemas/Page"
+            }
+          },
+          "400": {
+            "description": "Bad Request - Validation error, invalid domain, subdomain, timezone, or file format"
+          },
+          "401": {
+            "description": "Unauthorized - Authentication required"
+          },
+          "403": {
+            "description": "Forbidden - Access denied or plan limit exceeded"
+          },
+          "404": {
+            "description": "Status page not found"
+          },
+          "500": {
+            "description": "Internal Server Error - Database error occurred"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "apiKeyAuth": []
+          }
+        ],
+        "tags": [
+          "Status pages"
+        ]
+      }
+    },

@@ -242,20 +242,228 @@ def create_mcp_server(config: Config) -> FastMCP:
     
     # Add write operations only if in read-write mode
     if config.is_read_write():
-        logger.info("Read-write mode enabled - write operations will be available when implemented")
+        logger.info("Read-write mode enabled - adding write operations")
         
         @mcp.tool()
-        async def placeholder_write_operation() -> str:
+        async def create_page(
+            name: str,
+            subdomain: Optional[str] = None,
+            domain: Optional[str] = None,
+            url: Optional[str] = None,
+            language: Optional[str] = None,
+            **kwargs
+        ) -> str:
             """
-            Placeholder for future write operations.
+            Create a new status page.
             
+            Args:
+                name: Display name of the status page (required)
+                subdomain: Subdomain for accessing the status page
+                domain: Custom domain for the status page  
+                url: Company URL for logo redirect
+                language: Language for the status page interface ("ru" or "en")
+                **kwargs: Additional page configuration options
+                
             Returns:
-                str: Information about write operations
+                str: JSON string containing the created page details
             """
-            return json.dumps({
-                "success": True,
-                "message": "Write operations are available in this mode but not yet implemented. Future features will include creating, updating, and deleting monitored pages.",
-                "mode": "read_write"
-            }, indent=2)
+            try:
+                logger.info(f"Creating new page: {name}")
+                
+                page_data = {"name": name}
+                if subdomain:
+                    page_data["subdomain"] = subdomain
+                if domain:
+                    page_data["domain"] = domain
+                if url:
+                    page_data["url"] = url
+                if language:
+                    page_data["language"] = language
+                    
+                # Add any additional configuration
+                page_data.update(kwargs)
+                
+                page = pingera_client.pages.create(page_data)
+                
+                result = {
+                    "success": True,
+                    "data": page.dict()
+                }
+                
+                return json.dumps(result, indent=2, default=str)
+                
+            except PingeraError as e:
+                logger.error(f"Error creating page: {e}")
+                return json.dumps({
+                    "success": False,
+                    "error": str(e),
+                    "data": None
+                }, indent=2)
+        
+        @mcp.tool()
+        async def update_page(
+            page_id: str,
+            name: Optional[str] = None,
+            subdomain: Optional[str] = None,
+            domain: Optional[str] = None,
+            url: Optional[str] = None,
+            language: Optional[str] = None,
+            **kwargs
+        ) -> str:
+            """
+            Update an existing status page (full update).
+            
+            Args:
+                page_id: ID of the page to update
+                name: Display name of the status page
+                subdomain: Subdomain for accessing the status page
+                domain: Custom domain for the status page
+                url: Company URL for logo redirect
+                language: Language for the status page interface ("ru" or "en")
+                **kwargs: Additional page configuration options
+                
+            Returns:
+                str: JSON string containing the updated page details
+            """
+            try:
+                logger.info(f"Updating page: {page_id}")
+                
+                page_data = {}
+                if name:
+                    page_data["name"] = name
+                if subdomain:
+                    page_data["subdomain"] = subdomain
+                if domain:
+                    page_data["domain"] = domain
+                if url:
+                    page_data["url"] = url
+                if language:
+                    page_data["language"] = language
+                    
+                # Add any additional configuration
+                page_data.update(kwargs)
+                
+                page_id_int = int(page_id)
+                page = pingera_client.pages.update(page_id_int, page_data)
+                
+                result = {
+                    "success": True,
+                    "data": page.dict()
+                }
+                
+                return json.dumps(result, indent=2, default=str)
+                
+            except ValueError:
+                logger.error(f"Invalid page ID: {page_id}")
+                return json.dumps({
+                    "success": False,
+                    "error": f"Invalid page ID: {page_id}",
+                    "data": None
+                }, indent=2)
+            except PingeraError as e:
+                logger.error(f"Error updating page {page_id}: {e}")
+                return json.dumps({
+                    "success": False,
+                    "error": str(e),
+                    "data": None
+                }, indent=2)
+        
+        @mcp.tool()
+        async def patch_page(
+            page_id: str,
+            **kwargs
+        ) -> str:
+            """
+            Partially update an existing status page.
+            
+            Args:
+                page_id: ID of the page to update
+                **kwargs: Page fields to update (only provided fields will be updated)
+                
+            Returns:
+                str: JSON string containing the updated page details
+            """
+            try:
+                logger.info(f"Patching page: {page_id}")
+                
+                if not kwargs:
+                    return json.dumps({
+                        "success": False,
+                        "error": "No fields provided for update",
+                        "data": None
+                    }, indent=2)
+                
+                page_id_int = int(page_id)
+                page = pingera_client.pages.patch(page_id_int, kwargs)
+                
+                result = {
+                    "success": True,
+                    "data": page.dict()
+                }
+                
+                return json.dumps(result, indent=2, default=str)
+                
+            except ValueError:
+                logger.error(f"Invalid page ID: {page_id}")
+                return json.dumps({
+                    "success": False,
+                    "error": f"Invalid page ID: {page_id}",
+                    "data": None
+                }, indent=2)
+            except PingeraError as e:
+                logger.error(f"Error patching page {page_id}: {e}")
+                return json.dumps({
+                    "success": False,
+                    "error": str(e),
+                    "data": None
+                }, indent=2)
+        
+        @mcp.tool()
+        async def delete_page(page_id: str) -> str:
+            """
+            Permanently delete a status page and all associated data.
+            This action cannot be undone.
+            
+            Args:
+                page_id: ID of the page to delete
+                
+            Returns:
+                str: JSON string confirming deletion
+            """
+            try:
+                logger.info(f"Deleting page: {page_id}")
+                
+                page_id_int = int(page_id)
+                success = pingera_client.pages.delete(page_id_int)
+                
+                if success:
+                    result = {
+                        "success": True,
+                        "message": f"Page {page_id} deleted successfully",
+                        "data": {"page_id": page_id}
+                    }
+                else:
+                    result = {
+                        "success": False,
+                        "error": "Failed to delete page",
+                        "data": None
+                    }
+                
+                return json.dumps(result, indent=2)
+                
+            except ValueError:
+                logger.error(f"Invalid page ID: {page_id}")
+                return json.dumps({
+                    "success": False,
+                    "error": f"Invalid page ID: {page_id}",
+                    "data": None
+                }, indent=2)
+            except PingeraError as e:
+                logger.error(f"Error deleting page {page_id}: {e}")
+                return json.dumps({
+                    "success": False,
+                    "error": str(e),
+                    "data": None
+                }, indent=2)
     
     return mcp

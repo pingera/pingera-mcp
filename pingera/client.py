@@ -140,7 +140,7 @@ class PingeraClient:
         """Delegate to pages endpoint. Deprecated - use client.pages.list() instead."""
         return self.pages.list(*args, **kwargs)
     
-    def get_page(self, page_id: int):
+    def get_page(self, page_id: str):
         """Delegate to pages endpoint. Deprecated - use client.pages.get() instead."""
         return self.pages.get(page_id)
     

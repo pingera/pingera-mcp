@@ -74,7 +74,7 @@ class PagesEndpoint(BaseEndpoint):
             self.client.logger.error(f"Error getting pages: {e}")
             raise
     
-    def get(self, page_id: int) -> Page:
+    def get(self, page_id: str) -> Page:
         """
         Get a specific page by ID.
         
@@ -120,7 +120,31 @@ class PagesEndpoint(BaseEndpoint):
             self.client.logger.error(f"Error creating page: {e}")
             raise
     
-    def update(self, page_id: int, page_data: dict) -> Page:
+    def patch(self, page_id: str, page_data: dict) -> Page:
+        """
+        Partially update an existing page.
+        
+        Args:
+            page_id: ID of the page to update
+            page_data: Partial page data to update
+            
+        Returns:
+            Page: Updated page
+        """
+        try:
+            response = self._make_request("PATCH", str(page_id), data=page_data)
+            data = response.json()
+            
+            if "data" in data:
+                return Page(**data["data"])
+            else:
+                return Page(**data)
+                
+        except Exception as e:
+            self.client.logger.error(f"Error patching page {page_id}: {e}")
+            raise
+    
+    def update(self, page_id: str, page_data: dict) -> Page:
         """
         Update an existing page.
         
@@ -144,7 +168,7 @@ class PagesEndpoint(BaseEndpoint):
             self.client.logger.error(f"Error updating page {page_id}: {e}")
             raise
     
-    def delete(self, page_id: int) -> bool:
+    def delete(self, page_id: str) -> bool:
         """
         Delete a page.
         

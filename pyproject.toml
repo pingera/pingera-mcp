@@ -6,9 +6,28 @@ build-backend = "hatchling.build"
 [project]
 name = "pingera-mcp-server"
 version = "0.1.0"
-description = "MCP Server for Pingera monitoring service"
+description = "Model Context Protocol (MCP) server for Pingera monitoring service integration"
+readme = "README.md"
+license = {file = "LICENSE"}
 authors = [
     {name = "Pingera Team", email = "privet@pingera.ru"},
+]
+maintainers = [
+    {name = "Pingera Team", email = "privet@pingera.ru"},
+]
+keywords = ["mcp", "monitoring", "pingera", "api", "status-page"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Monitoring",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Status Monitoring",
 ]
 dependencies = [
     "mcp>=1.2.0",
@@ -53,9 +72,48 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 
+[project.urls]
+Homepage = "https://pingera.ru"
+Documentation = "https://github.com/pingera/pingera-mcp-server#readme"
+Repository = "https://github.com/pingera/pingera-mcp-server"
+Issues = "https://github.com/pingera/pingera-mcp-server/issues"
+Changelog = "https://github.com/pingera/pingera-mcp-server/blob/main/CHANGELOG.md"
+
 [tool.hatch.build.targets.wheel]
 packages = ["pingera"]
-include = ["*.py", "pingera/*.py"]
+include = [
+    "pingera/**/*.py",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+]
+exclude = [
+    "tests/",
+    ".replit",
+    "replit.md",
+    "attached_assets/",
+    "test_mcp_server.py",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "pingera/",
+    "tests/",
+    "README.md",
+    "LICENSE", 
+    "CHANGELOG.md",
+    ".env.example",
+    "main.py",
+    "config.py",
+    "mcp_server.py",
+]
+exclude = [
+    ".replit",
+    "replit.md", 
+    "attached_assets/",
+    "test_mcp_server.py",
+    "uv.lock",
+]
 
 [project.scripts]
 pingera-mcp = "main:main"

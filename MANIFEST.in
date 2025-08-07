@@ -1,0 +1,14 @@
+
+include README.md
+include LICENSE
+include CHANGELOG.md
+include .env.example
+recursive-include pingera *.py
+recursive-include tests *.py
+recursive-exclude tests __pycache__
+recursive-exclude pingera __pycache__
+exclude .replit
+exclude replit.md
+exclude uv.lock
+exclude test_mcp_server.py
+recursive-exclude attached_assets *

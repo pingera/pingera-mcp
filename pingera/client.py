@@ -65,7 +65,7 @@ class PingeraClient:
             "User-Agent": "Pingera-MCP-Server/0.1.0"
         })
 
-        # Initialize endpoint handlers
+        # Initialize endpoints
         self.pages = PageEndpoints(self)
         self.components = ComponentEndpoints(self)
 

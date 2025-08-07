@@ -16,7 +16,7 @@ from .exceptions import (
     PingeraTimeoutError
 )
 from .models import APIResponse
-from .endpoints import PageEndpoints, ComponentEndpoints
+from .endpoints import PagesEndpoint, ComponentEndpoints
 
 
 class PingeraClient:
@@ -66,7 +66,7 @@ class PingeraClient:
         })
 
         # Initialize endpoints
-        self.pages = PageEndpoints(self)
+        self.pages = PagesEndpoint(self)
         self.components = ComponentEndpoints(self)
 
     def _make_request(

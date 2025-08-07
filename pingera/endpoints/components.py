@@ -4,11 +4,11 @@ Component endpoints for Pingera API.
 """
 from typing import Optional, List
 
-from .base import BaseEndpoints
+from .base import BaseEndpoint
 from ..models import Component
 
 
-class ComponentEndpoints(BaseEndpoints):
+class ComponentEndpoints(BaseEndpoint):
     """Component-related API endpoints."""
 
     def get_component_groups(self, page_id: str, show_deleted: bool = False) -> List[Component]:
@@ -26,9 +26,9 @@ class ComponentEndpoints(BaseEndpoints):
         if show_deleted:
             params["show_deleted"] = show_deleted
             
-        response = self.client._request(
+        response = self._make_request(
             "GET",
-            f"/v1/pages/{page_id}/component-groups",
+            f"pages/{page_id}/component-groups",
             params=params
         )
         
@@ -45,13 +45,13 @@ class ComponentEndpoints(BaseEndpoints):
         Returns:
             Component: The created component
         """
-        response = self.client._request(
+        response = self._make_request(
             "POST",
-            f"/v1/pages/{page_id}/components",
-            json=component_data
+            f"pages/{page_id}/components",
+            data=component_data
         )
         
-        return Component(**response)
+        return Component(**response.json())
 
     def get_component(self, page_id: str, component_id: str) -> Component:
         """
@@ -64,12 +64,12 @@ class ComponentEndpoints(BaseEndpoints):
         Returns:
             Component: The component details
         """
-        response = self.client._request(
+        response = self._make_request(
             "GET",
-            f"/v1/pages/{page_id}/components/{component_id}"
+            f"pages/{page_id}/components/{component_id}"
         )
         
-        return Component(**response)
+        return Component(**response.json())
 
     def update_component(self, page_id: str, component_id: str, component_data: dict) -> Component:
         """
@@ -83,13 +83,13 @@ class ComponentEndpoints(BaseEndpoints):
         Returns:
             Component: The updated component
         """
-        response = self.client._request(
+        response = self._make_request(
             "PUT",
-            f"/v1/pages/{page_id}/components/{component_id}",
-            json=component_data
+            f"pages/{page_id}/components/{component_id}",
+            data=component_data
         )
         
-        return Component(**response)
+        return Component(**response.json())
 
     def patch_component(self, page_id: str, component_id: str, component_data: dict) -> Component:
         """
@@ -103,13 +103,13 @@ class ComponentEndpoints(BaseEndpoints):
         Returns:
             Component: The updated component
         """
-        response = self.client._request(
+        response = self._make_request(
             "PATCH",
-            f"/v1/pages/{page_id}/components/{component_id}",
-            json=component_data
+            f"pages/{page_id}/components/{component_id}",
+            data=component_data
         )
         
-        return Component(**response)
+        return Component(**response.json())
 
     def delete_component(self, page_id: str, component_id: str) -> bool:
         """
@@ -122,9 +122,9 @@ class ComponentEndpoints(BaseEndpoints):
         Returns:
             bool: True if deletion was successful
         """
-        self.client._request(
+        self._make_request(
             "DELETE",
-            f"/v1/pages/{page_id}/components/{component_id}"
+            f"pages/{page_id}/components/{component_id}"
         )
         
         return True

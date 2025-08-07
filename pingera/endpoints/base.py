@@ -31,12 +31,11 @@ class BaseEndpoint(ABC):
         
         Args:
             method: HTTP method
-            path: Endpoint path (will be appended to base_path)
+            path: Endpoint path
             params: Query parameters
             data: Request body data
             
         Returns:
             requests.Response: Response object
         """
-        endpoint = f"{self._base_path}/{path}".strip("/")
-        return self.client._make_request(method, endpoint, params, data)
+        return self.client._make_request(method, path, params, data)

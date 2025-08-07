@@ -397,7 +397,7 @@ class TestComponentTools:
 
         result_data = json.loads(result)
         assert result_data["success"] is True
-        assert result_data["message"] == "Component deleted successfully"
+        assert result_data["message"] == "Component comp123 deleted successfully"
 
 
 class TestComponentResources:

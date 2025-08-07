@@ -103,9 +103,47 @@ Located in `pingera/`, this modular library provides:
 
 ## Testing
 
+### Running the Test Suite
+
+Run all tests:
+```bash
+uv run pytest
+```
+
+Run tests with verbose output:
+```bash
+uv run pytest -v
+```
+
+Run specific test files:
+```bash
+uv run pytest tests/test_models.py
+uv run pytest tests/test_config.py
+uv run pytest tests/test_mcp_server.py
+```
+
+Run tests with coverage:
+```bash
+uv run pytest --cov=pingera --cov=config --cov=mcp_server
+```
+
+### Test Structure
+
+The test suite includes:
+- **Unit Tests**: Testing individual components (models, config, client)
+- **Integration Tests**: Testing MCP server functionality 
+- **Mock Tests**: Testing with simulated API responses
+
+### Manual Testing
+
 Test the client library directly:
 ```bash
 python -c "from pingera import PingeraClient; import os; client = PingeraClient(os.getenv('PINGERA_API_KEY')); print(f'Pages: {len(client.get_pages().pages)}')"
+```
+
+Test MCP server functionality:
+```bash
+python test_mcp_server.py
 ```
 
 ## Error Handling

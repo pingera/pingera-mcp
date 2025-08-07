@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 
 from config import Config, OperationMode
 from pingera import PingeraClient, Page, PageList
+from pingera.models import Component, ComponentStatus
 
 
 @pytest.fixture
@@ -49,6 +50,21 @@ def mock_page_list(mock_page):
 
 
 @pytest.fixture
+def mock_component():
+    """Create a mock component object for testing."""
+    return Component(
+        id="comp123",
+        name="Test Component",
+        description="Test component description",
+        status=ComponentStatus.OPERATIONAL,
+        page_id="page123",
+        group=False,
+        showcase=True,
+        position=1
+    )
+
+
+@pytest.fixture
 def mock_pingera_client():
     """Create a mock Pingera client for testing."""
     client = Mock(spec=PingeraClient)
@@ -58,4 +74,19 @@ def mock_pingera_client():
         "version": "v1",
         "status": "ok"
     }
+    
+    # Mock the components endpoint
+    client.components = Mock()
+    client.components.get_component_groups.return_value = []
+    client.components.get_component.return_value = None
+    client.components.create_component.return_value = None
+    client.components.update_component.return_value = None
+    client.components.patch_component.return_value = None
+    client.components.delete_component.return_value = True
+    
+    # Mock the pages endpoint
+    client.pages = Mock()
+    client.pages.list.return_value = None
+    client.pages.get.return_value = None
+    
     return client

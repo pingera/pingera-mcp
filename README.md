@@ -35,6 +35,79 @@ python main.py
 
 The server will start in read-only mode by default and connect to the Pingera API.
 
+## Claude Desktop Integration
+
+To use this MCP server with Claude Desktop, you need to configure it in your Claude Desktop settings.
+
+### Installation
+
+First, install the package globally using UV:
+
+```bash
+uv tool install pingera-mcp-server
+```
+
+### Configuration
+
+Open the Claude Desktop configuration file:
+
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+
+Add the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "pingera": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "pingera-mcp-server",
+        "--python",
+        "3.10",
+        "pingera-mcp"
+      ],
+      "env": {
+        "PINGERA_API_KEY": "your_api_key_here",
+        "PINGERA_MODE": "read_only",
+        "PINGERA_BASE_URL": "https://api.pingera.ru/v1",
+        "PINGERA_TIMEOUT": "30",
+        "PINGERA_MAX_RETRIES": "3",
+        "PINGERA_DEBUG": "false",
+        "PINGERA_SERVER_NAME": "Pingera MCP Server"
+      }
+    }
+  }
+}
+```
+
+### Required Environment Variables
+
+- **`PINGERA_API_KEY`** - Your Pingera API key (required)
+
+### Optional Environment Variables
+
+- **`PINGERA_MODE`** - Operation mode: `read_only` (default) or `read_write`
+- **`PINGERA_BASE_URL`** - API endpoint (default: `https://api.pingera.ru/v1`)
+- **`PINGERA_TIMEOUT`** - Request timeout in seconds (default: `30`)
+- **`PINGERA_MAX_RETRIES`** - Maximum retry attempts (default: `3`)
+- **`PINGERA_DEBUG`** - Enable debug logging (default: `false`)
+- **`PINGERA_SERVER_NAME`** - Server display name (default: `Pingera MCP Server`)
+
+### Restart Claude Desktop
+
+After updating the configuration file, restart Claude Desktop to load the new MCP server. You should now be able to access your Pingera monitoring data directly through Claude's interface.
+
+### Verify Installation
+
+Once configured, you can ask Claude to:
+- "List my monitored status pages"
+- "Show details for a specific page"
+- "Test the Pingera API connection"
+- "Get the current monitoring status"
+
 ## Configuration
 
 Configure the server using environment variables:

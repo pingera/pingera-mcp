@@ -27,16 +27,16 @@ class ComponentResources(BaseResources):
             components_data = [component.dict() for component in components]
             
             return self._json_response({
-                "components": components_data,
                 "page_id": page_id,
+                "component_groups": components_data,
                 "total": len(components_data)
             })
             
         except PingeraError as e:
             self.logger.error(f"Error fetching component groups resource: {e}")
             return self._error_response(str(e), {
-                "components": [],
                 "page_id": page_id,
+                "component_groups": [],
                 "total": 0
             })
     
@@ -55,7 +55,10 @@ class ComponentResources(BaseResources):
             self.logger.info(f"Fetching component resource for page ID: {page_id}, component ID: {component_id}")
             component = self.client.components.get_component(page_id, component_id)
             
-            return self._json_response(component.dict())
+            return self._json_response({
+                "page_id": page_id,
+                "component": component.dict()
+            })
             
         except PingeraError as e:
             self.logger.error(f"Error fetching component resource: {e}")

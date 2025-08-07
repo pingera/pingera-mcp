@@ -457,7 +457,6 @@ class TestComponentResources:
         result = await mock_component_resources.get_component_resource("page123", "comp123")
 
         result_data = json.loads(result)
-        print(f"#### {result}")
         assert result_data["page_id"] == "page123"
         assert result_data["component"]["name"] == "API Server"
         assert result_data["component"]["status"] == "operational"

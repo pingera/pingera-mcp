@@ -1,10 +1,11 @@
-
 """
-Pingera API endpoints package.
+API endpoints for Pingera client.
 """
 
-from .pages import PagesEndpoint
+from .pages import PageEndpoints
+from .components import ComponentEndpoints
 
 __all__ = [
-    "PagesEndpoint",
+    "PageEndpoints",
+    "ComponentEndpoints",
 ]

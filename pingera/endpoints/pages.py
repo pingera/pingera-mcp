@@ -21,7 +21,7 @@ class PagesEndpoint(BaseEndpoint):
         status: Optional[str] = None
     ) -> PageList:
         """
-        Get list of monitored pages.
+        Get list of statuspages.
         
         Args:
             page: Page number for pagination
@@ -29,7 +29,7 @@ class PagesEndpoint(BaseEndpoint):
             status: Filter by page status
             
         Returns:
-            PageList: List of monitored pages
+            PageList: List of statuspages
         """
         params = {}
         if page is not None:
@@ -99,7 +99,7 @@ class PagesEndpoint(BaseEndpoint):
     
     def create(self, page_data: dict) -> Page:
         """
-        Create a new page.
+        Create a new status page.
         
         Args:
             page_data: Page configuration data

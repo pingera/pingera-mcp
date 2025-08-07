@@ -22,7 +22,7 @@ class BaseResources:
     
     def _error_response(self, error: str, fallback_data: Any = None) -> str:
         """Create an error response with fallback data."""
-        return self._json_response({
-            "error": error,
-            **fallback_data if fallback_data else {}
-        })
+        response_data = {"error": error}
+        if fallback_data:
+            response_data.update(fallback_data)
+        return self._json_response(response_data)

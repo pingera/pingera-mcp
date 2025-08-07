@@ -15,7 +15,8 @@ from .exceptions import (
     PingeraConnectionError,
     PingeraTimeoutError
 )
-from .models import Page, PageList, APIResponse
+from .models import APIResponse
+from .endpoints import PagesEndpoint, ChecksEndpoint, OnDemandEndpoint
 
 
 class PingeraClient:
@@ -63,6 +64,11 @@ class PingeraClient:
             "Content-Type": "application/json",
             "User-Agent": "Pingera-MCP-Server/0.1.0"
         })
+        
+        # Initialize endpoints
+        self.pages = PagesEndpoint(self)
+        self.checks = ChecksEndpoint(self)
+        self.on_demand = OnDemandEndpoint(self)
     
     def _make_request(
         self, 
@@ -132,101 +138,13 @@ class PingeraClient:
         except requests.exceptions.RequestException as e:
             raise PingeraAPIError(f"Request failed: {e}")
     
-    def get_pages(
-        self, 
-        page: Optional[int] = None,
-        per_page: Optional[int] = None,
-        status: Optional[str] = None
-    ) -> PageList:
-        """
-        Get list of monitored pages.
-        
-        Args:
-            page: Page number for pagination
-            per_page: Number of items per page
-            status: Filter by page status
-            
-        Returns:
-            PageList: List of monitored pages
-            
-        Raises:
-            PingeraAPIError: If API request fails
-        """
-        params = {}
-        if page is not None:
-            params["page"] = page
-        if per_page is not None:
-            params["per_page"] = per_page
-        if status is not None:
-            params["status"] = status
-        
-        try:
-            response = self._make_request("GET", "/pages", params=params)
-            data = response.json()
-            
-            # Handle different possible response structures
-            if isinstance(data, list):
-                # Direct list of pages
-                pages = [Page(**page_data) for page_data in data]
-                return PageList(pages=pages, total=len(pages))
-            elif isinstance(data, dict):
-                if "pages" in data:
-                    # Response with pages key
-                    pages = [Page(**page_data) for page_data in data["pages"]]
-                    return PageList(
-                        pages=pages,
-                        total=data.get("total"),
-                        page=data.get("page"),
-                        per_page=data.get("per_page")
-                    )
-                elif "data" in data:
-                    # Response with data key
-                    page_data = data["data"]
-                    if isinstance(page_data, list):
-                        pages = [Page(**item) for item in page_data]
-                        return PageList(pages=pages, total=len(pages))
-                    else:
-                        # Single page wrapped in data
-                        pages = [Page(**page_data)]
-                        return PageList(pages=pages, total=1)
-                else:
-                    # Assume the dict itself contains page data
-                    pages = [Page(**data)]
-                    return PageList(pages=pages, total=1)
-            else:
-                self.logger.warning(f"Unexpected response format: {type(data)}")
-                return PageList(pages=[], total=0)
-                
-        except Exception as e:
-            self.logger.error(f"Error getting pages: {e}")
-            raise
+    def get_pages(self, *args, **kwargs):
+        """Delegate to pages endpoint. Deprecated - use client.pages.list() instead."""
+        return self.pages.list(*args, **kwargs)
     
-    def get_page(self, page_id: int) -> Page:
-        """
-        Get a specific page by ID.
-        
-        Args:
-            page_id: ID of the page to retrieve
-            
-        Returns:
-            Page: Page details
-            
-        Raises:
-            PingeraAPIError: If API request fails
-        """
-        try:
-            response = self._make_request("GET", f"/pages/{page_id}")
-            data = response.json()
-            
-            # Handle different response structures
-            if "data" in data:
-                return Page(**data["data"])
-            else:
-                return Page(**data)
-                
-        except Exception as e:
-            self.logger.error(f"Error getting page {page_id}: {e}")
-            raise
+    def get_page(self, page_id: int):
+        """Delegate to pages endpoint. Deprecated - use client.pages.get() instead."""
+        return self.pages.get(page_id)
     
     def test_connection(self) -> bool:
         """

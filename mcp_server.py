@@ -9,7 +9,7 @@ from mcp.server.fastmcp import FastMCP
 from config import Config
 from pingera import PingeraClient
 from pingera.tools import PagesTools, StatusTools, ComponentTools
-from pingera.resources import PagesResources, StatusResources
+from pingera.resources import PagesResources, StatusResources, ComponentResources
 
 
 def create_mcp_server(config: Config) -> FastMCP:
@@ -38,6 +38,7 @@ def create_mcp_server(config: Config) -> FastMCP:
     component_tools = ComponentTools(pingera_client)
     pages_resources = PagesResources(pingera_client)
     status_resources = StatusResources(pingera_client, config)
+    component_resources = ComponentResources(pingera_client)
 
     # Create MCP server
     mcp = FastMCP(config.server_name)

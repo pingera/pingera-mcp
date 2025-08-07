@@ -1,0 +1,92 @@
+"Component": {
+        "properties": {
+          "created_at": {
+            "description": "Timestamp when the component was created",
+            "example": "2024-01-15T10:00:00Z",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          },
+          "description": {
+            "description": "Detailed description of the component",
+            "example": "Main REST API server handling user requests",
+            "nullable": true,
+            "type": "string"
+          },
+          "group": {
+            "default": false,
+            "description": "Whether this component is a group container for other components",
+            "example": false,
+            "type": "boolean"
+          },
+          "group_id": {
+            "description": "ID of the group this component belongs to (if any)",
+            "example": "grp123abc456",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "Unique identifier for the component",
+            "example": "comp123abc456",
+            "readOnly": true,
+            "type": "string"
+          },
+          "name": {
+            "description": "Display name of the component",
+            "example": "API Server",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "only_show_if_degraded": {
+            "description": "Whether to show this component only when it's not operational",
+            "example": false,
+            "type": "boolean"
+          },
+          "page_id": {
+            "description": "ID of the status page this component belongs to",
+            "example": "page123def789",
+            "readOnly": true,
+            "type": "string"
+          },
+          "position": {
+            "description": "Display order position of the component on the status page",
+            "example": 1,
+            "nullable": true,
+            "type": "integer"
+          },
+          "showcase": {
+            "description": "Whether to prominently display this component on the status page",
+            "example": true,
+            "type": "boolean"
+          },
+          "start_date": {
+            "description": "Date when monitoring for this component started",
+            "example": "2024-01-01T00:00:00Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "description": "Current operational status of the component",
+            "enum": [
+              "operational",
+              "under_maintenance",
+              "degraded_performance",
+              "partial_outage",
+              "major_outage"
+            ],
+            "example": "operational"
+          },
+          "updated_at": {
+            "description": "Timestamp when the component was last updated",
+            "example": "2024-01-15T14:00:00Z",
+            "format": "date-time",
+            "readOnly": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },

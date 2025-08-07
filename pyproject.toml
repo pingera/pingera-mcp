@@ -15,7 +15,7 @@ authors = [
 maintainers = [
     {name = "Pingera Team", email = "privet@pingera.ru"},
 ]
-keywords = ["mcp", "monitoring", "pingera", "api", "status-page"]
+keywords = ["mcp", "monitoring", "pingera", "api", "statuspage", "playwright", "synthetic", "web monitoring", "security"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -74,10 +74,10 @@ python_functions = ["test_*"]
 
 [project.urls]
 Homepage = "https://pingera.ru"
-Documentation = "https://github.com/pingera/pingera-mcp-server#readme"
-Repository = "https://github.com/pingera/pingera-mcp-server"
-Issues = "https://github.com/pingera/pingera-mcp-server/issues"
-Changelog = "https://github.com/pingera/pingera-mcp-server/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/pingera/pingera-mcp#readme"
+Repository = "https://github.com/pingera/pingera-mcp"
+Issues = "https://github.com/pingera/pingera-mcp/issues"
+Changelog = "https://github.com/pingera/pingera-mcp/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pingera"]

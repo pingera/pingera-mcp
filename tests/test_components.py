@@ -257,10 +257,11 @@ class TestComponentTools:
         result = await mock_component_tools.list_component_groups("page123")
 
         result_data = json.loads(result)
+        print(f"##### {result}")
         assert result_data["success"] is True
-        assert len(result_data["component_groups"]) == 2
-        assert result_data["component_groups"][0]["name"] == "Infrastructure"
-        assert result_data["component_groups"][1]["name"] == "Services"
+        assert len(result_data["data"]["component_groups"]) == 2
+        assert result_data["data"]["component_groups"][0]["name"] == "Infrastructure"
+        assert result_data["data"]["component_groups"][1]["name"] == "Services"
 
     @pytest.mark.asyncio
     async def test_list_component_groups_with_deleted(self, mock_component_tools):

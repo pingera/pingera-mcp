@@ -2,16 +2,26 @@
 Pingera API client library for monitoring service integration.
 """
 
-from .client import PingeraClient
-from .exceptions import PingeraError, PingeraAPIError, PingeraAuthError
-from .models import Page, PageList
+try:
+    from .sdk_client import PingeraSDKClient as PingeraClient
+except ImportError:
+    # Fallback to custom client if SDK is not available
+    from .client import PingeraClient
 
-__version__ = "0.1.0"
+from .exceptions import (
+    PingeraError,
+    PingeraAPIError,
+    PingeraAuthError,
+    PingeraConnectionError,
+    PingeraTimeoutError
+)
+from .models import *
+
 __all__ = [
     "PingeraClient",
-    "PingeraError", 
+    "PingeraError",
     "PingeraAPIError",
     "PingeraAuthError",
-    "Page",
-    "PageList",
+    "PingeraConnectionError",
+    "PingeraTimeoutError"
 ]

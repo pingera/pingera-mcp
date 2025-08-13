@@ -25,25 +25,13 @@ def create_mcp_server(config: Config) -> FastMCP:
     logger = logging.getLogger(__name__)
 
     # Initialize Pingera client (SDK-based)
-    try:
-        pingera_client = PingeraClient(
-            api_key=config.api_key,
-            base_url=config.base_url,
-            timeout=config.timeout,
-            max_retries=config.max_retries
-        )
-        logger.info("Using Pingera SDK client")
-    except Exception as e:
-        logger.warning(f"Failed to initialize SDK client: {e}")
-        # Fallback to custom client if needed
-        from pingera.client import PingeraClient as CustomClient
-        pingera_client = CustomClient(
-            api_key=config.api_key,
-            base_url=config.base_url,
-            timeout=config.timeout,
-            max_retries=config.max_retries
-        )
-        logger.info("Using custom Pingera client")
+    pingera_client = PingeraClient(
+        api_key=config.api_key,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        max_retries=config.max_retries
+    )
+    logger.info("Using Pingera SDK client")
 
     # Initialize tool and resource handlers
     pages_tools = PagesTools(pingera_client)

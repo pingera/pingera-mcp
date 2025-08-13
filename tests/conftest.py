@@ -7,8 +7,7 @@ import os
 from unittest.mock import Mock, patch
 
 from config import Config, OperationMode
-from pingera import PingeraClient, Page, PageList
-from pingera.models import Component, ComponentStatus
+from pingera import PingeraClient
 
 
 @pytest.fixture
@@ -28,40 +27,40 @@ def mock_config():
 @pytest.fixture
 def mock_page():
     """Create a mock page object for testing."""
-    return Page(
-        id="123",
-        name="Test Page",
-        url="https://example.com",
-        created_at="2024-01-01T00:00:00Z",
-        updated_at="2024-01-01T00:00:00Z",
-        organization_id="org123"
-    )
+    return {
+        "id": "123",
+        "name": "Test Page",
+        "url": "https://example.com",
+        "created_at": "2024-01-01T00:00:00Z",
+        "updated_at": "2024-01-01T00:00:00Z",
+        "organization_id": "org123"
+    }
 
 
 @pytest.fixture
 def mock_page_list(mock_page):
     """Create a mock page list for testing."""
-    return PageList(
-        pages=[mock_page],
-        total=1,
-        page=1,
-        per_page=10
-    )
+    return {
+        "pages": [mock_page],
+        "total": 1,
+        "page": 1,
+        "per_page": 10
+    }
 
 
 @pytest.fixture
 def mock_component():
     """Create a mock component object for testing."""
-    return Component(
-        id="comp123",
-        name="Test Component",
-        description="Test component description",
-        status=ComponentStatus.OPERATIONAL,
-        page_id="page123",
-        group=False,
-        showcase=True,
-        position=1
-    )
+    return {
+        "id": "comp123",
+        "name": "Test Component",
+        "description": "Test component description",
+        "status": "operational",
+        "page_id": "page123",
+        "group": False,
+        "showcase": True,
+        "position": 1
+    }
 
 
 @pytest.fixture

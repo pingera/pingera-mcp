@@ -11,7 +11,6 @@ from .exceptions import (
     PingeraConnectionError,
     PingeraTimeoutError
 )
-from .models import *
 
 __all__ = [
     "PingeraClient",

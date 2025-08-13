@@ -24,7 +24,6 @@ from .exceptions import (
     PingeraConnectionError,
     PingeraTimeoutError
 )
-from .models import PageList, Page, ComponentList, Component
 
 
 class PingeraSDKClient:
@@ -142,28 +141,28 @@ class PagesEndpointSDK:
     def __init__(self, client: PingeraSDKClient):
         self.client = client
 
-    def list(self, page: Optional[int] = None, per_page: Optional[int] = None, status: Optional[str] = None) -> PageList:
+    def list(self, page: Optional[int] = None, per_page: Optional[int] = None, status: Optional[str] = None):
         """List pages using SDK."""
         try:
             # SDK doesn't seem to have a direct pages list endpoint
             # We'll need to adapt based on available endpoints
-            # For now, return empty list - this would need actual API exploration
-            return PageList(pages=[], total=0, page=page or 1, per_page=per_page or 20)
+            # For now, return empty response - this would need actual API exploration
+            return {"pages": [], "total": 0, "page": page or 1, "per_page": per_page or 20}
         except ApiException as e:
             self.client._handle_api_exception(e)
 
-    def get(self, page_id: str) -> Page:
+    def get(self, page_id: str):
         """Get single page using SDK."""
         try:
             # This would need to be implemented based on actual SDK endpoints
             # For now, return a mock page
-            return Page(
-                id=page_id,
-                name="SDK Page",
-                status="active",
-                url=f"https://status.example.com",
-                domain="example.com"
-            )
+            return {
+                "id": page_id,
+                "name": "SDK Page",
+                "status": "active",
+                "url": f"https://status.example.com",
+                "domain": "example.com"
+            }
         except ApiException as e:
             self.client._handle_api_exception(e)
 
@@ -174,41 +173,18 @@ class ComponentEndpointsSDK:
     def __init__(self, client: PingeraSDKClient):
         self.client = client
 
-    def get_component_groups(self, page_id: str, show_deleted: bool = False) -> ComponentList:
+    def get_component_groups(self, page_id: str, show_deleted: bool = False):
         """Get component groups using SDK."""
         try:
             # Use the SDK's components API
             components_response = self.client.components_api.v1_pages_page_id_components_get(page_id)
             
-            # Convert SDK response to our model format
-            components = []
-            if hasattr(components_response, 'data') and components_response.data:
-                for comp in components_response.data:
-                    components.append(Component(
-                        id=comp.id,
-                        name=comp.name,
-                        description=comp.description or "",
-                        status=comp.status,
-                        page_id=page_id,
-                        group=getattr(comp, 'group', False),
-                        group_id=getattr(comp, 'group_id', None),
-                        position=getattr(comp, 'position', None),
-                        showcase=getattr(comp, 'showcase', None),
-                        only_show_if_degraded=getattr(comp, 'only_show_if_degraded', None),
-                        start_date=getattr(comp, 'start_date', None),
-                        created_at=getattr(comp, 'created_at', None),
-                        updated_at=getattr(comp, 'updated_at', None)
-                    ))
-
-            return ComponentList(
-                component_groups=components,
-                total=len(components),
-                page_id=page_id
-            )
+            # Return SDK response directly
+            return components_response
         except ApiException as e:
             self.client._handle_api_exception(e)
 
-    def get_component(self, page_id: str, component_id: str) -> Component:
+    def get_component(self, page_id: str, component_id: str):
         """Get single component using SDK."""
         try:
             # First get all components, then filter by ID
@@ -217,21 +193,7 @@ class ComponentEndpointsSDK:
             if hasattr(components_response, 'data') and components_response.data:
                 for comp in components_response.data:
                     if comp.id == component_id:
-                        return Component(
-                            id=comp.id,
-                            name=comp.name,
-                            description=comp.description or "",
-                            status=comp.status,
-                            page_id=page_id,
-                            group=getattr(comp, 'group', False),
-                            group_id=getattr(comp, 'group_id', None),
-                            position=getattr(comp, 'position', None),
-                            showcase=getattr(comp, 'showcase', None),
-                            only_show_if_degraded=getattr(comp, 'only_show_if_degraded', None),
-                            start_date=getattr(comp, 'start_date', None),
-                            created_at=getattr(comp, 'created_at', None),
-                            updated_at=getattr(comp, 'updated_at', None)
-                        )
+                        return comp
             
             raise PingeraAPIError(f"Component {component_id} not found")
         except ApiException as e:

@@ -3,10 +3,10 @@
 Component models for Pingera API.
 """
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ComponentStatus(str, Enum):
@@ -42,3 +42,17 @@ class Component(BaseModel):
 
     class Config:
         use_enum_values = True
+
+
+class ComponentList(BaseModel):
+    """Model representing a list of components from Pingera API."""
+    
+    component_groups: List[Component] = Field(default_factory=list, description="List of component groups")
+    total: Optional[int] = Field(None, description="Total number of components")
+    page_id: Optional[str] = Field(None, description="Page ID these components belong to")
+    
+    class Config:
+        """Pydantic configuration."""
+        json_encoders = {
+            datetime: lambda v: v.isoformat() if v else None
+        }

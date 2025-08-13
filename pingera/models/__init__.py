@@ -4,7 +4,7 @@ Pydantic models for Pingera API responses.
 
 from .common import APIResponse
 from .pages import Page, PageList
-from .components import Component, ComponentStatus
+from .components import Component, ComponentStatus, ComponentList
 
 __all__ = [
     "APIResponse",
@@ -12,4 +12,5 @@ __all__ = [
     "PageList",
     "Component", 
     "ComponentStatus",
+    "ComponentList",
 ]

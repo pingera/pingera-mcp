@@ -58,13 +58,57 @@ async def main():
                 # Convert MCP tools to Gemini format
                 tools = []
                 for tool in mcp_tools.tools:
+                    # Extract the input schema safely
+                    input_schema = tool.inputSchema or {}
+                    properties = input_schema.get("properties", {})
+                    required = input_schema.get("required", [])
+                    
+                    # Convert MCP schema properties to Gemini format
+                    gemini_properties = {}
+                    for prop_name, prop_schema in properties.items():
+                        # Convert MCP property schema to Gemini format
+                        gemini_prop = {}
+                        
+                        # Handle type conversion
+                        if isinstance(prop_schema, dict):
+                            prop_type = prop_schema.get("type", "string")
+                            if prop_type == "array":
+                                gemini_prop["type"] = "ARRAY"
+                                items = prop_schema.get("items", {})
+                                if isinstance(items, dict) and "type" in items:
+                                    item_type = items["type"]
+                                    if item_type == "string":
+                                        gemini_prop["items"] = {"type": "STRING"}
+                                    elif item_type == "integer":
+                                        gemini_prop["items"] = {"type": "INTEGER"}
+                                    elif item_type == "number":
+                                        gemini_prop["items"] = {"type": "NUMBER"}
+                                    else:
+                                        gemini_prop["items"] = {"type": "STRING"}
+                            elif prop_type == "integer":
+                                gemini_prop["type"] = "INTEGER"
+                            elif prop_type == "number":
+                                gemini_prop["type"] = "NUMBER"
+                            elif prop_type == "boolean":
+                                gemini_prop["type"] = "BOOLEAN"
+                            else:
+                                gemini_prop["type"] = "STRING"
+                            
+                            # Add description if available
+                            if "description" in prop_schema:
+                                gemini_prop["description"] = prop_schema["description"]
+                        else:
+                            gemini_prop["type"] = "STRING"
+                        
+                        gemini_properties[prop_name] = gemini_prop
+                    
                     tool_schema = {
                         "name": tool.name,
                         "description": tool.description,
                         "parameters": {
-                            "type": "object",
-                            "properties": tool.inputSchema.get("properties", {}),
-                            "required": tool.inputSchema.get("required", [])
+                            "type": "OBJECT",
+                            "properties": gemini_properties,
+                            "required": required
                         }
                     }
                     tools.append(tool_schema)

@@ -140,6 +140,31 @@ def create_mcp_server(config: Config) -> FastMCP:
     ) -> str:
         return await checks_tools.get_unified_statistics(check_ids, from_date, to_date)
 
+    @mcp.tool()
+    async def execute_custom_check(
+        url: str,
+        check_type: str = "web",
+        timeout: Optional[int] = 30,
+        name: Optional[str] = None,
+        parameters: Optional[dict] = None
+    ) -> str:
+        return await checks_tools.execute_custom_check(url, check_type, timeout, name, parameters)
+
+    @mcp.tool()
+    async def execute_existing_check(check_id: str) -> str:
+        return await checks_tools.execute_existing_check(check_id)
+
+    @mcp.tool()
+    async def get_on_demand_job_status(job_id: str) -> str:
+        return await checks_tools.get_on_demand_job_status(job_id)
+
+    @mcp.tool()
+    async def list_on_demand_checks(
+        page: Optional[int] = None,
+        page_size: Optional[int] = None
+    ) -> str:
+        return await checks_tools.list_on_demand_checks(page, page_size)
+
     # Register write tools only if in read-write mode
     if config.is_read_write():
         logger.info("Read-write mode enabled - adding write operations")

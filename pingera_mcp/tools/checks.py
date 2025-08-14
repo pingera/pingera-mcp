@@ -489,3 +489,148 @@ class ChecksTools(BaseTools):
         if hasattr(response, '__dict__'):
             return response.__dict__
         return response
+
+    # On-Demand Checks Methods
+
+    async def execute_custom_check(
+        self,
+        url: str,
+        check_type: str = "web",
+        timeout: Optional[int] = 30,
+        name: Optional[str] = None,
+        parameters: Optional[dict] = None
+    ) -> str:
+        """
+        Execute a custom check on demand.
+
+        Args:
+            url: URL to check
+            check_type: Type of check ('web', 'synthetic', 'api')
+            timeout: Timeout in seconds
+            name: Name for the check
+            parameters: Additional parameters (e.g., pw_script for synthetic checks)
+
+        Returns:
+            JSON string containing job information
+        """
+        try:
+            self.logger.info(f"Executing custom check for URL: {url}")
+            
+            # Prepare check request data
+            check_request = {
+                "url": url,
+                "type": check_type,
+                "timeout": timeout,
+                "name": name or f"On-demand check for {url}",
+                "parameters": parameters or {}
+            }
+            
+            with self.client._get_api_client() as api_client:
+                from pingera.api import OnDemandChecksApi
+                on_demand_api = OnDemandChecksApi(api_client)
+                
+                response = on_demand_api.v1_checks_execute_post(check_request)
+                
+                job_data = self._format_job_response(response)
+                return self._success_response(job_data)
+                
+        except Exception as e:
+            self.logger.error(f"Error executing custom check: {e}")
+            return self._error_response(str(e))
+
+    async def execute_existing_check(self, check_id: str) -> str:
+        """
+        Execute an existing check on demand.
+
+        Args:
+            check_id: ID of the existing check to execute
+
+        Returns:
+            JSON string containing job information
+        """
+        try:
+            self.logger.info(f"Executing existing check: {check_id}")
+            
+            with self.client._get_api_client() as api_client:
+                from pingera.api import OnDemandChecksApi
+                on_demand_api = OnDemandChecksApi(api_client)
+                
+                response = on_demand_api.v1_checks_check_id_execute_post(check_id=check_id)
+                
+                job_data = self._format_job_response(response)
+                return self._success_response(job_data)
+                
+        except Exception as e:
+            self.logger.error(f"Error executing existing check {check_id}: {e}")
+            return self._error_response(str(e))
+
+    async def get_on_demand_job_status(self, job_id: str) -> str:
+        """
+        Get the status of an on-demand check job.
+
+        Args:
+            job_id: ID of the job to check
+
+        Returns:
+            JSON string containing job status
+        """
+        try:
+            self.logger.info(f"Getting job status for: {job_id}")
+            
+            with self.client._get_api_client() as api_client:
+                from pingera.api import OnDemandChecksApi
+                on_demand_api = OnDemandChecksApi(api_client)
+                
+                response = on_demand_api.v1_checks_jobs_job_id_get(job_id=job_id)
+                
+                job_data = self._format_job_response(response)
+                return self._success_response(job_data)
+                
+        except Exception as e:
+            self.logger.error(f"Error getting job status for {job_id}: {e}")
+            return self._error_response(str(e))
+
+    async def list_on_demand_checks(
+        self,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None
+    ) -> str:
+        """
+        List on-demand checks.
+
+        Args:
+            page: Page number for pagination
+            page_size: Number of items per page
+
+        Returns:
+            JSON string containing on-demand checks data
+        """
+        try:
+            self.logger.info(f"Listing on-demand checks (page={page}, page_size={page_size})")
+            
+            with self.client._get_api_client() as api_client:
+                from pingera.api import OnDemandChecksApi
+                on_demand_api = OnDemandChecksApi(api_client)
+                
+                response = on_demand_api.v1_on_demand_checks_get(
+                    page=page,
+                    page_size=page_size
+                )
+                
+                checks_data = self._format_on_demand_checks_response(response)
+                return self._success_response(checks_data)
+                
+        except Exception as e:
+            self.logger.error(f"Error listing on-demand checks: {e}")
+            return self._error_response(str(e))
+
+    def _format_on_demand_checks_response(self, response) -> dict:
+        """Format on-demand checks response."""
+        if hasattr(response, '__dict__'):
+            return {
+                "checks": getattr(response, 'data', []),
+                "total": getattr(response, 'total', 0),
+                "page": getattr(response, 'page', 1),
+                "page_size": getattr(response, 'page_size', 20)
+            }
+        return {"checks": [], "total": 0}

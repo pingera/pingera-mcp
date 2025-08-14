@@ -320,6 +320,143 @@ class TestChecksTools:
             assert result_data["success"] is False
             assert "API connection failed" in result_data["error"]
 
+    # On-Demand Checks Tests
+
+    @pytest.mark.asyncio
+    async def test_execute_custom_check_success(self, checks_tools):
+        """Test successful custom check execution."""
+        mock_job = Mock()
+        mock_job.job_id = "job_456"
+        mock_job.status = "queued"
+        mock_job.url = "https://example.com"
+        
+        with patch.object(checks_tools.client, '_get_api_client') as mock_context:
+            mock_api_client = Mock()
+            mock_context.return_value.__enter__.return_value = mock_api_client
+            mock_context.return_value.__exit__.return_value = None
+            
+            with patch('pingera.api.OnDemandChecksApi') as mock_on_demand_api:
+                mock_api_instance = Mock()
+                mock_api_instance.v1_checks_execute_post.return_value = mock_job
+                mock_on_demand_api.return_value = mock_api_instance
+
+                result = await checks_tools.execute_custom_check(
+                    url="https://example.com",
+                    check_type="web",
+                    timeout=30
+                )
+                
+                result_data = json.loads(result)
+                assert result_data["success"] is True
+                assert result_data["data"]["job_id"] == "job_456"
+
+    @pytest.mark.asyncio
+    async def test_execute_existing_check_success(self, checks_tools):
+        """Test successful existing check execution."""
+        mock_job = Mock()
+        mock_job.job_id = "job_789"
+        mock_job.status = "queued"
+        mock_job.check_id = "check_123"
+        
+        with patch.object(checks_tools.client, '_get_api_client') as mock_context:
+            mock_api_client = Mock()
+            mock_context.return_value.__enter__.return_value = mock_api_client
+            mock_context.return_value.__exit__.return_value = None
+            
+            with patch('pingera.api.OnDemandChecksApi') as mock_on_demand_api:
+                mock_api_instance = Mock()
+                mock_api_instance.v1_checks_check_id_execute_post.return_value = mock_job
+                mock_on_demand_api.return_value = mock_api_instance
+
+                result = await checks_tools.execute_existing_check("check_123")
+                
+                result_data = json.loads(result)
+                assert result_data["success"] is True
+                assert result_data["data"]["job_id"] == "job_789"
+
+    @pytest.mark.asyncio
+    async def test_get_on_demand_job_status_success(self, checks_tools):
+        """Test successful job status retrieval."""
+        mock_job = Mock()
+        mock_job.job_id = "job_456"
+        mock_job.status = "completed"
+        mock_job.result = {"status_code": 200, "response_time": 150}
+        
+        with patch.object(checks_tools.client, '_get_api_client') as mock_context:
+            mock_api_client = Mock()
+            mock_context.return_value.__enter__.return_value = mock_api_client
+            mock_context.return_value.__exit__.return_value = None
+            
+            with patch('pingera.api.OnDemandChecksApi') as mock_on_demand_api:
+                mock_api_instance = Mock()
+                mock_api_instance.v1_checks_jobs_job_id_get.return_value = mock_job
+                mock_on_demand_api.return_value = mock_api_instance
+
+                result = await checks_tools.get_on_demand_job_status("job_456")
+                
+                result_data = json.loads(result)
+                assert result_data["success"] is True
+                assert result_data["data"]["status"] == "completed"
+
+    @pytest.mark.asyncio
+    async def test_list_on_demand_checks_success(self, checks_tools):
+        """Test successful on-demand checks listing."""
+        mock_response = Mock()
+        mock_response.data = [
+            {"id": "od_check_1", "name": "Custom Check 1", "url": "https://site1.com"},
+            {"id": "od_check_2", "name": "Custom Check 2", "url": "https://site2.com"}
+        ]
+        mock_response.total = 2
+        mock_response.page = 1
+        mock_response.page_size = 20
+        
+        with patch.object(checks_tools.client, '_get_api_client') as mock_context:
+            mock_api_client = Mock()
+            mock_context.return_value.__enter__.return_value = mock_api_client
+            mock_context.return_value.__exit__.return_value = None
+            
+            with patch('pingera.api.OnDemandChecksApi') as mock_on_demand_api:
+                mock_api_instance = Mock()
+                mock_api_instance.v1_on_demand_checks_get.return_value = mock_response
+                mock_on_demand_api.return_value = mock_api_instance
+
+                result = await checks_tools.list_on_demand_checks()
+                
+                result_data = json.loads(result)
+                assert result_data["success"] is True
+                assert "checks" in result_data["data"]
+                assert len(result_data["data"]["checks"]) == 2
+                assert result_data["data"]["total"] == 2
+
+    @pytest.mark.asyncio
+    async def test_execute_custom_check_with_parameters(self, checks_tools):
+        """Test custom check execution with parameters."""
+        mock_job = Mock()
+        mock_job.job_id = "job_synthetic"
+        mock_job.status = "queued"
+        
+        with patch.object(checks_tools.client, '_get_api_client') as mock_context:
+            mock_api_client = Mock()
+            mock_context.return_value.__enter__.return_value = mock_api_client
+            mock_context.return_value.__exit__.return_value = None
+            
+            with patch('pingera.api.OnDemandChecksApi') as mock_on_demand_api:
+                mock_api_instance = Mock()
+                mock_api_instance.v1_checks_execute_post.return_value = mock_job
+                mock_on_demand_api.return_value = mock_api_instance
+
+                result = await checks_tools.execute_custom_check(
+                    url="https://example.com",
+                    check_type="synthetic",
+                    timeout=60,
+                    name="Synthetic Test",
+                    parameters={"pw_script": "console.log('test');"}
+                )
+                
+                result_data = json.loads(result)
+                assert result_data["success"] is True
+                assert result_data["data"]["job_id"] == "job_synthetic"
+
     @pytest.mark.asyncio
     async def test_format_methods(self, checks_tools, mock_checks_list):
         """Test response formatting methods."""

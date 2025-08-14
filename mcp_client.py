@@ -115,7 +115,4 @@ async def main():
         print("\nMake sure the MCP server is properly configured for stdio communication.")
         print("The server should be running via 'python main.py' and listening on stdio.")
 
-if __name__ == "__main__":
-    print("🚀 Starting simple MCP client test with Gemini...")
-    print("="*60)
-    asyncio.run(main())
+asyncio.run(main())

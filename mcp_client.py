@@ -15,9 +15,24 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Configure MCP server parameters to match README setup
 server_params = StdioServerParameters(
-    command="python",
-    args=["main.py"],
-    env={}
+    command="uv",
+    args=[
+        "run",
+        "--with",
+        "pingera-mcp-server",
+        "--python",
+        "3.10",
+        "pingera-mcp"
+    ],
+    env={
+        "PINGERA_API_KEY": os.getenv("PINGERA_API_KEY", "your_api_key_here"),
+        "PINGERA_MODE": "read_only",
+        "PINGERA_BASE_URL": "https://api.pingera.ru/v1",
+        "PINGERA_TIMEOUT": "30",
+        "PINGERA_MAX_RETRIES": "3",
+        "PINGERA_DEBUG": "false",
+        "PINGERA_SERVER_NAME": "Pingera MCP Server"
+    }
 )
 
 async def run():

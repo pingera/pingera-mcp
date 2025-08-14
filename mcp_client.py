@@ -142,17 +142,15 @@ async def main():
                     traceback.print_exc()
                     raise
                 
-                print("🎯 Gemini's response:")
-                if response.text:
-                    print(response.text)
-                
-                # Check if Gemini wants to call a function
+                # Check if Gemini wants to call a function first
+                function_calls_made = False
                 if response.candidates[0].content.parts and len(response.candidates[0].content.parts) > 0:
                     for part in response.candidates[0].content.parts:
                         if hasattr(part, 'function_call'):
                             function_call = part.function_call
+                            function_calls_made = True
                             
-                            print(f"\n🔧 Gemini wants to call: {function_call.name}")
+                            print(f"🔧 Gemini wants to call: {function_call.name}")
                             print(f"📝 With arguments: {dict(function_call.args)}")
                             
                             # Execute the MCP tool
@@ -165,13 +163,25 @@ async def main():
                             print(json.dumps(json.loads(result.content[0].text), indent=2))
                             
                             # Ask Gemini to interpret the results
-                            follow_up_model = genai.GenerativeModel('gemini-2.0-flash-exp')
+                            follow_up_model = genai.GenerativeModel('gemini-2.5-flash')
                             follow_up = follow_up_model.generate_content(
                                 f"Based on this monitoring data: {result.content[0].text}\n\nPlease summarize the results in a friendly way for the question: {prompt}"
                             )
                             
                             print(f"\n🤖 Gemini's summary:")
                             print(follow_up.text)
+                
+                # Only try to access text if no function calls were made
+                if not function_calls_made:
+                    print("🎯 Gemini's response:")
+                    try:
+                        if response.text:
+                            print(response.text)
+                        else:
+                            print("No text response from Gemini")
+                    except ValueError as e:
+                        print(f"Could not get text from response: {e}")
+                        print("Response likely contains function calls or other structured content")
     
     except Exception as e:
         print(f"❌ Error connecting to MCP server: {e}")

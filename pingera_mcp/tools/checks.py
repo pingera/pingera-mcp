@@ -51,14 +51,45 @@ class ChecksTools(BaseTools):
                 if status is not None:
                     kwargs['status'] = status
                 
+                self.logger.info(f"🔧 API call parameters: {kwargs}")
+                self.logger.info(f"🔧 API client base URL: {getattr(api_client.configuration, 'host', 'Unknown')}")
+                
                 response = checks_api.v1_checks_get(**kwargs)
+                
+                # Debug the raw response
+                self.logger.info(f"🔍 Raw API response type: {type(response)}")
+                self.logger.info(f"🔍 Response has __dict__: {hasattr(response, '__dict__')}")
+                
+                if hasattr(response, '__dict__'):
+                    self.logger.info(f"🔍 Response __dict__: {response.__dict__}")
+                    
+                # Check for common response attributes
+                for attr in ['data', 'checks', 'items', 'results', 'total', 'page', 'page_size', 'count']:
+                    if hasattr(response, attr):
+                        attr_value = getattr(response, attr)
+                        self.logger.info(f"🔍 Response.{attr}: {attr_value} (type: {type(attr_value)})")
+                        if isinstance(attr_value, list):
+                            self.logger.info(f"🔍 Response.{attr} length: {len(attr_value)}")
+                
+                # Try to inspect the response structure more deeply
+                try:
+                    # Check if response is iterable
+                    if hasattr(response, '__iter__') and not isinstance(response, (str, bytes)):
+                        response_list = list(response)
+                        self.logger.info(f"🔍 Response as list: {response_list} (length: {len(response_list)})")
+                except Exception as iter_error:
+                    self.logger.info(f"🔍 Response not iterable: {iter_error}")
                 
                 # Convert response to dict format
                 checks_data = self._format_checks_response(response)
+                self.logger.info(f"🔍 Formatted checks data: {checks_data}")
+                
                 return self._success_response(checks_data)
                 
         except Exception as e:
             self.logger.error(f"Error listing checks: {e}")
+            import traceback
+            self.logger.error(f"Full traceback: {traceback.format_exc()}")
             return self._error_response(str(e))
 
     async def get_check_details(self, check_id: str) -> str:
@@ -432,13 +463,37 @@ class ChecksTools(BaseTools):
 
     def _format_checks_response(self, response) -> dict:
         """Format checks list response."""
+        self.logger.info(f"🔧 Formatting checks response: {type(response)}")
+        
         if hasattr(response, '__dict__'):
-            return {
-                "checks": getattr(response, 'data', []),
-                "total": getattr(response, 'total', 0),
-                "page": getattr(response, 'page', 1),
-                "page_size": getattr(response, 'page_size', 20)
+            # Try different possible attribute names for checks data
+            checks_data = None
+            for attr_name in ['data', 'checks', 'items', 'results']:
+                if hasattr(response, attr_name):
+                    checks_data = getattr(response, attr_name)
+                    self.logger.info(f"🔧 Found checks data in response.{attr_name}: {checks_data}")
+                    break
+            
+            if checks_data is None:
+                checks_data = []
+                self.logger.warning("🔧 No checks data found in response attributes")
+            
+            # Get pagination info
+            total = getattr(response, 'total', len(checks_data) if isinstance(checks_data, list) else 0)
+            page = getattr(response, 'page', 1)
+            page_size = getattr(response, 'page_size', getattr(response, 'per_page', 20))
+            
+            formatted_result = {
+                "checks": checks_data if isinstance(checks_data, list) else [],
+                "total": total,
+                "page": page,
+                "page_size": page_size
             }
+            
+            self.logger.info(f"🔧 Formatted result: {formatted_result}")
+            return formatted_result
+        
+        self.logger.warning(f"🔧 Response has no __dict__ attribute, returning empty result")
         return {"checks": [], "total": 0}
 
     def _format_check_response(self, response) -> dict:

@@ -119,7 +119,7 @@ async def main():
                 # Ask Gemini to use the tools
                 print(f"🔧 Creating Gemini model with {len(tools)} tools...")
                 try:
-                    model = genai.GenerativeModel('gemini-2.5-pro-exp-03-25', tools=tools)
+                    model = genai.GenerativeModel('gemini-2.5-flash', tools=tools)
                     print("✓ Gemini model created successfully")
                     
                     print(f"🤖 Generating content for prompt: {prompt}")

@@ -40,12 +40,18 @@ class ChecksTools(BaseTools):
                 from pingera.api import ChecksApi
                 checks_api = ChecksApi(api_client)
                 
-                response = checks_api.v1_checks_get(
-                    page=page,
-                    page_size=page_size,
-                    type=check_type,
-                    status=status
-                )
+                # Only pass non-None parameters
+                kwargs = {}
+                if page is not None:
+                    kwargs['page'] = page
+                if page_size is not None:
+                    kwargs['page_size'] = page_size
+                if check_type is not None:
+                    kwargs['type'] = check_type
+                if status is not None:
+                    kwargs['status'] = status
+                
+                response = checks_api.v1_checks_get(**kwargs)
                 
                 # Convert response to dict format
                 checks_data = self._format_checks_response(response)

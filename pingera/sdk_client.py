@@ -5,36 +5,19 @@ import logging
 import os
 from typing import Dict, Optional, Any, List
 
-try:
-    # Try importing from pingera_sdk first (if that's the module name)
-    from pingera_sdk import ApiClient, Configuration
-    from pingera_sdk.api import (
-        StatusPagesComponentsApi,
-        StatusPagesIncidentsApi,
-        ChecksApi,
-        AlertsApi,
-        HeartbeatsApi,
-        OnDemandChecksApi,
-        ChecksUnifiedResultsApi
-    )
-    from pingera_sdk.exceptions import ApiException
-except ImportError:
-    # Fallback to pingera_client or another naming convention
-    try:
-        from pingera_client import ApiClient, Configuration
-        from pingera_client.api import (
-            StatusPagesComponentsApi,
-            StatusPagesIncidentsApi,
-            ChecksApi,
-            AlertsApi,
-            HeartbeatsApi,
-            OnDemandChecksApi,
-            ChecksUnifiedResultsApi
-        )
-        from pingera_client.exceptions import ApiException
-    except ImportError:
-        # If still failing, we need to check the actual package structure
-        raise ImportError("Could not import Pingera SDK. Please check the package installation and import path.")
+# Import from the pingera package
+import pingera
+from pingera import ApiClient, Configuration
+from pingera.api import (
+    StatusPagesComponentsApi,
+    StatusPagesIncidentsApi,
+    ChecksApi,
+    AlertsApi,
+    HeartbeatsApi,
+    OnDemandChecksApi,
+    ChecksUnifiedResultsApi
+)
+from pingera.exceptions import ApiException
 
 from .exceptions import (
     PingeraAPIError,

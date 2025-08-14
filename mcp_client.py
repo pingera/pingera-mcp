@@ -13,17 +13,10 @@ from mcp.client.stdio import stdio_client
 # Initialize Gemini client
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Configure MCP server parameters to match README setup
+# Configure MCP server parameters to run the local server
 server_params = StdioServerParameters(
-    command="uv",
-    args=[
-        "run",
-        "--with",
-        "pingera-mcp-server",
-        "--python",
-        "3.10",
-        "pingera-mcp"
-    ],
+    command="python",
+    args=["main.py"],
     env={
         "PINGERA_API_KEY": os.getenv("PINGERA_API_KEY", "your_api_key_here"),
         "PINGERA_MODE": "read_only",

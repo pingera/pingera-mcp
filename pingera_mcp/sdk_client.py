@@ -69,7 +69,14 @@ class PingeraSDKClient:
 
     def get_pages(self, page: Optional[int] = None, per_page: Optional[int] = None, status: Optional[str] = None):
         """Get pages using the SDK."""
-        return self.pages.list(page=page, per_page=per_page, status=status)
+        try:
+            with ApiClient(self.configuration) as api_client:
+                status_pages_api = StatusPagesApi(api_client)
+                # Call the SDK method directly to match working example
+                pages_response = status_pages_api.v1_pages_get(page=page or 1, page_size=per_page or 20)
+                return pages_response
+        except ApiException as e:
+            self._handle_api_exception(e)
 
     def get_page(self, page_id: int):
         """Get single page using the SDK."""
@@ -152,10 +159,9 @@ class PagesEndpointSDK:
         try:
             with ApiClient(self.client.configuration) as api_client:
                 status_pages_api = StatusPagesApi(api_client)
-                pages_response = status_pages_api.v1_pages_get(
-                    page=page or 1,
-                    page_size=per_page or 20
-                )
+                # Based on the working test_pingera_sdk.py, the SDK method takes no parameters
+                # or uses different parameter names than expected
+                pages_response = status_pages_api.v1_pages_get()
                 return pages_response
         except ApiException as e:
             self.client._handle_api_exception(e)

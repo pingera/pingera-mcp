@@ -109,31 +109,24 @@ async def test_mcp_server():
         for resource in resources:
             print(f"  - {resource}")
 
-        print("\n✅ Server configuration test completed successfully!")
-
-    except Exception as e:
-        print(f"❌ Server testing failed: {e}")
-        import traceback
-        traceback.print_exc()
-
-    # Test MCP tool call for list_pages
+        # Test MCP tool call for list_pages
         print("\n📋 Testing MCP tool call: list_pages...")
         try:
             # Since we're testing the MCP server directly, we need to simulate tool calls
             # In a real MCP environment, this would be called by the MCP client (like Claude)
-            
+
             # Get the tool handler from our server components
             from pingera_mcp.tools import PagesTools
-            
+
             # Create a pages tool instance with our test client
             pages_tool = PagesTools(test_client)
-            
+
             # Call the list_pages tool directly (simulating MCP tool call)
             result = await pages_tool.list_pages(page=1, per_page=10)
-            
+
             print("✓ MCP tool call successful")
             print("📄 Pages data received:")
-            
+
             # Parse and display the result
             import json
             try:
@@ -142,10 +135,10 @@ async def test_mcp_server():
                     pages_data = parsed_result.get("data", {})
                     pages = pages_data.get("pages", [])
                     total = pages_data.get("total", 0)
-                    
+
                     print(f"  Total pages: {total}")
                     print(f"  Pages in this response: {len(pages)}")
-                    
+
                     if pages:
                         print("  Page details:")
                         for i, page in enumerate(pages, 1):
@@ -158,15 +151,22 @@ async def test_mcp_server():
                         print("  No pages found")
                 else:
                     print(f"  ❌ Tool returned error: {parsed_result.get('error', 'Unknown error')}")
-                    
+
             except json.JSONDecodeError:
                 print(f"  Raw response: {result}")
-                
+
         except Exception as e:
             print(f"❌ MCP tool call failed: {e}")
             print("  This might be expected if the API is not accessible in test environment")
 
         print("\n🎉 MCP Server testing completed!")
+
+        print("\n✅ Server configuration test completed successfully!")
+
+    except Exception as e:
+        print(f"❌ Server testing failed: {e}")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     asyncio.run(test_mcp_server())

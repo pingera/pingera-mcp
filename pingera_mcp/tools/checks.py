@@ -432,23 +432,38 @@ class ChecksTools(BaseTools):
     def _format_checks_response(self, response) -> dict:
         """Format checks list response."""
         if hasattr(response, '__dict__'):
+            # Handle the actual API response structure with pagination and checks
+            checks_data = getattr(response, 'checks', [])
+            pagination = getattr(response, 'pagination', {})
+            
             # Convert model objects to dictionaries for JSON serialization
-            data = getattr(response, 'data', [])
-            if isinstance(data, list):
-                formatted_data = []
-                for item in data:
+            if isinstance(checks_data, list):
+                formatted_checks = []
+                for item in checks_data:
                     if hasattr(item, '__dict__'):
-                        formatted_data.append(item.__dict__)
+                        # Convert datetime objects to strings for JSON serialization
+                        check_dict = {}
+                        for key, value in item.__dict__.items():
+                            if hasattr(value, 'isoformat'):  # datetime object
+                                check_dict[key] = value.isoformat()
+                            else:
+                                check_dict[key] = value
+                        formatted_checks.append(check_dict)
                     else:
-                        formatted_data.append(item)
+                        formatted_checks.append(item)
             else:
-                formatted_data = data
+                formatted_checks = checks_data
+
+            # Extract pagination info
+            total = pagination.get('total_items', 0) if isinstance(pagination, dict) else 0
+            page = pagination.get('page', 1) if isinstance(pagination, dict) else 1
+            page_size = pagination.get('page_size', 20) if isinstance(pagination, dict) else 20
 
             return {
-                "checks": formatted_data,
-                "total": getattr(response, 'total', 0),
-                "page": getattr(response, 'page', 1),
-                "page_size": getattr(response, 'page_size', 20)
+                "checks": formatted_checks,
+                "total": total,
+                "page": page,
+                "page_size": page_size
             }
         return {"checks": [], "total": 0}
 

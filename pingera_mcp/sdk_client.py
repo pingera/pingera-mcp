@@ -57,17 +57,8 @@ class PingeraSDKClient:
         self.configuration.api_key['apiKeyAuth'] = self.api_key
         self.configuration.timeout = timeout
 
-        # Create API client
-        self.api_client = ApiClient(self.configuration)
-
-        # Initialize API instances
-        self.components_api = StatusPagesComponentsApi(self.api_client)
-        self.incidents_api = StatusPagesIncidentsApi(self.api_client)
-        self.checks_api = ChecksApi(self.api_client)
-        self.alerts_api = AlertsApi(self.api_client)
-        self.heartbeats_api = HeartbeatsApi(self.api_client)
-        self.on_demand_api = OnDemandChecksApi(self.api_client)
-        self.unified_results_api = ChecksUnifiedResultsApi(self.api_client)
+        # Store configuration, API client will be created in context manager
+        self.api_client = None
 
         # Initialize endpoints for compatibility
         self.pages = PagesEndpointSDK(self)
@@ -96,9 +87,11 @@ class PingeraSDKClient:
             bool: True if connection is successful
         """
         try:
-            # Try to list checks as a lightweight connection test
-            self.checks_api.v1_checks_get(page=1, page_size=1)
-            return True
+            # Use proper SDK pattern with context manager
+            with ApiClient(self.configuration) as api_client:
+                checks_api = ChecksApi(api_client)
+                checks = checks_api.v1_checks_get(page=1, page_size=1)
+                return True
         except ApiException as e:
             self.logger.error(f"Connection test failed: {e}")
             return False
@@ -177,25 +170,27 @@ class ComponentEndpointsSDK:
     def get_component_groups(self, page_id: str, show_deleted: bool = False):
         """Get component groups using SDK."""
         try:
-            # Use the SDK's components API
-            components_response = self.client.components_api.v1_pages_page_id_components_get(page_id)
-
-            # Return SDK response directly
-            return components_response
+            # Use proper SDK pattern with context manager
+            with ApiClient(self.client.configuration) as api_client:
+                components_api = StatusPagesComponentsApi(api_client)
+                components_response = components_api.v1_pages_page_id_components_get(page_id)
+                return components_response
         except ApiException as e:
             self.client._handle_api_exception(e)
 
     def get_component(self, page_id: str, component_id: str):
         """Get single component using SDK."""
         try:
-            # First get all components, then filter by ID
-            components_response = self.client.components_api.v1_pages_page_id_components_get(page_id)
+            # Use proper SDK pattern with context manager
+            with ApiClient(self.client.configuration) as api_client:
+                components_api = StatusPagesComponentsApi(api_client)
+                components_response = components_api.v1_pages_page_id_components_get(page_id)
 
-            if hasattr(components_response, 'data') and components_response.data:
-                for comp in components_response.data:
-                    if comp.id == component_id:
-                        return comp
+                if hasattr(components_response, 'data') and components_response.data:
+                    for comp in components_response.data:
+                        if comp.id == component_id:
+                            return comp
 
-            raise PingeraAPIError(f"Component {component_id} not found")
+                raise PingeraAPIError(f"Component {component_id} not found")
         except ApiException as e:
             self.client._handle_api_exception(e)

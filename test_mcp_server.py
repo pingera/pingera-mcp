@@ -126,16 +126,11 @@ async def test_mcp_server():
 
             print("✓ MCP tool call successful")
             print("📄 Pages data received:")
-            
-            # First, let's see the raw API response
-            print(f"  Raw result: {result}")
 
             # Parse and display the result
             import json
             try:
                 parsed_result = json.loads(result)
-                print(f"  Parsed result: {parsed_result}")
-                
                 if parsed_result.get("success"):
                     pages_data = parsed_result.get("data", {})
                     pages = pages_data.get("pages", [])
@@ -154,11 +149,13 @@ async def test_mcp_server():
                                 page_dict = page
                             
                             name = page_dict.get('name', 'Unknown')
-                            page_id = page_dict.get('id', 'N/A')
+                            # Try different possible ID fields from the API response
+                            page_id = page_dict.get('id') or page_dict.get('page_id') or page_dict.get('organization_id', 'N/A')
                             subdomain = page_dict.get('subdomain', '')
                             domain = page_dict.get('domain', '')
                             url = page_dict.get('url', '')
                             template = page_dict.get('template', '')
+                            template_id = page_dict.get('template_id', '')
                             language = page_dict.get('language', '')
                             
                             print(f"    {i}. {name} (ID: {page_id})")
@@ -176,6 +173,8 @@ async def test_mcp_server():
                             # Show template and language
                             if template:
                                 print(f"       Template: {template}")
+                            elif template_id:
+                                print(f"       Template ID: {template_id}")
                             if language:
                                 print(f"       Language: {language}")
                             

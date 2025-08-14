@@ -142,11 +142,43 @@ async def test_mcp_server():
                     if pages:
                         print("  Page details:")
                         for i, page in enumerate(pages, 1):
-                            print(f"    {i}. {page.get('name', 'Unknown')} (ID: {page.get('id', 'N/A')})")
-                            if page.get('url'):
-                                print(f"       URL: {page.get('url')}")
-                            if page.get('status'):
-                                print(f"       Status: {page.get('status')}")
+                            # Handle both dict and object formats
+                            if hasattr(page, '__dict__'):
+                                page_dict = page.__dict__ if hasattr(page, '__dict__') else page
+                            else:
+                                page_dict = page
+                            
+                            name = page_dict.get('name', 'Unknown')
+                            page_id = page_dict.get('id', 'N/A')
+                            subdomain = page_dict.get('subdomain', '')
+                            domain = page_dict.get('domain', '')
+                            url = page_dict.get('url', '')
+                            template = page_dict.get('template', '')
+                            language = page_dict.get('language', '')
+                            
+                            print(f"    {i}. {name} (ID: {page_id})")
+                            
+                            # Show subdomain or domain
+                            if domain:
+                                print(f"       Domain: {domain}")
+                            elif subdomain:
+                                print(f"       Subdomain: {subdomain}.pingera.ru")
+                            
+                            # Show company URL if available
+                            if url:
+                                print(f"       Company URL: {url}")
+                            
+                            # Show template and language
+                            if template:
+                                print(f"       Template: {template}")
+                            if language:
+                                print(f"       Language: {language}")
+                            
+                            # Show creation date if available
+                            if page_dict.get('created_at'):
+                                print(f"       Created: {page_dict.get('created_at')}")
+                            
+                            print()  # Add spacing between pages
                     else:
                         print("  No pages found")
                 else:

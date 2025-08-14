@@ -1,4 +1,3 @@
-
 """
 Pingera SDK client wrapper for MCP server integration.
 """
@@ -178,7 +177,7 @@ class ComponentEndpointsSDK:
         try:
             # Use the SDK's components API
             components_response = self.client.components_api.v1_pages_page_id_components_get(page_id)
-            
+
             # Return SDK response directly
             return components_response
         except ApiException as e:
@@ -189,12 +188,12 @@ class ComponentEndpointsSDK:
         try:
             # First get all components, then filter by ID
             components_response = self.client.components_api.v1_pages_page_id_components_get(page_id)
-            
+
             if hasattr(components_response, 'data') and components_response.data:
                 for comp in components_response.data:
                     if comp.id == component_id:
                         return comp
-            
+
             raise PingeraAPIError(f"Component {component_id} not found")
         except ApiException as e:
             self.client._handle_api_exception(e)

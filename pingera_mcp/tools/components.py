@@ -6,7 +6,7 @@ import json
 from typing import Optional
 
 from .base import BaseTools
-from pingera import PingeraError
+from ..exceptions import PingeraError
 
 
 class ComponentTools(BaseTools):

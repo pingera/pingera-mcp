@@ -3,7 +3,7 @@
 MCP resources for page data access.
 """
 from .base import BaseResources
-from pingera import PingeraError
+from ..exceptions import PingeraError
 
 
 class PagesResources(BaseResources):

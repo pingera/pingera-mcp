@@ -56,3 +56,8 @@ args = "python main.py"
 [[ports]]
 localPort = 6274
 externalPort = 80
+
+[[ports]]
+localPort = 6277
+externalPort = 6277
+exposeLocalhost = true

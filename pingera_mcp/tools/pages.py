@@ -42,17 +42,18 @@ class PagesTools(BaseTools):
                 status=status
             )
             
-            # Handle SDK response format
-            if hasattr(pages_response, 'data') and pages_response.data:
-                pages_list = [page.to_dict() if hasattr(page, 'to_dict') else page for page in pages_response.data]
-            elif hasattr(pages_response, 'pages'):
+            # Handle SDK response format - based on your working test_pingera_sdk.py
+            if hasattr(pages_response, 'pages') and pages_response.pages:
                 pages_list = [page.to_dict() if hasattr(page, 'to_dict') else page for page in pages_response.pages]
+            elif hasattr(pages_response, 'data') and pages_response.data:
+                pages_list = [page.to_dict() if hasattr(page, 'to_dict') else page for page in pages_response.data]
             else:
                 pages_list = []
             
-            total = getattr(pages_response, 'total', len(pages_list))
-            current_page = getattr(pages_response, 'page', page or 1)
-            items_per_page = getattr(pages_response, 'per_page', per_page or 20)
+            # Since pagination is not supported, return all results
+            total = len(pages_list)
+            current_page = 1
+            items_per_page = total
             
             data = {
                 "pages": pages_list,

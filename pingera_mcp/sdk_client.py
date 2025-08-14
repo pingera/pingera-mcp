@@ -72,8 +72,8 @@ class PingeraSDKClient:
         try:
             with ApiClient(self.configuration) as api_client:
                 status_pages_api = StatusPagesApi(api_client)
-                # Call the SDK method directly to match working example
-                pages_response = status_pages_api.v1_pages_get(page=page or 1, page_size=per_page or 20)
+                # Pages API doesn't support pagination parameters
+                pages_response = status_pages_api.v1_pages_get()
                 return pages_response
         except ApiException as e:
             self._handle_api_exception(e)
@@ -159,8 +159,7 @@ class PagesEndpointSDK:
         try:
             with ApiClient(self.client.configuration) as api_client:
                 status_pages_api = StatusPagesApi(api_client)
-                # Based on the working test_pingera_sdk.py, the SDK method takes no parameters
-                # or uses different parameter names than expected
+                # Pages API doesn't support pagination parameters
                 pages_response = status_pages_api.v1_pages_get()
                 return pages_response
         except ApiException as e:

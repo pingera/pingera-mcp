@@ -67,6 +67,10 @@ class PingeraSDKClient:
         self.pages = PagesEndpointSDK(self)
         self.components = ComponentsEndpointSDK(self)
 
+    def _get_api_client(self):
+        """Get API client context manager for SDK operations."""
+        return ApiClient(self.configuration)
+
     def get_pages(self, page: Optional[int] = None, per_page: Optional[int] = None, status: Optional[str] = None):
         """Get pages using the SDK."""
         try:

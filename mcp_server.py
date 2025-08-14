@@ -2,13 +2,13 @@
 MCP Server implementation for Pingera monitoring service.
 """
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from mcp.server.fastmcp import FastMCP
 
 from config import Config
 from pingera_mcp import PingeraClient
-from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools
+from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools
 from pingera_mcp.resources import PagesResources, StatusResources, ComponentResources
 
 
@@ -37,6 +37,7 @@ def create_mcp_server(config: Config) -> FastMCP:
     pages_tools = PagesTools(pingera_client)
     status_tools = StatusTools(pingera_client)
     component_tools = ComponentTools(pingera_client)
+    checks_tools = ChecksTools(pingera_client)
     pages_resources = PagesResources(pingera_client)
     status_resources = StatusResources(pingera_client, config)
     component_resources = ComponentResources(pingera_client)
@@ -84,6 +85,60 @@ def create_mcp_server(config: Config) -> FastMCP:
     @mcp.tool()
     async def get_component_details(page_id: str, component_id: str) -> str:
         return await component_tools.get_component_details(page_id, component_id)
+
+    @mcp.tool()
+    async def list_checks(
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+        check_type: Optional[str] = None,
+        status: Optional[str] = None
+    ) -> str:
+        return await checks_tools.list_checks(page, page_size, check_type, status)
+
+    @mcp.tool()
+    async def get_check_details(check_id: str) -> str:
+        return await checks_tools.get_check_details(check_id)
+
+    @mcp.tool()
+    async def get_check_results(
+        check_id: str,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None
+    ) -> str:
+        return await checks_tools.get_check_results(check_id, from_date, to_date, page, page_size)
+
+    @mcp.tool()
+    async def get_check_statistics(check_id: str) -> str:
+        return await checks_tools.get_check_statistics(check_id)
+
+    @mcp.tool()
+    async def list_check_jobs() -> str:
+        return await checks_tools.list_check_jobs()
+
+    @mcp.tool()
+    async def get_check_job_details(job_id: str) -> str:
+        return await checks_tools.get_check_job_details(job_id)
+
+    @mcp.tool()
+    async def get_unified_results(
+        check_ids: Optional[List[str]] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None,
+        status: Optional[str] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None
+    ) -> str:
+        return await checks_tools.get_unified_results(check_ids, from_date, to_date, status, page, page_size)
+
+    @mcp.tool()
+    async def get_unified_statistics(
+        check_ids: Optional[List[str]] = None,
+        from_date: Optional[str] = None,
+        to_date: Optional[str] = None
+    ) -> str:
+        return await checks_tools.get_unified_statistics(check_ids, from_date, to_date)
 
     # Register write tools only if in read-write mode
     if config.is_read_write():
@@ -164,5 +219,25 @@ def create_mcp_server(config: Config) -> FastMCP:
         @mcp.tool()
         async def delete_component(page_id: str, component_id: str) -> str:
             return await component_tools.delete_component(page_id, component_id)
+
+        @mcp.tool()
+        async def create_check(check_data: dict) -> str:
+            return await checks_tools.create_check(check_data)
+
+        @mcp.tool()
+        async def update_check(check_id: str, check_data: dict) -> str:
+            return await checks_tools.update_check(check_id, check_data)
+
+        @mcp.tool()
+        async def delete_check(check_id: str) -> str:
+            return await checks_tools.delete_check(check_id)
+
+        @mcp.tool()
+        async def pause_check(check_id: str) -> str:
+            return await checks_tools.pause_check(check_id)
+
+        @mcp.tool()
+        async def resume_check(check_id: str) -> str:
+            return await checks_tools.resume_check(check_id)
 
     return mcp

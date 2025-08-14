@@ -36,17 +36,29 @@ class PagesTools(BaseTools):
             if per_page is not None and per_page > 100:
                 per_page = 100
             
-            pages = self.client.get_pages(
+            pages_response = self.client.get_pages(
                 page=page,
                 per_page=per_page,
                 status=status
             )
             
+            # Handle SDK response format
+            if hasattr(pages_response, 'data') and pages_response.data:
+                pages_list = [page.to_dict() if hasattr(page, 'to_dict') else page for page in pages_response.data]
+            elif hasattr(pages_response, 'pages'):
+                pages_list = [page.to_dict() if hasattr(page, 'to_dict') else page for page in pages_response.pages]
+            else:
+                pages_list = []
+            
+            total = getattr(pages_response, 'total', len(pages_list))
+            current_page = getattr(pages_response, 'page', page or 1)
+            items_per_page = getattr(pages_response, 'per_page', per_page or 20)
+            
             data = {
-                "pages": [page.dict() for page in pages.pages],
-                "total": pages.total,
-                "page": pages.page,
-                "per_page": pages.per_page
+                "pages": pages_list,
+                "total": total,
+                "page": current_page,
+                "per_page": items_per_page
             }
             
             return self._success_response(data)
@@ -69,7 +81,13 @@ class PagesTools(BaseTools):
             self.logger.info(f"Getting page details for ID: {page_id}")
             page = self.client.get_page(page_id)
             
-            return self._success_response(page.dict())
+            # Handle SDK response format
+            if hasattr(page, 'to_dict'):
+                page_data = page.to_dict()
+            else:
+                page_data = page
+            
+            return self._success_response(page_data)
             
         except PingeraError as e:
             self.logger.error(f"Error getting page details for {page_id}: {e}")
@@ -116,7 +134,13 @@ class PagesTools(BaseTools):
             
             page = self.client.pages.create(page_data)
             
-            return self._success_response(page.dict())
+            # Handle SDK response format
+            if hasattr(page, 'to_dict'):
+                page_data_result = page.to_dict()
+            else:
+                page_data_result = page
+            
+            return self._success_response(page_data_result)
             
         except PingeraError as e:
             self.logger.error(f"Error creating page: {e}")
@@ -168,7 +192,13 @@ class PagesTools(BaseTools):
             page_id_int = int(page_id)
             page = self.client.pages.update(page_id_int, page_data)
             
-            return self._success_response(page.dict())
+            # Handle SDK response format
+            if hasattr(page, 'to_dict'):
+                page_data_result = page.to_dict()
+            else:
+                page_data_result = page
+            
+            return self._success_response(page_data_result)
             
         except ValueError:
             self.logger.error(f"Invalid page ID: {page_id}")
@@ -197,7 +227,13 @@ class PagesTools(BaseTools):
             page_id_int = int(page_id)
             page = self.client.pages.patch(page_id_int, kwargs)
             
-            return self._success_response(page.dict())
+            # Handle SDK response format
+            if hasattr(page, 'to_dict'):
+                page_data_result = page.to_dict()
+            else:
+                page_data_result = page
+            
+            return self._success_response(page_data_result)
             
         except ValueError:
             self.logger.error(f"Invalid page ID: {page_id}")

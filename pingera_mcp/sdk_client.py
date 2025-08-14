@@ -9,6 +9,7 @@ from typing import Dict, Optional, Any, List
 import pingera
 from pingera import ApiClient, Configuration
 from pingera.api import (
+    StatusPagesApi,
     StatusPagesComponentsApi,
     StatusPagesIncidentsApi,
     ChecksApi,
@@ -65,6 +66,14 @@ class PingeraSDKClient:
         # Initialize endpoints for compatibility
         self.pages = PagesEndpointSDK(self)
         self.components = ComponentEndpointsSDK(self)
+
+    def get_pages(self, page: Optional[int] = None, per_page: Optional[int] = None, status: Optional[str] = None):
+        """Get pages using the SDK."""
+        return self.pages.list(page=page, per_page=per_page, status=status)
+
+    def get_page(self, page_id: int):
+        """Get single page using the SDK."""
+        return self.pages.get(str(page_id))
 
     def _handle_api_exception(self, e: ApiException) -> None:
         """Convert SDK exceptions to our custom exceptions."""
@@ -141,25 +150,70 @@ class PagesEndpointSDK:
     def list(self, page: Optional[int] = None, per_page: Optional[int] = None, status: Optional[str] = None):
         """List pages using SDK."""
         try:
-            # SDK doesn't seem to have a direct pages list endpoint
-            # We'll need to adapt based on available endpoints
-            # For now, return empty response - this would need actual API exploration
-            return {"pages": [], "total": 0, "page": page or 1, "per_page": per_page or 20}
+            with ApiClient(self.client.configuration) as api_client:
+                status_pages_api = StatusPagesApi(api_client)
+                pages_response = status_pages_api.v1_pages_get(
+                    page=page or 1,
+                    page_size=per_page or 20
+                )
+                return pages_response
         except ApiException as e:
             self.client._handle_api_exception(e)
 
     def get(self, page_id: str):
         """Get single page using SDK."""
         try:
-            # This would need to be implemented based on actual SDK endpoints
-            # For now, return a mock page
-            return {
-                "id": page_id,
-                "name": "SDK Page",
-                "status": "active",
-                "url": f"https://status.example.com",
-                "domain": "example.com"
-            }
+            with ApiClient(self.client.configuration) as api_client:
+                status_pages_api = StatusPagesApi(api_client)
+                page_response = status_pages_api.v1_pages_page_id_get(page_id=page_id)
+                return page_response
+        except ApiException as e:
+            self.client._handle_api_exception(e)
+
+    def create(self, page_data: dict):
+        """Create a new page using SDK."""
+        try:
+            with ApiClient(self.client.configuration) as api_client:
+                status_pages_api = StatusPagesApi(api_client)
+                created_page = status_pages_api.v1_pages_post(page_data)
+                return created_page
+        except ApiException as e:
+            self.client._handle_api_exception(e)
+
+    def update(self, page_id: int, page_data: dict):
+        """Update an existing page using SDK."""
+        try:
+            with ApiClient(self.client.configuration) as api_client:
+                status_pages_api = StatusPagesApi(api_client)
+                updated_page = status_pages_api.v1_pages_page_id_put(
+                    page_id=str(page_id),
+                    page_data=page_data
+                )
+                return updated_page
+        except ApiException as e:
+            self.client._handle_api_exception(e)
+
+    def patch(self, page_id: int, page_data: dict):
+        """Partially update an existing page using SDK."""
+        try:
+            with ApiClient(self.client.configuration) as api_client:
+                status_pages_api = StatusPagesApi(api_client)
+                # Assuming there's a PATCH method, otherwise use PUT
+                updated_page = status_pages_api.v1_pages_page_id_put(
+                    page_id=str(page_id),
+                    page_data=page_data
+                )
+                return updated_page
+        except ApiException as e:
+            self.client._handle_api_exception(e)
+
+    def delete(self, page_id: int):
+        """Delete a page using SDK."""
+        try:
+            with ApiClient(self.client.configuration) as api_client:
+                status_pages_api = StatusPagesApi(api_client)
+                status_pages_api.v1_pages_page_id_delete(page_id=str(page_id))
+                return True
         except ApiException as e:
             self.client._handle_api_exception(e)
 

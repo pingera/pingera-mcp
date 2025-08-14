@@ -53,7 +53,9 @@ class PingeraSDKClient:
 
         # Configure the SDK client
         self.configuration = Configuration()
-        self.configuration.host = self.base_url
+        # Remove /v1 suffix since the SDK adds it automatically
+        host_without_version = self.base_url.replace('/v1', '').rstrip('/')
+        self.configuration.host = host_without_version
         self.configuration.api_key['apiKeyAuth'] = self.api_key
         self.configuration.timeout = timeout
 

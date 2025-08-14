@@ -126,11 +126,16 @@ async def test_mcp_server():
 
             print("✓ MCP tool call successful")
             print("📄 Pages data received:")
+            
+            # First, let's see the raw API response
+            print(f"  Raw result: {result}")
 
             # Parse and display the result
             import json
             try:
                 parsed_result = json.loads(result)
+                print(f"  Parsed result: {parsed_result}")
+                
                 if parsed_result.get("success"):
                     pages_data = parsed_result.get("data", {})
                     pages = pages_data.get("pages", [])

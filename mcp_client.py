@@ -73,11 +73,30 @@ async def main():
                 print("\n" + "-"*50)
                 
                 # Ask Gemini to use the tools
-                model = genai.GenerativeModel('gemini-2.5-pro-exp-03-25', tools=tools)
-                response = model.generate_content(
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(temperature=0)
-                )
+                print(f"🔧 Creating Gemini model with {len(tools)} tools...")
+                try:
+                    model = genai.GenerativeModel('gemini-2.5-pro-exp-03-25', tools=tools)
+                    print("✓ Gemini model created successfully")
+                    
+                    print(f"🤖 Generating content for prompt: {prompt}")
+                    print(f"🔧 Using temperature: 0")
+                    
+                    response = model.generate_content(
+                        prompt,
+                        generation_config=genai.types.GenerationConfig(temperature=0)
+                    )
+                    print("✓ Gemini response generated successfully")
+                    print(f"📝 Response type: {type(response)}")
+                    print(f"📝 Response has text: {hasattr(response, 'text') and response.text is not None}")
+                    print(f"📝 Response candidates count: {len(response.candidates) if hasattr(response, 'candidates') else 'N/A'}")
+                    
+                except Exception as gemini_error:
+                    print(f"❌ Gemini error: {gemini_error}")
+                    print(f"❌ Error type: {type(gemini_error)}")
+                    import traceback
+                    print("❌ Full traceback:")
+                    traceback.print_exc()
+                    raise
                 
                 print("🎯 Gemini's response:")
                 if response.text:

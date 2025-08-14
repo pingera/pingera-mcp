@@ -28,7 +28,7 @@ async def test_mcp_server():
     print(f"✓ Server created in {config.mode.value} mode")
     
     # Get the actual MCP server instance from FastMCP
-    server = mcp_app.mcp_server
+    server = mcp_app._mcp_server
     
     try:
         # Test listing available resources

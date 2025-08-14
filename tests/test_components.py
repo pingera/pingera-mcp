@@ -33,14 +33,14 @@ class TestComponentTools:
     @pytest.mark.asyncio
     async def test_list_component_groups_success(self, mock_component_tools):
         """Test successful component groups listing."""
-        mock_response = Mock()
-        mock_response.data = [
-            {"id": "group1", "name": "Infrastructure", "group": True},
-            {"id": "group2", "name": "Services", "group": True}
-        ]
+        # Create mock objects that have dict() method
+        mock_group1 = Mock()
+        mock_group1.dict.return_value = {"id": "group1", "name": "Infrastructure", "group": True}
+        mock_group2 = Mock()
+        mock_group2.dict.return_value = {"id": "group2", "name": "Services", "group": True}
 
         mock_component_tools.client.components.get_component_groups = Mock(
-            return_value=mock_response
+            return_value=[mock_group1, mock_group2]
         )
 
         result = await mock_component_tools.list_component_groups("page123")
@@ -137,11 +137,8 @@ class TestComponentResources:
     @pytest.mark.asyncio
     async def test_get_component_groups_resource_success(self, mock_component_resources):
         """Test successful component groups resource retrieval."""
-        mock_response = Mock()
-        mock_response.data = []
-
         mock_component_resources.client.components.get_component_groups = Mock(
-            return_value=mock_response
+            return_value=[]
         )
 
         result = await mock_component_resources.get_component_groups_resource("page123")

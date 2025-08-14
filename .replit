@@ -7,7 +7,7 @@ channel = "stable-25_05"
 packages = ["libxcrypt"]
 
 [workflows]
-runButton = "Project"
+runButton = "MCP Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -43,6 +43,15 @@ args = "PYTHONPATH=. python main.py"
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow]]
+name = "MCP Server"
+author = 39311518
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
 
 [[ports]]
 localPort = 6274

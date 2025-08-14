@@ -46,8 +46,8 @@ logger.info("MCP Server created successfully")
 def main() -> None:
     """Main entry point for running the server."""
     try:
-        # Run the server with host binding for Replit
-        mcp.run(host="0.0.0.0")
+        # Run the server
+        mcp.run()
         
     except KeyboardInterrupt:
         logger.info("Shutting down Pingera MCP Server...")

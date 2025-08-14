@@ -6,13 +6,14 @@ import json
 import logging
 from typing import Any, Dict
 
-from pingera import PingeraClient, PingeraError
+from ..sdk_client import PingeraSDKClient
+from ..exceptions import PingeraError
 
 
 class BaseTools:
     """Base class for MCP tools with common functionality."""
     
-    def __init__(self, client: PingeraClient):
+    def __init__(self, client: PingeraSDKClient):
         self.client = client
         self.logger = logging.getLogger(self.__class__.__name__)
     

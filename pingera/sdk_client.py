@@ -6,8 +6,8 @@ import logging
 import os
 from typing import Dict, Optional, Any, List
 
-from pingera_sdk import ApiClient, Configuration
-from pingera_sdk.api import (
+from pingera import ApiClient, Configuration
+from pingera.api import (
     StatusPagesComponentsApi,
     StatusPagesIncidentsApi,
     ChecksApi,
@@ -16,7 +16,7 @@ from pingera_sdk.api import (
     OnDemandChecksApi,
     ChecksUnifiedResultsApi
 )
-from pingera_sdk.exceptions import ApiException
+from pingera.exceptions import ApiException
 
 from .exceptions import (
     PingeraAPIError,

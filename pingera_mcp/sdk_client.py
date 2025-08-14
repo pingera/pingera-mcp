@@ -90,6 +90,7 @@ class PingeraSDKClient:
             # Use proper SDK pattern with context manager
             with ApiClient(self.configuration) as api_client:
                 checks_api = ChecksApi(api_client)
+                # Make a minimal API call to test authentication
                 checks = checks_api.v1_checks_get(page=1, page_size=1)
                 return True
         except ApiException as e:

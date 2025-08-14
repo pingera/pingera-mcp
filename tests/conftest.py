@@ -7,7 +7,7 @@ import os
 from unittest.mock import Mock, patch
 
 from config import Config, OperationMode
-from pingera import PingeraClient
+from pingera_mcp import PingeraClient
 
 
 @pytest.fixture

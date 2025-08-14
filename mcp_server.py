@@ -7,9 +7,9 @@ from typing import Optional
 from mcp.server.fastmcp import FastMCP
 
 from config import Config
-from pingera import PingeraClient
-from pingera.tools import PagesTools, StatusTools, ComponentTools
-from pingera.resources import PagesResources, StatusResources, ComponentResources
+from pingera_mcp import PingeraClient
+from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools
+from pingera_mcp.resources import PagesResources, StatusResources, ComponentResources
 
 
 def create_mcp_server(config: Config) -> FastMCP:

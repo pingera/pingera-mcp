@@ -83,9 +83,9 @@ Issues = "https://github.com/pingera/pingera-mcp/issues"
 Changelog = "https://github.com/pingera/pingera-mcp/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["pingera"]
+packages = ["pingera_mcp"]
 include = [
-    "pingera/**/*.py",
+    "pingera_mcp/**/*.py",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
@@ -100,7 +100,7 @@ exclude = [
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "pingera/",
+    "pingera_mcp/",
     "tests/",
     "README.md",
     "LICENSE", 

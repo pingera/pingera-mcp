@@ -7,9 +7,9 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 import json
 
-from pingera.tools import ComponentTools
-from pingera.resources import ComponentResources
-from pingera import PingeraError, PingeraAPIError
+from pingera_mcp.tools import ComponentTools
+from pingera_mcp.resources import ComponentResources
+from pingera_mcp.exceptions import PingeraError, PingeraAPIError
 
 
 class TestComponentEndpoints:
@@ -39,7 +39,7 @@ class TestComponentTools:
         mock_group2 = Mock()
         mock_group2.dict.return_value = {"id": "group2", "name": "Services", "group": True}
 
-        mock_component_tools.client.components.get_component_groups = Mock(
+        mock_component_tools.client.get_component_groups = Mock(
             return_value=[mock_group1, mock_group2]
         )
 
@@ -51,20 +51,20 @@ class TestComponentTools:
     @pytest.mark.asyncio
     async def test_list_component_groups_with_deleted(self, mock_component_tools):
         """Test component groups listing with deleted components."""
-        mock_component_tools.client.components.get_component_groups = Mock(
+        mock_component_tools.client.get_component_groups = Mock(
             return_value=[]
         )
 
         await mock_component_tools.list_component_groups("page123", show_deleted=True)
 
-        mock_component_tools.client.components.get_component_groups.assert_called_once_with(
+        mock_component_tools.client.get_component_groups.assert_called_once_with(
             page_id="page123", show_deleted=True
         )
 
     @pytest.mark.asyncio
     async def test_list_component_groups_error(self, mock_component_tools):
         """Test component groups listing with error."""
-        mock_component_tools.client.components.get_component_groups = Mock(
+        mock_component_tools.client.get_component_groups = Mock(
             side_effect=PingeraAPIError("API Error", 500)
         )
 
@@ -83,7 +83,7 @@ class TestComponentTools:
         mock_component.status = "operational"
         mock_component.description = "Main API server"
 
-        mock_component_tools.client.components.get_component = Mock(
+        mock_component_tools.client.get_component = Mock(
             return_value=mock_component
         )
 
@@ -95,7 +95,7 @@ class TestComponentTools:
     @pytest.mark.asyncio
     async def test_get_component_details_error(self, mock_component_tools):
         """Test component details retrieval with error."""
-        mock_component_tools.client.components.get_component = Mock(
+        mock_component_tools.client.get_component = Mock(
             side_effect=PingeraError("Component not found")
         )
 
@@ -115,7 +115,7 @@ class TestComponentTools:
     @pytest.mark.asyncio
     async def test_delete_component_success(self, mock_component_tools):
         """Test successful component deletion."""
-        mock_component_tools.client.components.delete_component = Mock(
+        mock_component_tools.client.delete_component = Mock(
             return_value=True
         )
 
@@ -137,7 +137,7 @@ class TestComponentResources:
     @pytest.mark.asyncio
     async def test_get_component_groups_resource_success(self, mock_component_resources):
         """Test successful component groups resource retrieval."""
-        mock_component_resources.client.components.get_component_groups = Mock(
+        mock_component_resources.client.get_component_groups = Mock(
             return_value=[]
         )
 
@@ -149,7 +149,7 @@ class TestComponentResources:
     @pytest.mark.asyncio
     async def test_get_component_groups_resource_error(self, mock_component_resources):
         """Test component groups resource retrieval with error."""
-        mock_component_resources.client.components.get_component_groups = Mock(
+        mock_component_resources.client.get_component_groups = Mock(
             side_effect=PingeraError("API Error")
         )
 
@@ -166,7 +166,7 @@ class TestComponentResources:
         mock_component.id = "comp123"
         mock_component.name = "API Server"
 
-        mock_component_resources.client.components.get_component = Mock(
+        mock_component_resources.client.get_component = Mock(
             return_value=mock_component
         )
 
@@ -178,7 +178,7 @@ class TestComponentResources:
     @pytest.mark.asyncio
     async def test_get_component_resource_error(self, mock_component_resources):
         """Test component resource retrieval with error."""
-        mock_component_resources.client.components.get_component = Mock(
+        mock_component_resources.client.get_component = Mock(
             side_effect=PingeraError("Component not found")
         )
 

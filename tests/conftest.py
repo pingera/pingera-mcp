@@ -7,7 +7,7 @@ import os
 from unittest.mock import Mock, patch
 
 from config import Config, OperationMode
-from pingera_mcp import PingeraClient
+from pingera_mcp.sdk_client import PingeraClient
 
 
 @pytest.fixture
@@ -74,18 +74,20 @@ def mock_pingera_client():
         "status": "ok"
     }
     
-    # Mock the components endpoint
-    client.components = Mock()
-    client.components.get_component_groups.return_value = []
-    client.components.get_component.return_value = None
-    client.components.create_component.return_value = None
-    client.components.update_component.return_value = None
-    client.components.patch_component.return_value = None
-    client.components.delete_component.return_value = True
+    # Mock the component methods directly on client
+    client.get_component_groups.return_value = []
+    client.get_component.return_value = None
+    client.create_component.return_value = None
+    client.update_component.return_value = None
+    client.patch_component.return_value = None
+    client.delete_component.return_value = True
     
-    # Mock the pages endpoint
-    client.pages = Mock()
-    client.pages.list.return_value = None
-    client.pages.get.return_value = None
+    # Mock the page methods directly on client
+    client.get_pages.return_value = None
+    client.get_page.return_value = None
+    client.create_page.return_value = None
+    client.update_page.return_value = None
+    client.patch_page.return_value = None
+    client.delete_page.return_value = True
     
     return client

@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import Mock, patch, AsyncMock
 
 from mcp_server import create_mcp_server
-from pingera import PingeraError
+from pingera_mcp.exceptions import PingeraError
 from config import OperationMode
 
 
@@ -19,6 +19,12 @@ class TestMCPServer:
         """Create MCP server for testing."""
         with patch('mcp_server.PingeraClient') as mock_client_class:
             mock_client = Mock()
+            mock_client.test_connection.return_value = True
+            mock_client.get_api_info.return_value = {
+                "connected": True,
+                "message": "Pingera.ru API",
+                "api_version": "v1"
+            }
             mock_client_class.return_value = mock_client
             return create_mcp_server(mock_config), mock_client
     

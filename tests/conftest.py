@@ -39,22 +39,31 @@ def mock_page():
 @pytest.fixture
 def mock_page_list():
     """Mock page list response."""
-    from pingera_mcp.models import StatusPage
     from unittest.mock import Mock
 
-    page = StatusPage(
-        id=1,
-        name="Test Page",
-        subdomain="test",
-        url="https://example.com",
-        language="en",
-        created_at="2024-01-01T00:00:00Z"
-    )
+    # Create a mock page object directly
+    page = Mock()
+    page.id = 1
+    page.name = "Test Page"
+    page.subdomain = "test"
+    page.url = "https://example.com"
+    page.language = "en"
+    page.created_at = "2024-01-01T00:00:00Z"
+    page.dict.return_value = {
+        "id": 1,
+        "name": "Test Page",
+        "subdomain": "test",
+        "url": "https://example.com",
+        "language": "en",
+        "created_at": "2024-01-01T00:00:00Z"
+    }
 
     # Create a mock response object that matches the SDK structure
     mock_response = Mock()
     mock_response.pages = [page]
     mock_response.total = 1
+    mock_response.page = 1
+    mock_response.per_page = 10
     return mock_response
 
 

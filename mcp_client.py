@@ -35,7 +35,7 @@ server_params = StdioServerParameters(
     }
 )
 
-async def run():
+async def main():
     """Run simple MCP client test with Gemini."""
     
     # Simple query about monitoring checks
@@ -118,4 +118,4 @@ async def run():
 if __name__ == "__main__":
     print("🚀 Starting simple MCP client test with Gemini...")
     print("="*60)
-    asyncio.run(run())
+    asyncio.run(main())

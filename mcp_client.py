@@ -73,7 +73,7 @@ async def main():
                 print("\n" + "-"*50)
                 
                 # Ask Gemini to use the tools
-                model = genai.GenerativeModel('gemini-2.0-flash-exp', tools=tools)
+                model = genai.GenerativeModel('gemini-2.5-pro-exp-03-25', tools=tools)
                 response = model.generate_content(
                     prompt,
                     generation_config=genai.types.GenerationConfig(temperature=0)

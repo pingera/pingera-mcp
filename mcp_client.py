@@ -71,7 +71,7 @@ async def run():
             if response.candidates[0].content.parts and len(response.candidates[0].content.parts) > 0:
                 for part in response.candidates[0].content.parts:
                     if hasattr(part, 'function_call'):
-                function_call = part.function_call
+                        function_call = part.function_call
                         
                         print(f"\n🔧 Gemini wants to call: {function_call.name}")
                         print(f"📝 With arguments: {dict(function_call.args)}")

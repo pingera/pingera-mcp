@@ -63,9 +63,9 @@ class PingeraSDKClient:
         # Store configuration, API client will be created in context manager
         self.api_client = None
 
-        # Initialize endpoints for compatibility
+        # Initialize endpoint handlers
         self.pages = PagesEndpointSDK(self)
-        self.components = ComponentEndpointsSDK(self)
+        self.components = ComponentsEndpointSDK(self)
 
     def get_pages(self, page: Optional[int] = None, per_page: Optional[int] = None, status: Optional[str] = None):
         """Get pages using the SDK."""
@@ -223,7 +223,7 @@ class PagesEndpointSDK:
             self.client._handle_api_exception(e)
 
 
-class ComponentEndpointsSDK:
+class ComponentsEndpointSDK:
     """Component endpoints using SDK."""
 
     def __init__(self, client: PingeraSDKClient):

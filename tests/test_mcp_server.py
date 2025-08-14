@@ -39,9 +39,10 @@ class TestMCPServer:
         assert mock_client is not None
         
         # Test that the mock client would return the expected data
-        pages = mock_client.get_pages()
-        assert len(pages.pages) == 1
-        assert pages.pages[0].name == "Test Page"
+        pages_response = mock_client.get_pages()
+        assert hasattr(pages_response, 'pages')
+        assert len(pages_response.pages) == 1
+        assert pages_response.pages[0].name == "Test Page"
     
     @pytest.mark.asyncio 
     async def test_server_creation_read_only_mode(self, mock_config):
@@ -93,9 +94,10 @@ class TestMCPServer:
             assert server is not None
             
             # Test that client methods would work
-            pages = mock_client.get_pages()
-            assert len(pages.pages) == 1
-            assert pages.pages[0].name == "Test Page"
+            pages_response = mock_client.get_pages()
+            assert hasattr(pages_response, 'pages')
+            assert len(pages_response.pages) == 1
+            assert pages_response.pages[0].name == "Test Page"
     
     def test_error_handling_during_server_creation(self, mock_config):
         """Test error handling during server creation."""

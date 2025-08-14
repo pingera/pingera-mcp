@@ -42,6 +42,9 @@ async def test_mcp_server():
             )
 
             # Test connection
+            print(f"  Testing with base URL: {test_client.base_url}")
+            print(f"  API key configured: {'Yes' if test_client.api_key else 'No'}")
+
             connection_status = test_client.test_connection()
             api_info = test_client.get_api_info()
 

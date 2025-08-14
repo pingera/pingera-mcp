@@ -131,7 +131,6 @@ async def main():
                     )
                     print("✓ Gemini response generated successfully")
                     print(f"📝 Response type: {type(response)}")
-                    print(f"📝 Response has text: {hasattr(response, 'text') and response.text is not None}")
                     print(f"📝 Response candidates count: {len(response.candidates) if hasattr(response, 'candidates') else 'N/A'}")
                     
                 except Exception as gemini_error:

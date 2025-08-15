@@ -159,6 +159,13 @@ async def main():
                             function_call = part.function_call
                             function_calls_made = True
                             
+                            # Check if function call has a valid name
+                            if not function_call.name or function_call.name.strip() == "":
+                                print("❌ Gemini generated an empty function call name")
+                                print("🤖 Falling back to text response...")
+                                function_calls_made = False
+                                break
+                            
                             print(f"🔧 Gemini wants to call: {function_call.name}")
                             print(f"📝 With arguments: {dict(function_call.args)}")
                             

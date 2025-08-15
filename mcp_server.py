@@ -8,7 +8,7 @@ from mcp.server.fastmcp import FastMCP
 
 from config import Config
 from pingera_mcp import PingeraClient
-from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools, AlertsTools, HeartbeatsTools
+from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools, AlertsTools, HeartbeatsTools, IncidentsTools
 from pingera_mcp.resources import PagesResources, StatusResources, ComponentResources
 
 # Configure logging
@@ -47,6 +47,7 @@ component_tools = ComponentTools(pingera_client)
 checks_tools = ChecksTools(pingera_client)
 alerts_tools = AlertsTools(pingera_client)
 heartbeats_tools = HeartbeatsTools(pingera_client)
+incidents_tools = IncidentsTools(pingera_client)
 pages_resources = PagesResources(pingera_client)
 status_resources = StatusResources(pingera_client, config)
 component_resources = ComponentResources(pingera_client)
@@ -234,6 +235,27 @@ async def get_heartbeat_logs(
 ) -> str:
     return await heartbeats_tools.get_heartbeat_logs(heartbeat_id, from_date, to_date, page, page_size)
 
+@mcp.tool()
+async def list_incidents(
+    page_id: str,
+    page: Optional[int] = None,
+    page_size: Optional[int] = None,
+    status: Optional[str] = None
+) -> str:
+    return await incidents_tools.list_incidents(page_id, page, page_size, status)
+
+@mcp.tool()
+async def get_incident_details(page_id: str, incident_id: str) -> str:
+    return await incidents_tools.get_incident_details(page_id, incident_id)
+
+@mcp.tool()
+async def get_incident_updates(page_id: str, incident_id: str) -> str:
+    return await incidents_tools.get_incident_updates(page_id, incident_id)
+
+@mcp.tool()
+async def get_incident_update_details(page_id: str, incident_id: str, update_id: str) -> str:
+    return await incidents_tools.get_incident_update_details(page_id, incident_id, update_id)
+
 
 # Register write tools only if in read-write mode
 if config.is_read_write():
@@ -346,3 +368,27 @@ if config.is_read_write():
     @mcp.tool()
     async def delete_alert(alert_id: str) -> str:
         return await alerts_tools.delete_alert(alert_id)
+
+    @mcp.tool()
+    async def create_incident(page_id: str, incident_data: dict) -> str:
+        return await incidents_tools.create_incident(page_id, incident_data)
+
+    @mcp.tool()
+    async def update_incident(page_id: str, incident_id: str, incident_data: dict) -> str:
+        return await incidents_tools.update_incident(page_id, incident_id, incident_data)
+
+    @mcp.tool()
+    async def delete_incident(page_id: str, incident_id: str) -> str:
+        return await incidents_tools.delete_incident(page_id, incident_id)
+
+    @mcp.tool()
+    async def add_incident_update(page_id: str, incident_id: str, update_data: dict) -> str:
+        return await incidents_tools.add_incident_update(page_id, incident_id, update_data)
+
+    @mcp.tool()
+    async def update_incident_update(page_id: str, incident_id: str, update_id: str, update_data: dict) -> str:
+        return await incidents_tools.update_incident_update(page_id, incident_id, update_id, update_data)
+
+    @mcp.tool()
+    async def delete_incident_update(page_id: str, incident_id: str, update_id: str) -> str:
+        return await incidents_tools.delete_incident_update(page_id, incident_id, update_id)

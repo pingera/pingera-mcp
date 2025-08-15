@@ -9,6 +9,7 @@ from .components import ComponentTools
 from .checks import ChecksTools
 from .alerts import AlertsTools
 from .heartbeats import HeartbeatsTools
+from .incidents import IncidentsTools
 
 __all__ = [
     "PagesTools",
@@ -17,4 +18,5 @@ __all__ = [
     "ChecksTools",
     "AlertsTools",
     "HeartbeatsTools",
+    "IncidentsTools",
 ]

@@ -41,17 +41,24 @@ class PagesTools(BaseTools):
                 status=status
             )
 
-            # Handle SDK response format - based on your working test_pingera_sdk.py
-            if hasattr(pages_response, 'pages') and pages_response.pages:
-                pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response.pages]
-            elif hasattr(pages_response, 'data') and pages_response.data:
-                pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response.data]
-            elif isinstance(pages_response, list):
+            # Handle SDK response format - the SDK returns pages directly as a list
+            if isinstance(pages_response, list):
                 # SDK returns pages as direct list
                 pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response]
+                self.logger.info(f"Extracted {len(pages_list)} pages from direct list")
             else:
-                pages_list = []
-                self.logger.warning(f"Could not extract pages from response: {pages_response}")
+                # Log the actual response structure for debugging
+                self.logger.info(f"Response type: {type(pages_response)}")
+                self.logger.info(f"Response dir: {dir(pages_response)}")
+                
+                # Try different response structures
+                if hasattr(pages_response, 'pages') and pages_response.pages:
+                    pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response.pages]
+                elif hasattr(pages_response, 'data') and pages_response.data:
+                    pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response.data]
+                else:
+                    pages_list = []
+                    self.logger.warning(f"Could not extract pages from response: {pages_response}")
 
             # Since pagination is not supported, return all results
             total = len(pages_list)

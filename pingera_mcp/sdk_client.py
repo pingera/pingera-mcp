@@ -81,22 +81,15 @@ class PingeraSDKClient:
                 
                 # Enhanced debug logging
                 self.logger.info(f"Pages response type: {type(pages_response)}")
-                self.logger.info(f"Pages response dir: {dir(pages_response)}")
                 
-                if hasattr(pages_response, 'data') and pages_response.data:
-                    self.logger.info(f"First page object type: {type(pages_response.data[0])}")
-                    self.logger.info(f"First page dir: {dir(pages_response.data[0])}")
-                    if hasattr(pages_response.data[0], '__dict__'):
-                        self.logger.info(f"First page attributes: {list(pages_response.data[0].__dict__.keys())}")
-                    
-                    # Check if the page has an ID attribute
-                    first_page = pages_response.data[0]
-                    for attr_name in ['id', 'page_id', 'organization_id', 'uuid']:
-                        if hasattr(first_page, attr_name):
-                            attr_value = getattr(first_page, attr_name)
-                            self.logger.info(f"Found {attr_name}: {attr_value}")
+                # The SDK returns pages directly as a list
+                if isinstance(pages_response, list):
+                    self.logger.info(f"Got {len(pages_response)} pages from SDK")
+                    return pages_response
+                else:
+                    self.logger.info(f"Unexpected response format: {type(pages_response)}")
+                    return pages_response
                 
-                return pages_response
         except ApiException as e:
             self._handle_api_exception(e)
 

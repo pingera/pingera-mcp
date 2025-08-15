@@ -1,4 +1,3 @@
-
 """
 MCP Server implementation for Pingera monitoring service.
 """
@@ -9,7 +8,7 @@ from mcp.server.fastmcp import FastMCP
 
 from config import Config
 from pingera_mcp import PingeraClient
-from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools, AlertsTools
+from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools, AlertsTools, HeartbeatsTools
 from pingera_mcp.resources import PagesResources, StatusResources, ComponentResources
 
 # Configure logging
@@ -47,6 +46,7 @@ status_tools = StatusTools(pingera_client)
 component_tools = ComponentTools(pingera_client)
 checks_tools = ChecksTools(pingera_client)
 alerts_tools = AlertsTools(pingera_client)
+heartbeats_tools = HeartbeatsTools(pingera_client)
 pages_resources = PagesResources(pingera_client)
 status_resources = StatusResources(pingera_client, config)
 component_resources = ComponentResources(pingera_client)
@@ -194,6 +194,46 @@ async def list_alert_channels() -> str:
 @mcp.tool()
 async def list_alert_rules() -> str:
     return await alerts_tools.list_alert_rules()
+
+# Register heartbeat tools
+@mcp.tool()
+async def list_heartbeats(
+    page: Optional[int] = None,
+    page_size: Optional[int] = None,
+    status: Optional[str] = None
+) -> str:
+    return await heartbeats_tools.list_heartbeats(page, page_size, status)
+
+@mcp.tool()
+async def get_heartbeat_details(heartbeat_id: str) -> str:
+    return await heartbeats_tools.get_heartbeat_details(heartbeat_id)
+
+@mcp.tool()
+async def create_heartbeat(heartbeat_data: dict) -> str:
+    return await heartbeats_tools.create_heartbeat(heartbeat_data)
+
+@mcp.tool()
+async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict) -> str:
+    return await heartbeats_tools.update_heartbeat(heartbeat_id, heartbeat_data)
+
+@mcp.tool()
+async def delete_heartbeat(heartbeat_id: str) -> str:
+    return await heartbeats_tools.delete_heartbeat(heartbeat_id)
+
+@mcp.tool()
+async def send_heartbeat_ping(heartbeat_id: str) -> str:
+    return await heartbeats_tools.send_heartbeat_ping(heartbeat_id)
+
+@mcp.tool()
+async def get_heartbeat_logs(
+    heartbeat_id: str,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
+) -> str:
+    return await heartbeats_tools.get_heartbeat_logs(heartbeat_id, from_date, to_date, page, page_size)
+
 
 # Register write tools only if in read-write mode
 if config.is_read_write():

@@ -37,9 +37,19 @@ server_params = StdioServerParameters(
 
 async def main():
     """Run simple MCP client test with Gemini."""
+    import sys
     
-    # Simple query about monitoring checks
-    prompt = "How many monitoring checks do I have and what types are they?"
+    # Get prompt from command line argument, stdin, or use default
+    if len(sys.argv) > 1:
+        prompt = " ".join(sys.argv[1:])
+    elif not sys.stdin.isatty():
+        # Read from stdin if piped
+        prompt = sys.stdin.read().strip()
+    else:
+        prompt = "How many monitoring checks do I have and what types are they?"
+    
+    if not prompt:
+        prompt = "How many monitoring checks do I have and what types are they?"
     
     print(f"🤖 Query: {prompt}")
     print("\n" + "="*50)

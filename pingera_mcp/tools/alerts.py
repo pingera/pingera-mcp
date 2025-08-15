@@ -42,7 +42,7 @@ class AlertsTools(BaseTools):
                 if page is not None:
                     kwargs['page'] = page
                 if page_size is not None:
-                    kwargs['page_size'] = page_size
+                    kwargs['per_page'] = page_size  # SDK uses 'per_page' instead of 'page_size'
                 if status is not None:
                     kwargs['status'] = status
 

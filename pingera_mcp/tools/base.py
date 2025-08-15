@@ -33,13 +33,8 @@ class BaseTools:
 
     def _convert_sdk_object_to_dict(self, obj) -> dict:
         """
-        Convert SDK object to dictionary with clean, business-relevant data only.
-
-        Args:
-            obj: SDK response object
-
-        Returns:
-            dict: Clean dictionary with only relevant business data
+        Convert SDK object to dictionary preserving ALL data including IDs.
+        Simple and comprehensive approach.
         """
         if obj is None:
             return {}
@@ -50,25 +45,14 @@ class BaseTools:
 
         result = {}
         
-        # Strategy 1: Try to_dict() method first (preferred)
-        if hasattr(obj, 'to_dict') and callable(getattr(obj, 'to_dict')):
-            try:
-                result = obj.to_dict()
-                if isinstance(result, dict):
-                    # Clean up the result by removing internal metadata
-                    cleaned_result = self._clean_sdk_dict(result)
-                    self.logger.debug(f"to_dict() extracted {len(cleaned_result)} clean fields")
-                    return cleaned_result
-            except Exception as e:
-                self.logger.debug(f"to_dict() failed: {e}")
-
-        # Strategy 2: Extract from __dict__ 
+        # Get ALL attributes from the object - don't be selective
         if hasattr(obj, '__dict__'):
             for key, value in obj.__dict__.items():
-                # Skip internal/metadata fields
-                if key.startswith('_') or key in ['model_fields', 'model_config', 'model_computed_fields', 'model_fields_set']:
+                # Only skip truly internal Python attributes
+                if key.startswith('__'):
                     continue
                     
+                # Convert all values
                 if value is not None:
                     # Handle datetime objects
                     if hasattr(value, 'isoformat'):
@@ -81,21 +65,11 @@ class BaseTools:
                         result[key] = [self._convert_sdk_object_to_dict(item) if hasattr(item, '__dict__') else item for item in value]
                     else:
                         result[key] = value
-
-        # Ensure we have an ID field
-        if 'id' not in result:
-            # Look for alternative ID fields
-            for attr in ['page_id', 'organization_id', 'check_id', 'component_id']:
-                if hasattr(obj, attr):
-                    value = getattr(obj, attr)
-                    if value:
-                        result['id'] = value
-                        break
+                else:
+                    # Include None values too for completeness
+                    result[key] = value
 
         self.logger.debug(f"Extracted {len(result)} fields: {list(result.keys())}")
-        if 'id' in result:
-            self.logger.debug(f"ID found: {result['id']}")
-
         return result
 
     def _clean_sdk_dict(self, data: dict) -> dict:

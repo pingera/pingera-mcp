@@ -33,13 +33,14 @@ class BaseTools:
 
     def _convert_sdk_object_to_dict(self, obj) -> dict:
         """
-        Convert SDK object to dictionary, preserving all attributes including IDs.
+        Convert SDK object to dictionary - AGGRESSIVE EXTRACTION of ALL data.
+        We cannot afford to miss ANY data, especially IDs.
 
         Args:
             obj: SDK response object
 
         Returns:
-            dict: Dictionary representation of the object
+            dict: Dictionary representation with ALL possible data extracted
         """
         if obj is None:
             return {}
@@ -48,104 +49,138 @@ class BaseTools:
         if isinstance(obj, dict):
             return obj
 
-        # Log object details for debugging
-        self.logger.debug(f"Converting SDK object: {type(obj)}")
-        self.logger.debug(f"Object dir: {dir(obj)}")
+        # Start with an empty result and extract EVERYTHING
+        result = {}
+        
+        self.logger.info(f"Converting SDK object: {type(obj)}")
 
-        # Try to_dict() method first
+        # STRATEGY 1: Try to_dict() method first
         if hasattr(obj, 'to_dict') and callable(getattr(obj, 'to_dict')):
             try:
-                result = obj.to_dict()
-                self.logger.debug(f"to_dict() result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
-                return result
+                to_dict_result = obj.to_dict()
+                if isinstance(to_dict_result, dict):
+                    result.update(to_dict_result)
+                    self.logger.info(f"to_dict() extracted {len(to_dict_result)} fields: {list(to_dict_result.keys())}")
             except Exception as e:
-                self.logger.debug(f"Failed to use to_dict() method: {e}")
+                self.logger.warning(f"to_dict() failed: {e}")
 
-        # Try attribute_map if available (OpenAPI generated clients often have this)
+        # STRATEGY 2: Extract from attribute_map (OpenAPI clients)
         if hasattr(obj, 'attribute_map'):
-            result = {}
-            for python_name, api_name in obj.attribute_map.items():
-                if hasattr(obj, python_name):
-                    value = getattr(obj, python_name)
-                    if hasattr(value, 'isoformat'):
-                        result[api_name] = value.isoformat()
-                    elif hasattr(value, '__dict__'):
-                        result[api_name] = self._convert_sdk_object_to_dict(value)
-                    elif isinstance(value, list):
-                        result[api_name] = [self._convert_sdk_object_to_dict(item) if hasattr(item, '__dict__') else item for item in value]
-                    else:
-                        result[api_name] = value
-            self.logger.debug(f"attribute_map result keys: {list(result.keys())}")
-            return result
-
-        # Fall back to extracting all public attributes
-        if hasattr(obj, '__dict__'):
-            result = {}
-            for key, value in obj.__dict__.items():
-                # Skip private attributes but keep everything else
-                if key.startswith('_'):
-                    continue
-
-                # Handle datetime objects
-                if hasattr(value, 'isoformat'):
-                    result[key] = value.isoformat()
-                # Handle nested objects recursively
-                elif hasattr(value, '__dict__'):
-                    result[key] = self._convert_sdk_object_to_dict(value)
-                # Handle lists of objects
-                elif isinstance(value, list):
-                    result[key] = [self._convert_sdk_object_to_dict(item) if hasattr(item, '__dict__') else item for item in value]
-                else:
-                    result[key] = value
-            
-            # Enhanced ID extraction - check for common ID attributes directly on the object
-            # Try to extract IDs using getattr and also check all attributes
-            for id_attr in ['id', 'page_id', 'organization_id', 'uuid', 'pk', 'created_at', 'updated_at']:
-                try:
-                    if hasattr(obj, id_attr):
-                        value = getattr(obj, id_attr)
-                        if value is not None and id_attr not in result:
-                            # Handle datetime objects for timestamps
+            try:
+                for python_name, api_name in obj.attribute_map.items():
+                    if hasattr(obj, python_name):
+                        value = getattr(obj, python_name)
+                        if value is not None:
+                            # Handle datetime objects
                             if hasattr(value, 'isoformat'):
-                                result[id_attr] = value.isoformat()
+                                result[api_name] = value.isoformat()
+                            # Handle nested objects
+                            elif hasattr(value, '__dict__'):
+                                result[api_name] = self._convert_sdk_object_to_dict(value)
+                            # Handle lists
+                            elif isinstance(value, list):
+                                result[api_name] = [self._convert_sdk_object_to_dict(item) if hasattr(item, '__dict__') else item for item in value]
                             else:
-                                result[id_attr] = value
-                            self.logger.info(f"Added missing {id_attr}: {value}")
-                except Exception as e:
-                    self.logger.warning(f"Failed to extract {id_attr}: {e}")
-            
-            # Also try to get all attributes from dir() that look like IDs
-            for attr_name in dir(obj):
-                if not attr_name.startswith('_') and ('id' in attr_name.lower() or attr_name in ['created_at', 'updated_at']):
-                    try:
-                        if attr_name not in result and hasattr(obj, attr_name):
-                            value = getattr(obj, attr_name)
-                            if value is not None and callable(value) == False:  # Skip methods
-                                # Handle datetime objects
-                                if hasattr(value, 'isoformat'):
-                                    result[attr_name] = value.isoformat()
-                                else:
-                                    result[attr_name] = value
-                                self.logger.info(f"Found ID-like attribute {attr_name}: {value}")
-                    except Exception as e:
-                        self.logger.warning(f"Failed to extract {attr_name}: {e}")
-            
-            self.logger.debug(f"Final extraction result keys: {list(result.keys())}")
-            if 'id' in result:
-                self.logger.info(f"Successfully extracted ID: {result['id']}")
-            else:
-                self.logger.warning("No 'id' field found in extracted data")
-            
-            return result
+                                result[api_name] = value
+                            
+                            # Also store with python name as backup
+                            if python_name != api_name:
+                                result[python_name] = result[api_name]
+                                
+                self.logger.info(f"attribute_map extracted {len(obj.attribute_map)} mappings")
+            except Exception as e:
+                self.logger.warning(f"attribute_map extraction failed: {e}")
 
-        # If all else fails, try to convert object directly to dict using vars()
+        # STRATEGY 3: Extract from __dict__ (all instance attributes)
+        if hasattr(obj, '__dict__'):
+            try:
+                for key, value in obj.__dict__.items():
+                    if value is not None:  # Keep everything that has a value
+                        # Handle datetime objects
+                        if hasattr(value, 'isoformat'):
+                            result[key] = value.isoformat()
+                        # Handle nested objects
+                        elif hasattr(value, '__dict__'):
+                            result[key] = self._convert_sdk_object_to_dict(value)
+                        # Handle lists
+                        elif isinstance(value, list):
+                            result[key] = [self._convert_sdk_object_to_dict(item) if hasattr(item, '__dict__') else item for item in value]
+                        else:
+                            result[key] = value
+                            
+                self.logger.info(f"__dict__ extracted {len(obj.__dict__)} attributes")
+            except Exception as e:
+                self.logger.warning(f"__dict__ extraction failed: {e}")
+
+        # STRATEGY 4: Extract from dir() - get ALL possible attributes
         try:
-            result = vars(obj)
-            self.logger.debug(f"vars() result keys: {list(result.keys()) if isinstance(result, dict) else 'Not a dict'}")
-            return result
-        except:
-            pass
+            all_attrs = [attr for attr in dir(obj) if not attr.startswith('_') and not callable(getattr(obj, attr, None))]
+            for attr_name in all_attrs:
+                try:
+                    if not hasattr(obj, attr_name):
+                        continue
+                        
+                    value = getattr(obj, attr_name)
+                    if value is None:
+                        continue
+                        
+                    # Skip if we already have this attribute
+                    if attr_name in result:
+                        continue
+                        
+                    # Handle datetime objects
+                    if hasattr(value, 'isoformat'):
+                        result[attr_name] = value.isoformat()
+                    # Handle nested objects  
+                    elif hasattr(value, '__dict__'):
+                        result[attr_name] = self._convert_sdk_object_to_dict(value)
+                    # Handle lists
+                    elif isinstance(value, list):
+                        result[attr_name] = [self._convert_sdk_object_to_dict(item) if hasattr(item, '__dict__') else item for item in value]
+                    # Store primitive values
+                    else:
+                        result[attr_name] = value
+                        
+                except Exception as e:
+                    self.logger.debug(f"Failed to extract {attr_name}: {e}")
+                    
+            self.logger.info(f"dir() scan found {len(all_attrs)} non-private attributes")
+        except Exception as e:
+            self.logger.warning(f"dir() scan failed: {e}")
 
-        # Last resort: return the object as-is and log
-        self.logger.warning(f"Could not convert SDK object {type(obj)} to dict, returning as-is")
-        return obj
+        # STRATEGY 5: Use vars() as additional fallback
+        try:
+            vars_result = vars(obj)
+            for key, value in vars_result.items():
+                if key not in result and value is not None:
+                    if hasattr(value, 'isoformat'):
+                        result[key] = value.isoformat()
+                    elif hasattr(value, '__dict__'):
+                        result[key] = self._convert_sdk_object_to_dict(value)
+                    elif isinstance(value, list):
+                        result[key] = [self._convert_sdk_object_to_dict(item) if hasattr(item, '__dict__') else item for item in value]
+                    else:
+                        result[key] = value
+            self.logger.info(f"vars() extracted {len(vars_result)} additional fields")
+        except Exception as e:
+            self.logger.debug(f"vars() extraction failed: {e}")
+
+        # LOG RESULTS
+        self.logger.info(f"TOTAL EXTRACTED FIELDS: {len(result)}")
+        self.logger.info(f"All extracted keys: {sorted(result.keys())}")
+        
+        # Special logging for ID fields
+        id_fields = [k for k in result.keys() if 'id' in k.lower()]
+        if id_fields:
+            self.logger.info(f"ID FIELDS FOUND: {id_fields}")
+            for id_field in id_fields:
+                self.logger.info(f"  {id_field}: {result[id_field]}")
+        else:
+            self.logger.error("NO ID FIELDS FOUND! This is a problem!")
+
+        # If we still have no data, return the object as-is with warning
+        if not result:
+            self.logger.error(f"FAILED to extract ANY data from {type(obj)}")
+            return {"_raw_object_type": str(type(obj)), "_extraction_failed": True}
+
+        return result

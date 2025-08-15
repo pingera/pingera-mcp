@@ -334,10 +334,10 @@ class ChecksTools(BaseTools):
             self.logger.info(f"Getting job details for ID: {job_id}")
 
             with self.client._get_api_client() as api_client:
-                from pingera.api import ChecksApi
-                checks_api = ChecksApi(api_client)
+                from pingera.api import OnDemandChecksApi
+                on_demand_api = OnDemandChecksApi(api_client)
 
-                response = checks_api.v1_checks_jobs_job_id_get(job_id=job_id)
+                response = on_demand_api.v1_checks_jobs_job_id_get(job_id=job_id)
 
                 job_data = self._format_job_response(response)
                 return self._success_response(job_data)

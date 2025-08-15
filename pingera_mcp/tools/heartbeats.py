@@ -42,8 +42,8 @@ class HeartbeatsTools(BaseTools):
                     kwargs['page'] = page
                 if page_size is not None:
                     kwargs['page_size'] = page_size
-                if status is not None:
-                    kwargs['status'] = status
+                # Note: HeartbeatsApi.v1_heartbeats_get does not support status filtering
+                # Status filtering will be handled client-side if needed
 
                 response = heartbeats_api.v1_heartbeats_get(**kwargs)
 

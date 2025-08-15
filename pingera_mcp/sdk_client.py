@@ -78,6 +78,14 @@ class PingeraSDKClient:
                 status_pages_api = StatusPagesApi(api_client)
                 # Pages API doesn't support pagination parameters
                 pages_response = status_pages_api.v1_pages_get()
+                
+                # Log the response structure to debug
+                self.logger.debug(f"Pages response type: {type(pages_response)}")
+                if hasattr(pages_response, 'data') and pages_response.data:
+                    self.logger.debug(f"First page object type: {type(pages_response.data[0])}")
+                    if hasattr(pages_response.data[0], '__dict__'):
+                        self.logger.debug(f"First page attributes: {list(pages_response.data[0].__dict__.keys())}")
+                
                 return pages_response
         except ApiException as e:
             self._handle_api_exception(e)

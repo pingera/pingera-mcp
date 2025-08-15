@@ -43,12 +43,12 @@ class PagesTools(BaseTools):
 
             # Handle SDK response format - based on your working test_pingera_sdk.py
             if hasattr(pages_response, 'pages') and pages_response.pages:
-                pages_list = [page.to_dict() if hasattr(page, 'to_dict') else page for page in pages_response.pages]
+                pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response.pages]
             elif hasattr(pages_response, 'data') and pages_response.data:
-                pages_list = [page.to_dict() if hasattr(page, 'to_dict') else page for page in pages_response.data]
+                pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response.data]
             elif isinstance(pages_response, list):
                 # SDK returns pages as direct list
-                pages_list = [page.to_dict() if hasattr(page, 'to_dict') else page for page in pages_response]
+                pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response]
             else:
                 pages_list = []
                 self.logger.warning(f"Could not extract pages from response: {pages_response}")
@@ -86,10 +86,7 @@ class PagesTools(BaseTools):
             page = self.client.get_page(page_id)
 
             # Handle SDK response format
-            if hasattr(page, 'to_dict'):
-                page_data = page.to_dict()
-            else:
-                page_data = page
+            page_data = self._convert_sdk_object_to_dict(page)
 
             return self._success_response(page_data)
 
@@ -139,10 +136,7 @@ class PagesTools(BaseTools):
             page = self.client.pages.create(page_data)
 
             # Handle SDK response format
-            if hasattr(page, 'to_dict'):
-                page_data_result = page.to_dict()
-            else:
-                page_data_result = page
+            page_data_result = self._convert_sdk_object_to_dict(page)
 
             return self._success_response(page_data_result)
 
@@ -197,10 +191,7 @@ class PagesTools(BaseTools):
             page = self.client.pages.update(page_id_int, page_data)
 
             # Handle SDK response format
-            if hasattr(page, 'to_dict'):
-                page_data_result = page.to_dict()
-            else:
-                page_data_result = page
+            page_data_result = self._convert_sdk_object_to_dict(page)
 
             return self._success_response(page_data_result)
 
@@ -232,10 +223,7 @@ class PagesTools(BaseTools):
             page = self.client.pages.patch(page_id_int, kwargs)
 
             # Handle SDK response format
-            if hasattr(page, 'to_dict'):
-                page_data_result = page.to_dict()
-            else:
-                page_data_result = page
+            page_data_result = self._convert_sdk_object_to_dict(page)
 
             return self._success_response(page_data_result)
 

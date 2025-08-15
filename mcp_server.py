@@ -82,7 +82,6 @@ async def list_pages(
     Args:
         page: Page number for pagination (default: 1)
         per_page: Number of items per page (default: 20, max: 100)
-        status: Filter by status ('active', 'inactive', 'draft')
     
     Returns:
         JSON with list of status pages including their names, IDs, domains, and configuration details.

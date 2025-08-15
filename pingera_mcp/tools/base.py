@@ -98,14 +98,44 @@ class BaseTools:
                 else:
                     result[key] = value
             
-            # Also check for common ID attributes directly on the object
-            for id_attr in ['id', 'page_id', 'organization_id', 'uuid', 'pk']:
-                if hasattr(obj, id_attr) and id_attr not in result:
-                    value = getattr(obj, id_attr)
-                    result[id_attr] = value
-                    self.logger.debug(f"Added missing {id_attr}: {value}")
+            # Enhanced ID extraction - check for common ID attributes directly on the object
+            # Try to extract IDs using getattr and also check all attributes
+            for id_attr in ['id', 'page_id', 'organization_id', 'uuid', 'pk', 'created_at', 'updated_at']:
+                try:
+                    if hasattr(obj, id_attr):
+                        value = getattr(obj, id_attr)
+                        if value is not None and id_attr not in result:
+                            # Handle datetime objects for timestamps
+                            if hasattr(value, 'isoformat'):
+                                result[id_attr] = value.isoformat()
+                            else:
+                                result[id_attr] = value
+                            self.logger.info(f"Added missing {id_attr}: {value}")
+                except Exception as e:
+                    self.logger.warning(f"Failed to extract {id_attr}: {e}")
             
-            self.logger.debug(f"__dict__ extraction result keys: {list(result.keys())}")
+            # Also try to get all attributes from dir() that look like IDs
+            for attr_name in dir(obj):
+                if not attr_name.startswith('_') and ('id' in attr_name.lower() or attr_name in ['created_at', 'updated_at']):
+                    try:
+                        if attr_name not in result and hasattr(obj, attr_name):
+                            value = getattr(obj, attr_name)
+                            if value is not None and callable(value) == False:  # Skip methods
+                                # Handle datetime objects
+                                if hasattr(value, 'isoformat'):
+                                    result[attr_name] = value.isoformat()
+                                else:
+                                    result[attr_name] = value
+                                self.logger.info(f"Found ID-like attribute {attr_name}: {value}")
+                    except Exception as e:
+                        self.logger.warning(f"Failed to extract {attr_name}: {e}")
+            
+            self.logger.debug(f"Final extraction result keys: {list(result.keys())}")
+            if 'id' in result:
+                self.logger.info(f"Successfully extracted ID: {result['id']}")
+            else:
+                self.logger.warning("No 'id' field found in extracted data")
+            
             return result
 
         # If all else fails, try to convert object directly to dict using vars()

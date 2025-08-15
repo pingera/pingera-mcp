@@ -9,7 +9,7 @@ from mcp.server.fastmcp import FastMCP
 
 from config import Config
 from pingera_mcp import PingeraClient
-from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools
+from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools, AlertsTools
 from pingera_mcp.resources import PagesResources, StatusResources, ComponentResources
 
 # Configure logging
@@ -46,6 +46,7 @@ pages_tools = PagesTools(pingera_client)
 status_tools = StatusTools(pingera_client)
 component_tools = ComponentTools(pingera_client)
 checks_tools = ChecksTools(pingera_client)
+alerts_tools = AlertsTools(pingera_client)
 pages_resources = PagesResources(pingera_client)
 status_resources = StatusResources(pingera_client, config)
 component_resources = ComponentResources(pingera_client)
@@ -170,6 +171,30 @@ async def list_on_demand_checks(
 ) -> str:
     return await checks_tools.list_on_demand_checks(page, page_size)
 
+@mcp.tool()
+async def list_alerts(
+    page: Optional[int] = None,
+    page_size: Optional[int] = None,
+    status: Optional[str] = None
+) -> str:
+    return await alerts_tools.list_alerts(page, page_size, status)
+
+@mcp.tool()
+async def get_alert_details(alert_id: str) -> str:
+    return await alerts_tools.get_alert_details(alert_id)
+
+@mcp.tool()
+async def get_alert_statistics() -> str:
+    return await alerts_tools.get_alert_statistics()
+
+@mcp.tool()
+async def list_alert_channels() -> str:
+    return await alerts_tools.list_alert_channels()
+
+@mcp.tool()
+async def list_alert_rules() -> str:
+    return await alerts_tools.list_alert_rules()
+
 # Register write tools only if in read-write mode
 if config.is_read_write():
     logger.info("Read-write mode enabled - adding write operations")
@@ -269,3 +294,15 @@ if config.is_read_write():
     @mcp.tool()
     async def resume_check(check_id: str) -> str:
         return await checks_tools.resume_check(check_id)
+
+    @mcp.tool()
+    async def create_alert(alert_data: dict) -> str:
+        return await alerts_tools.create_alert(alert_data)
+
+    @mcp.tool()
+    async def update_alert(alert_id: str, alert_data: dict) -> str:
+        return await alerts_tools.update_alert(alert_id, alert_data)
+
+    @mcp.tool()
+    async def delete_alert(alert_id: str) -> str:
+        return await alerts_tools.delete_alert(alert_id)

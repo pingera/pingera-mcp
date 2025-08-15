@@ -2,6 +2,7 @@
 MCP Server implementation for Pingera monitoring service.
 """
 import logging
+import json
 from typing import Optional, List
 
 from mcp.server.fastmcp import FastMCP
@@ -68,10 +69,14 @@ async def get_status_resource() -> str:
 # Register read-only tools
 @mcp.tool()
 async def list_pages(
-    page: Optional[int] = None,
-    per_page: Optional[int] = None,
+    page: Optional[int] = None, 
+    per_page: Optional[int] = None, 
     status: Optional[str] = None
 ) -> str:
+    """
+    List all status pages. Use this first to discover available pages and their IDs.
+    Each page has a unique ID that you'll need for other operations like listing incidents.
+    """
     return await pages_tools.list_pages(page, per_page, status)
 
 @mcp.tool()
@@ -254,7 +259,87 @@ async def get_incident_updates(page_id: str, incident_id: str) -> str:
 
 @mcp.tool()
 async def get_incident_update_details(page_id: str, incident_id: str, update_id: str) -> str:
+    """Get details of a specific incident update."""
     return await incidents_tools.get_incident_update_details(page_id, incident_id, update_id)
+
+@mcp.tool()
+async def find_pages_with_latest_incidents() -> str:
+    """
+    Find all status pages and show the latest incident from each page.
+    This is useful when you don't know specific page IDs but want to see recent incidents.
+    """
+    try:
+        # First get all pages
+        pages_result = await pages_tools.list_pages()
+        pages_data = json.loads(pages_result)
+
+        if not pages_data.get("success") or not pages_data.get("data", {}).get("pages"):
+            return pages_result
+
+        pages = pages_data["data"]["pages"]
+        results = []
+
+        for page in pages:
+            page_id = str(page.get("id") or page.get("page_id", ""))
+            page_name = page.get("name", "Unknown")
+
+            if not page_id:
+                continue
+
+            # Get latest incidents for this page
+            try:
+                incidents_result = await incidents_tools.list_incidents(page_id, page=1, per_page=1)
+                incidents_data = json.loads(incidents_result)
+
+                page_info = {
+                    "page_id": page_id,
+                    "page_name": page_name,
+                    "subdomain": page.get("subdomain", ""),
+                    "domain": page.get("domain", ""),
+                    "url": page.get("url", ""),
+                    "latest_incident": None
+                }
+
+                if (incidents_data.get("success") and 
+                    incidents_data.get("data", {}).get("incidents")):
+                    incidents = incidents_data["data"]["incidents"]
+                    if incidents:
+                        latest = incidents[0]
+                        page_info["latest_incident"] = {
+                            "id": latest.get("id"),
+                            "name": latest.get("name"),
+                            "status": latest.get("status"),
+                            "impact": latest.get("impact"),
+                            "created_at": latest.get("created_at"),
+                            "updated_at": latest.get("updated_at"),
+                            "body": latest.get("body", "")
+                        }
+
+                results.append(page_info)
+
+            except Exception as e:
+                # Continue with other pages if one fails
+                results.append({
+                    "page_id": page_id,
+                    "page_name": page_name,
+                    "error": f"Could not fetch incidents: {str(e)}"
+                })
+
+        return json.dumps({
+            "success": True,
+            "message": f"Found {len(results)} pages with incident information",
+            "data": {
+                "pages_with_incidents": results,
+                "total_pages": len(results)
+            }
+        }, indent=2)
+
+    except Exception as e:
+        return json.dumps({
+            "success": False,
+            "error": f"Error finding pages and incidents: {str(e)}",
+            "data": None
+        }, indent=2)
 
 
 # Register write tools only if in read-write mode

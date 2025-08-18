@@ -261,13 +261,80 @@ class ComponentsEndpointSDK:
             # Use proper SDK pattern with context manager
             with ApiClient(self.client.configuration) as api_client:
                 components_api = StatusPagesComponentsApi(api_client)
-                components_response = components_api.v1_pages_page_id_components_get(page_id)
+                component_response = components_api.v1_pages_page_id_components_component_id_get(
+                    page_id=page_id,
+                    component_id=component_id
+                )
+                return component_response
+        except ApiException as e:
+            self.client._handle_api_exception(e)
 
-                if hasattr(components_response, 'data') and components_response.data:
-                    for comp in components_response.data:
-                        if comp.id == component_id:
-                            return comp
+    def create_component(self, page_id: str, component_data: dict):
+        """Create component using SDK."""
+        try:
+            with ApiClient(self.client.configuration) as api_client:
+                from pingera.models import Component
+                components_api = StatusPagesComponentsApi(api_client)
+                
+                # Create component model from data
+                component = Component(**component_data)
+                
+                created_component = components_api.v1_pages_page_id_components_post(
+                    page_id=page_id,
+                    component=component
+                )
+                return created_component
+        except ApiException as e:
+            self.client._handle_api_exception(e)
 
-                raise PingeraAPIError(f"Component {component_id} not found")
+    def update_component(self, page_id: str, component_id: str, component_data: dict):
+        """Update component using SDK."""
+        try:
+            with ApiClient(self.client.configuration) as api_client:
+                from pingera.models import Component
+                components_api = StatusPagesComponentsApi(api_client)
+                
+                # Create component model from data
+                component = Component(**component_data)
+                
+                updated_component = components_api.v1_pages_page_id_components_component_id_put(
+                    page_id=page_id,
+                    component_id=component_id,
+                    component=component
+                )
+                return updated_component
+        except ApiException as e:
+            self.client._handle_api_exception(e)
+
+    def patch_component(self, page_id: str, component_id: str, component_data: dict):
+        """Patch component using SDK."""
+        try:
+            with ApiClient(self.client.configuration) as api_client:
+                from pingera.models import Component
+                components_api = StatusPagesComponentsApi(api_client)
+                
+                # Create component model from data
+                component = Component(**component_data)
+                
+                updated_component = components_api.v1_pages_page_id_components_component_id_put(
+                    page_id=page_id,
+                    component_id=component_id,
+                    component=component
+                )
+                return updated_component
+        except ApiException as e:
+            self.client._handle_api_exception(e)
+
+    def delete_component(self, page_id: str, component_id: str):
+        """Delete component using SDK."""
+        try:
+            with ApiClient(self.client.configuration) as api_client:
+                components_api = StatusPagesComponentsApi(api_client)
+                
+                components_api.v1_pages_page_id_components_component_id_delete(
+                    page_id=page_id,
+                    component_id=component_id
+                )
+                return True
         except ApiException as e:
             self.client._handle_api_exception(e)

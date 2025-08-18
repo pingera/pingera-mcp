@@ -26,7 +26,7 @@ server_params = StdioServerParameters(
     ],
     env={
         "PINGERA_API_KEY": os.getenv("PINGERA_API_KEY", "your_api_key_here"),
-        "PINGERA_MODE": "read_only",
+        "PINGERA_MODE": "read_write",
         "PINGERA_BASE_URL": "https://api.pingera.ru/v1",
         "PINGERA_TIMEOUT": "30",
         "PINGERA_MAX_RETRIES": "3",

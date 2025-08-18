@@ -201,10 +201,15 @@ async def main():
                                             print(content)
 
                                         # Send result back to Gemini
+                                        function_response = genai.types.FunctionResponse(
+                                            name=function_call.name,
+                                            response={"result": content}
+                                        )
+                                        
                                         result_response = model.generate_content([
-                                            {"role": "user", "parts": [{"text": prompt}]},
-                                            {"role": "model", "parts": [response.candidates[0].content.parts[0]]},
-                                            {"role": "function", "name": function_call.name, "parts": [{"text": content}]}
+                                            prompt,
+                                            response,
+                                            function_response
                                         ])
 
                                         print(f"\n🤖 Gemini's analysis:")

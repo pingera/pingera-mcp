@@ -88,11 +88,10 @@ class ComponentTools(BaseTools):
                     **kwargs
                 )
 
-                # Convert response to a consistent format
-                if hasattr(response, '__iter__') and not isinstance(response, str):
-                    # If response is a list of components
-                    components_list = list(response)
-                    converted_components = [self._convert_sdk_object_to_dict(comp) for comp in components_list]
+                # The API returns a list of Component objects directly
+                if isinstance(response, list):
+                    # Direct list of components
+                    converted_components = [self._convert_sdk_object_to_dict(comp) for comp in response]
                     
                     data = {
                         "page_id": page_id,
@@ -102,20 +101,34 @@ class ComponentTools(BaseTools):
                         "page_size": page_size or len(converted_components)
                     }
                 else:
-                    # If response has pagination info
-                    components_data = getattr(response, 'components', []) if hasattr(response, 'components') else response
-                    if isinstance(components_data, list):
-                        converted_components = [self._convert_sdk_object_to_dict(comp) for comp in components_data]
-                    else:
-                        converted_components = [self._convert_sdk_object_to_dict(components_data)]
+                    # Check if response has pagination structure
+                    components_data = getattr(response, 'components', None) if hasattr(response, 'components') else None
                     
-                    data = {
-                        "page_id": page_id,
-                        "components": converted_components,
-                        "total": getattr(response, 'total', len(converted_components)),
-                        "page": getattr(response, 'page', page or 1),
-                        "page_size": getattr(response, 'page_size', page_size or len(converted_components))
-                    }
+                    if components_data is not None:
+                        # Response has pagination structure
+                        if isinstance(components_data, list):
+                            converted_components = [self._convert_sdk_object_to_dict(comp) for comp in components_data]
+                        else:
+                            converted_components = [self._convert_sdk_object_to_dict(components_data)]
+                        
+                        data = {
+                            "page_id": page_id,
+                            "components": converted_components,
+                            "total": getattr(response, 'total', len(converted_components)),
+                            "page": getattr(response, 'page', page or 1),
+                            "page_size": getattr(response, 'page_size', page_size or len(converted_components))
+                        }
+                    else:
+                        # Single component response
+                        converted_component = self._convert_sdk_object_to_dict(response)
+                        
+                        data = {
+                            "page_id": page_id,
+                            "components": [converted_component],
+                            "total": 1,
+                            "page": page or 1,
+                            "page_size": page_size or 1
+                        }
 
                 return self._success_response(data)
 

@@ -165,12 +165,16 @@ class PagesTools(BaseTools):
             # Add any additional configuration
             page_data.update(kwargs)
 
-            page = self.client.pages.create(page_data)
+            with self.client._get_api_client() as api_client:
+                from pingera.api import StatusPagesApi
+                pages_api = StatusPagesApi(api_client)
 
-            # Handle SDK response format
-            page_data_result = self._convert_sdk_object_to_dict(page)
+                response = pages_api.v1_pages_post(page=page_data)
 
-            return self._success_response(page_data_result)
+                # Handle SDK response format
+                page_data_result = self._convert_sdk_object_to_dict(response)
+
+                return self._success_response(page_data_result)
 
         except PingeraError as e:
             self.logger.error(f"Error creating page: {e}")
@@ -219,13 +223,17 @@ class PagesTools(BaseTools):
             # Add any additional configuration
             page_data.update(kwargs)
 
-            page_id_int = int(page_id)
-            page = self.client.pages.update(page_id_int, page_data)
+            with self.client._get_api_client() as api_client:
+                from pingera.api import StatusPagesApi
+                pages_api = StatusPagesApi(api_client)
 
-            # Handle SDK response format
-            page_data_result = self._convert_sdk_object_to_dict(page)
+                page_id_int = int(page_id)
+                response = pages_api.v1_pages_page_id_put(page_id=page_id_int, page=page_data)
 
-            return self._success_response(page_data_result)
+                # Handle SDK response format
+                page_data_result = self._convert_sdk_object_to_dict(response)
+
+                return self._success_response(page_data_result)
 
         except ValueError:
             self.logger.error(f"Invalid page ID: {page_id}")
@@ -251,13 +259,17 @@ class PagesTools(BaseTools):
             if not kwargs:
                 return self._error_response("No fields provided for update", None)
 
-            page_id_int = int(page_id)
-            page = self.client.pages.patch(page_id_int, kwargs)
+            with self.client._get_api_client() as api_client:
+                from pingera.api import StatusPagesApi
+                pages_api = StatusPagesApi(api_client)
 
-            # Handle SDK response format
-            page_data_result = self._convert_sdk_object_to_dict(page)
+                page_id_int = int(page_id)
+                response = pages_api.v1_pages_page_id_patch(page_id=page_id_int, page=kwargs)
 
-            return self._success_response(page_data_result)
+                # Handle SDK response format
+                page_data_result = self._convert_sdk_object_to_dict(response)
+
+                return self._success_response(page_data_result)
 
         except ValueError:
             self.logger.error(f"Invalid page ID: {page_id}")
@@ -280,17 +292,18 @@ class PagesTools(BaseTools):
         try:
             self.logger.info(f"Deleting page: {page_id}")
 
-            page_id_int = int(page_id)
-            success = self.client.pages.delete(page_id_int)
+            with self.client._get_api_client() as api_client:
+                from pingera.api import StatusPagesApi
+                pages_api = StatusPagesApi(api_client)
 
-            if success:
-                return json.dumps({
-                    "success": True,
-                    "message": f"Page {page_id} deleted successfully",
-                    "data": {"page_id": page_id}
-                }, indent=2)
-            else:
-                return self._error_response("Failed to delete page", None)
+                page_id_int = int(page_id)
+                pages_api.v1_pages_page_id_delete(page_id=page_id_int)
+
+                return self._success_response({
+                    "deleted": True,
+                    "page_id": page_id,
+                    "message": f"Page {page_id} deleted successfully"
+                })
 
         except ValueError:
             self.logger.error(f"Invalid page ID: {page_id}")

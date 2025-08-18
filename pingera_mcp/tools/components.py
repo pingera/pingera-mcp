@@ -34,10 +34,16 @@ class ComponentTools(BaseTools):
                 show_deleted=show_deleted
             )
 
+            # Convert SDK Component objects to dicts
+            if isinstance(component_groups, list):
+                converted_groups = [self._convert_sdk_object_to_dict(group) for group in component_groups]
+            else:
+                converted_groups = [self._convert_sdk_object_to_dict(component_groups)]
+
             data = {
                 "page_id": page_id,
-                "component_groups": [group.dict() for group in component_groups],
-                "total": len(component_groups),
+                "component_groups": converted_groups,
+                "total": len(converted_groups),
                 "show_deleted": show_deleted
             }
 
@@ -73,15 +79,8 @@ class ComponentTools(BaseTools):
                     component_id=component_id
                 )
 
-            # Handle SDK response format properly
-            if hasattr(component, 'to_dict'):
-                component_dict = component.to_dict()
-            elif hasattr(component, '__dict__'):
-                component_dict = component.__dict__
-            else:
-                # If it's already a dict or simple type
-                component_dict = component if component is not None else {}
-
+            # Convert SDK Component object to dict
+            component_dict = self._convert_sdk_object_to_dict(component)
             return self._success_response(component_dict)
 
         except PingeraError as e:
@@ -143,7 +142,9 @@ class ComponentTools(BaseTools):
 
             component = self.client.components.create_component(page_id, component_data)
 
-            return self._success_response(component.dict())
+            # Convert SDK Component object to dict
+            component_dict = self._convert_sdk_object_to_dict(component)
+            return self._success_response(component_dict)
 
         except PingeraError as e:
             self.logger.error(f"Error creating component: {e}")
@@ -208,7 +209,9 @@ class ComponentTools(BaseTools):
 
             component = self.client.components.update_component(page_id, component_id, component_data)
 
-            return self._success_response(component.dict())
+            # Convert SDK Component object to dict
+            component_dict = self._convert_sdk_object_to_dict(component)
+            return self._success_response(component_dict)
 
         except PingeraError as e:
             self.logger.error(f"Error updating component {component_id}: {e}")
@@ -234,7 +237,9 @@ class ComponentTools(BaseTools):
 
             component = self.client.components.patch_component(page_id, component_id, kwargs)
 
-            return self._success_response(component.dict())
+            # Convert SDK Component object to dict
+            component_dict = self._convert_sdk_object_to_dict(component)
+            return self._success_response(component_dict)
 
         except PingeraError as e:
             self.logger.error(f"Error patching component {component_id}: {e}")

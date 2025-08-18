@@ -251,7 +251,9 @@ class ComponentsEndpointSDK:
             with ApiClient(self.client.configuration) as api_client:
                 components_api = StatusPagesComponentsApi(api_client)
                 components_response = components_api.v1_pages_page_id_components_get(page_id)
-                return components_response
+                
+                # The API returns a list of Component objects directly
+                return components_response if isinstance(components_response, list) else [components_response]
         except ApiException as e:
             self.client._handle_api_exception(e)
 

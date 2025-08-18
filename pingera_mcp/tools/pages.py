@@ -45,16 +45,16 @@ class PagesTools(BaseTools):
             self.logger.info(f"=== SDK RESPONSE ANALYSIS ===")
             self.logger.info(f"Response type: {type(pages_response)}")
             self.logger.info(f"Response is list: {isinstance(pages_response, list)}")
-
+            
             if hasattr(pages_response, '__dict__'):
                 self.logger.info(f"Response __dict__: {pages_response.__dict__}")
-
+            
             if hasattr(pages_response, 'attribute_map'):
                 self.logger.info(f"Response attribute_map: {pages_response.attribute_map}")
-
+                
             all_attrs = [attr for attr in dir(pages_response) if not attr.startswith('_')]
             self.logger.info(f"Response public attributes: {all_attrs}")
-
+            
             # Handle SDK response format - the SDK returns pages directly as a list
             if isinstance(pages_response, list):
                 # SDK returns pages as direct list
@@ -65,15 +65,15 @@ class PagesTools(BaseTools):
                     self.logger.info(f"Page type: {type(page)}")
                     if hasattr(page, '__dict__'):
                         self.logger.info(f"Page __dict__: {page.__dict__}")
-
+                    
                     converted_page = self._convert_sdk_object_to_dict(page)
                     pages_list.append(converted_page)
                     self.logger.info(f"Converted page keys: {list(converted_page.keys())}")
-
+                    
             else:
                 # Try different response structures
                 self.logger.info("Response is not a direct list, trying nested structures...")
-
+                
                 if hasattr(pages_response, 'pages') and pages_response.pages:
                     self.logger.info(f"Found pages in response.pages: {len(pages_response.pages)}")
                     pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response.pages]

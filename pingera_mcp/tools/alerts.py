@@ -211,54 +211,6 @@ class AlertsTools(BaseTools):
             self.logger.error(f"Error listing alert channels: {e}")
             return self._error_response(str(e))
 
-    async def create_alert(self, alert_data: dict) -> str:
-        """Create a new alert rule."""
-        try:
-            return json.dumps({
-                "success": False,
-                "error": "Alert creation not yet implemented in SDK",
-                "message": "Write operations require SDK method implementation"
-            }, indent=2)
-        except Exception as e:
-            self.logger.error(f"Failed to create alert: {e}")
-            return json.dumps({
-                "success": False,
-                "error": str(e),
-                "message": "Failed to create alert rule"
-            }, indent=2)
-
-    async def update_alert(self, alert_id: str, alert_data: dict) -> str:
-        """Update an existing alert rule."""
-        try:
-            return json.dumps({
-                "success": False,
-                "error": "Alert update not yet implemented in SDK",
-                "message": "Write operations require SDK method implementation"
-            }, indent=2)
-        except Exception as e:
-            self.logger.error(f"Failed to update alert: {e}")
-            return json.dumps({
-                "success": False,
-                "error": str(e),
-                "message": f"Failed to update alert: {alert_id}"
-            }, indent=2)
-
-    async def delete_alert(self, alert_id: str) -> str:
-        """Delete an alert rule."""
-        try:
-            return json.dumps({
-                "success": False,
-                "error": "Alert deletion not yet implemented in SDK",
-                "message": "Write operations require SDK method implementation"
-            }, indent=2)
-        except Exception as e:
-            self.logger.error(f"Failed to delete alert: {e}")
-            return json.dumps({
-                "success": False,
-                "error": str(e),
-                "message": f"Failed to delete alert: {alert_id}"
-            }, indent=2)
-
     async def list_alert_rules(self) -> str:
         """
         Get alert rules.

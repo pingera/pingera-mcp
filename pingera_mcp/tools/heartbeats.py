@@ -1,3 +1,4 @@
+
 """
 MCP tools for heartbeat monitoring.
 """
@@ -20,12 +21,12 @@ class HeartbeatsTools(BaseTools):
     ) -> str:
         """
         List all heartbeats with optional filtering.
-
+        
         Args:
             page: Page number for pagination
-            page_size: Number of items per page
+            page_size: Number of items per page  
             status: Filter by heartbeat status
-
+            
         Returns:
             JSON string with heartbeats data
         """
@@ -56,10 +57,10 @@ class HeartbeatsTools(BaseTools):
     async def get_heartbeat_details(self, heartbeat_id: str) -> str:
         """
         Get details for a specific heartbeat.
-
+        
         Args:
             heartbeat_id: ID of the heartbeat to retrieve
-
+            
         Returns:
             JSON string with heartbeat details
         """
@@ -80,68 +81,111 @@ class HeartbeatsTools(BaseTools):
             return self._error_response(str(e))
 
     async def create_heartbeat(self, heartbeat_data: dict) -> str:
-        """Create a new heartbeat monitor."""
+        """
+        Create a new heartbeat.
+        
+        Args:
+            heartbeat_data: Heartbeat configuration data
+            
+        Returns:
+            JSON string with created heartbeat data
+        """
         try:
-            return json.dumps({
-                "success": False,
-                "error": "Heartbeat creation not yet implemented in SDK",
-                "message": "Write operations require SDK method implementation"
-            }, indent=2)
+            self.logger.info(f"Creating heartbeat with data: {heartbeat_data}")
+
+            with self.client._get_api_client() as api_client:
+                from pingera.api import HeartbeatsApi
+                heartbeats_api = HeartbeatsApi(api_client)
+
+                response = heartbeats_api.v1_heartbeats_post(heartbeat_data)
+
+                created_heartbeat = self._format_heartbeat_response(response)
+                return self._success_response(created_heartbeat)
+
         except Exception as e:
-            self.logger.error(f"Failed to create heartbeat: {e}")
-            return json.dumps({
-                "success": False,
-                "error": str(e),
-                "message": "Failed to create heartbeat monitor"
-            }, indent=2)
+            self.logger.error(f"Error creating heartbeat: {e}")
+            return self._error_response(str(e))
 
     async def update_heartbeat(self, heartbeat_id: str, heartbeat_data: dict) -> str:
-        """Update an existing heartbeat monitor."""
+        """
+        Update an existing heartbeat.
+        
+        Args:
+            heartbeat_id: ID of the heartbeat to update
+            heartbeat_data: Updated heartbeat data
+            
+        Returns:
+            JSON string with updated heartbeat data
+        """
         try:
-            return json.dumps({
-                "success": False,
-                "error": "Heartbeat update not yet implemented in SDK",
-                "message": "Write operations require SDK method implementation"
-            }, indent=2)
+            self.logger.info(f"Updating heartbeat {heartbeat_id} with data: {heartbeat_data}")
+
+            with self.client._get_api_client() as api_client:
+                from pingera.api import HeartbeatsApi
+                heartbeats_api = HeartbeatsApi(api_client)
+
+                response = heartbeats_api.v1_heartbeats_heartbeat_id_put(
+                    heartbeat_id=heartbeat_id,
+                    heartbeat_data=heartbeat_data
+                )
+
+                updated_heartbeat = self._format_heartbeat_response(response)
+                return self._success_response(updated_heartbeat)
+
         except Exception as e:
-            self.logger.error(f"Failed to update heartbeat: {e}")
-            return json.dumps({
-                "success": False,
-                "error": str(e),
-                "message": f"Failed to update heartbeat: {heartbeat_id}"
-            }, indent=2)
+            self.logger.error(f"Error updating heartbeat {heartbeat_id}: {e}")
+            return self._error_response(str(e))
 
     async def delete_heartbeat(self, heartbeat_id: str) -> str:
-        """Delete a heartbeat monitor."""
+        """
+        Delete a heartbeat.
+        
+        Args:
+            heartbeat_id: ID of the heartbeat to delete
+            
+        Returns:
+            JSON string with deletion status
+        """
         try:
-            return json.dumps({
-                "success": False,
-                "error": "Heartbeat deletion not yet implemented in SDK",
-                "message": "Write operations require SDK method implementation"
-            }, indent=2)
+            self.logger.info(f"Deleting heartbeat {heartbeat_id}")
+
+            with self.client._get_api_client() as api_client:
+                from pingera.api import HeartbeatsApi
+                heartbeats_api = HeartbeatsApi(api_client)
+
+                heartbeats_api.v1_heartbeats_heartbeat_id_delete(heartbeat_id=heartbeat_id)
+
+                return self._success_response({"deleted": True, "heartbeat_id": heartbeat_id})
+
         except Exception as e:
-            self.logger.error(f"Failed to delete heartbeat: {e}")
-            return json.dumps({
-                "success": False,
-                "error": str(e),
-                "message": f"Failed to delete heartbeat: {heartbeat_id}"
-            }, indent=2)
+            self.logger.error(f"Error deleting heartbeat {heartbeat_id}: {e}")
+            return self._error_response(str(e))
 
     async def send_heartbeat_ping(self, heartbeat_id: str) -> str:
-        """Send a ping signal to a heartbeat monitor."""
+        """
+        Send a ping to a heartbeat.
+        
+        Args:
+            heartbeat_id: ID of the heartbeat to ping
+            
+        Returns:
+            JSON string with ping status
+        """
         try:
-            return json.dumps({
-                "success": False,
-                "error": "Heartbeat ping not yet implemented in SDK",
-                "message": "Write operations require SDK method implementation"
-            }, indent=2)
+            self.logger.info(f"Sending ping to heartbeat {heartbeat_id}")
+
+            with self.client._get_api_client() as api_client:
+                from pingera.api import HeartbeatsApi
+                heartbeats_api = HeartbeatsApi(api_client)
+
+                response = heartbeats_api.v1_heartbeats_heartbeat_id_ping_post(heartbeat_id=heartbeat_id)
+
+                ping_data = self._format_ping_response(response)
+                return self._success_response(ping_data)
+
         except Exception as e:
-            self.logger.error(f"Failed to send heartbeat ping: {e}")
-            return json.dumps({
-                "success": False,
-                "error": str(e),
-                "message": f"Failed to ping heartbeat: {heartbeat_id}"
-            }, indent=2)
+            self.logger.error(f"Error sending ping to heartbeat {heartbeat_id}: {e}")
+            return self._error_response(str(e))
 
     async def get_heartbeat_logs(
         self,
@@ -153,14 +197,14 @@ class HeartbeatsTools(BaseTools):
     ) -> str:
         """
         Get logs for a heartbeat.
-
+        
         Args:
             heartbeat_id: ID of the heartbeat
             from_date: Start date for log filtering (ISO 8601 format)
             to_date: End date for log filtering (ISO 8601 format)
             page: Page number for pagination
             page_size: Number of items per page
-
+            
         Returns:
             JSON string with heartbeat logs
         """

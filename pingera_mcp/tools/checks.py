@@ -632,6 +632,86 @@ class ChecksTools(BaseTools):
             self.logger.error(f"Error executing existing check {check_id}: {e}")
             return self._error_response(str(e))
 
+    async def create_check(self, check_data: dict) -> str:
+        """Create a new monitoring check."""
+        try:
+            return json.dumps({
+                "success": False,
+                "error": "Check creation not yet implemented in SDK",
+                "message": "Write operations require SDK method implementation"
+            }, indent=2)
+        except Exception as e:
+            self.logger.error(f"Failed to create check: {e}")
+            return json.dumps({
+                "success": False,
+                "error": str(e),
+                "message": "Failed to create monitoring check"
+            }, indent=2)
+
+    async def update_check(self, check_id: str, check_data: dict) -> str:
+        """Update an existing monitoring check."""
+        try:
+            return json.dumps({
+                "success": False,
+                "error": "Check update not yet implemented in SDK",
+                "message": "Write operations require SDK method implementation"
+            }, indent=2)
+        except Exception as e:
+            self.logger.error(f"Failed to update check: {e}")
+            return json.dumps({
+                "success": False,
+                "error": str(e),
+                "message": f"Failed to update check: {check_id}"
+            }, indent=2)
+
+    async def delete_check(self, check_id: str) -> str:
+        """Delete a monitoring check."""
+        try:
+            return json.dumps({
+                "success": False,
+                "error": "Check deletion not yet implemented in SDK",
+                "message": "Write operations require SDK method implementation"
+            }, indent=2)
+        except Exception as e:
+            self.logger.error(f"Failed to delete check: {e}")
+            return json.dumps({
+                "success": False,
+                "error": str(e),
+                "message": f"Failed to delete check: {check_id}"
+            }, indent=2)
+
+    async def pause_check(self, check_id: str) -> str:
+        """Pause a monitoring check."""
+        try:
+            return json.dumps({
+                "success": False,
+                "error": "Check pause not yet implemented in SDK",
+                "message": "Write operations require SDK method implementation"
+            }, indent=2)
+        except Exception as e:
+            self.logger.error(f"Failed to pause check: {e}")
+            return json.dumps({
+                "success": False,
+                "error": str(e),
+                "message": f"Failed to pause check: {check_id}"
+            }, indent=2)
+
+    async def resume_check(self, check_id: str) -> str:
+        """Resume a monitoring check."""
+        try:
+            return json.dumps({
+                "success": False,
+                "error": "Check resume not yet implemented in SDK",
+                "message": "Write operations require SDK method implementation"
+            }, indent=2)
+        except Exception as e:
+            self.logger.error(f"Failed to resume check: {e}")
+            return json.dumps({
+                "success": False,
+                "error": str(e),
+                "message": f"Failed to resume check: {check_id}"
+            }, indent=2)
+
     async def get_on_demand_job_status(self, job_id: str) -> str:
         """
         Get the status of an on-demand check job.

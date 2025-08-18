@@ -152,6 +152,8 @@ async def main():
 
                 # Check if Gemini wants to call a function first
                 function_calls_made = False
+                tool_responses = []
+                
                 if response.candidates[0].content.parts and len(response.candidates[0].content.parts) > 0:
                     for part in response.candidates[0].content.parts:
                         if hasattr(part, 'function_call'):
@@ -202,6 +204,16 @@ async def main():
 
                                         print(f"\n✅ Tool execution completed successfully!")
                                         function_calls_made = True
+                                        
+                                        # Store tool response for Gemini's follow-up
+                                        tool_responses.append(
+                                            genai.protos.Part(
+                                                function_response=genai.protos.FunctionResponse(
+                                                    name=function_call.name,
+                                                    response={"result": content}
+                                                )
+                                            )
+                                        )
                                     else:
                                         print("⚠️ Tool returned empty content list")
                                 else:
@@ -216,8 +228,39 @@ async def main():
                                 print(f"📝 Tool error details:")
                                 traceback.print_exc()
 
+                # If tools were executed, get Gemini's final response
+                if function_calls_made and tool_responses:
+                    print("\n🔄 Getting Gemini's final response with tool results...")
+                    try:
+                        # Create a new message with tool responses
+                        final_response = model.generate_content(
+                            [
+                                {"role": "user", "parts": [prompt]},
+                                {"role": "model", "parts": response.candidates[0].content.parts},
+                                {"role": "user", "parts": tool_responses}
+                            ],
+                            generation_config=genai.types.GenerationConfig(temperature=0)
+                        )
+                        
+                        print("🎯 Gemini's final response:")
+                        if final_response.text:
+                            print(final_response.text)
+                        else:
+                            print("No final text response from Gemini")
+                            
+                    except Exception as final_error:
+                        print(f"❌ Error getting final response: {final_error}")
+                        print("📝 Falling back to basic text response...")
+                        # Fallback to basic text response
+                        try:
+                            if response.text:
+                                print("🎯 Gemini's response:")
+                                print(response.text)
+                        except ValueError as e:
+                            print(f"Could not get any text response: {e}")
+                
                 # Only try to access text if no function calls were made
-                if not function_calls_made:
+                elif not function_calls_made:
                     print("🎯 Gemini's response:")
                     try:
                         if response.text:

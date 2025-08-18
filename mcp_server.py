@@ -758,8 +758,7 @@ if config.is_read_write():
         only_show_if_degraded: Optional[bool] = None,
         position: Optional[int] = None,
         showcase: Optional[bool] = None,
-        status: Optional[str] = None,
-        **kwargs
+        status: Optional[str] = None
     ) -> str:
         """
         Create a new component or component group on a status page.
@@ -783,8 +782,15 @@ if config.is_read_write():
             JSON with created component details including ID and configuration.
         """
         return await component_tools.create_component(
-            page_id, name, description, group, group_id, 
-            only_show_if_degraded, position, showcase, status, **kwargs
+            page_id=page_id,
+            name=name,
+            description=description,
+            group=group,
+            group_id=group_id,
+            only_show_if_degraded=only_show_if_degraded,
+            position=position,
+            showcase=showcase,
+            status=status
         )
 
     @mcp.tool()

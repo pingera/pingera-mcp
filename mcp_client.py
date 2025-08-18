@@ -200,24 +200,7 @@ async def main():
                                         else:
                                             print(content)
 
-                                        # Send result back to Gemini using the correct format
-                                        function_response = {
-                                            "function_call": function_call,
-                                            "function_response": {
-                                                "name": function_call.name,
-                                                "response": {"result": content}
-                                            }
-                                        }
-                                        
-                                        result_response = model.generate_content([
-                                            prompt,
-                                            response,
-                                            function_response
-                                        ])
-
-                                        print(f"\n🤖 Gemini's analysis:")
-                                        print(result_response.text)
-
+                                        print(f"\n✅ Tool execution completed successfully!")
                                         function_calls_made = True
                                     else:
                                         print("⚠️ Tool returned empty content list")

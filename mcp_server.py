@@ -118,6 +118,28 @@ async def list_component_groups(
     return await component_tools.list_component_groups(page_id, show_deleted)
 
 @mcp.tool()
+async def list_components(
+    page_id: str,
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
+) -> str:
+    """
+    List all components for a specific status page.
+
+    This returns all components including both individual components and component groups.
+    Components represent services, systems, or features displayed on your status page.
+
+    Args:
+        page_id: The ID of the status page
+        page: Page number for pagination (default: 1)
+        page_size: Number of components per page (default: 20)
+
+    Returns:
+        JSON with list of all components including names, IDs, status, groups, and configuration.
+    """
+    return await component_tools.list_components(page_id, page, page_size)
+
+@mcp.tool()
 async def get_component_details(page_id: str, component_id: str) -> str:
     """
     Get detailed information about a specific component.

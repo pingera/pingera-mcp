@@ -53,6 +53,76 @@ class ComponentTools(BaseTools):
             self.logger.error(f"Error listing component groups for page {page_id}: {e}")
             return self._error_response(str(e), {"component_groups": [], "total": 0})
 
+    async def list_components(
+        self,
+        page_id: str,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None
+    ) -> str:
+        """
+        List all components for a specific status page.
+
+        Args:
+            page_id: The ID of the status page
+            page: Page number for pagination
+            page_size: Number of components per page
+
+        Returns:
+            str: JSON string containing list of all components
+        """
+        try:
+            self.logger.info(f"Listing all components for page {page_id}")
+
+            with self.client._get_api_client() as api_client:
+                from pingera.api import StatusPagesComponentsApi
+                components_api = StatusPagesComponentsApi(api_client)
+
+                kwargs = {}
+                if page is not None:
+                    kwargs['page'] = page
+                if page_size is not None:
+                    kwargs['page_size'] = page_size
+
+                response = components_api.v1_pages_page_id_components_get(
+                    page_id=page_id,
+                    **kwargs
+                )
+
+                # Convert response to a consistent format
+                if hasattr(response, '__iter__') and not isinstance(response, str):
+                    # If response is a list of components
+                    components_list = list(response)
+                    converted_components = [self._convert_sdk_object_to_dict(comp) for comp in components_list]
+                    
+                    data = {
+                        "page_id": page_id,
+                        "components": converted_components,
+                        "total": len(converted_components),
+                        "page": page or 1,
+                        "page_size": page_size or len(converted_components)
+                    }
+                else:
+                    # If response has pagination info
+                    components_data = getattr(response, 'components', []) if hasattr(response, 'components') else response
+                    if isinstance(components_data, list):
+                        converted_components = [self._convert_sdk_object_to_dict(comp) for comp in components_data]
+                    else:
+                        converted_components = [self._convert_sdk_object_to_dict(components_data)]
+                    
+                    data = {
+                        "page_id": page_id,
+                        "components": converted_components,
+                        "total": getattr(response, 'total', len(converted_components)),
+                        "page": getattr(response, 'page', page or 1),
+                        "page_size": getattr(response, 'page_size', page_size or len(converted_components))
+                    }
+
+                return self._success_response(data)
+
+        except Exception as e:
+            self.logger.error(f"Error listing components for page {page_id}: {e}")
+            return self._error_response(str(e), {"components": [], "total": 0})
+
     async def get_component_details(self, page_id: str, component_id: str) -> str:
         """
         Get detailed information about a specific component.

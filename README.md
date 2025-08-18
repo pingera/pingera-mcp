@@ -125,23 +125,42 @@ PINGERA_DEBUG=false
 PINGERA_SERVER_NAME=Pingera MCP Server
 ```
 
-## MCP Resources
-
-The server exposes the following resources:
-
-- **`pingera://pages`** - List of all monitored status pages
-- **`pingera://pages/{page_id}`** - Details for a specific status page
-- **`pingera://status`** - Server and API connection status
-
 ## MCP Tools
 
 Available tools for AI agents:
 
+### Pages Management
 - **`list_pages`** - Get paginated list of monitored pages
   - Parameters: `page`, `per_page`, `status`
 - **`get_page_details`** - Get detailed information about a specific page
   - Parameters: `page_id`
+
+### Component Management
+- **`list_component_groups`** - List all component groups for monitoring organization
+- **`get_component_details`** - Get detailed information about a specific component
+  - Parameters: `component_id`
+
+### Monitoring Checks
+- **`list_checks`** - List all monitoring checks (HTTP, TCP, ping, etc.)
+  - Parameters: `page`, `page_size`, `status`, `check_type`
+- **`get_check_details`** - Get detailed information about a specific check
+  - Parameters: `check_id`
+
+### Alert Rules
+- **`list_alert_rules`** - List all alert rules and their trigger conditions
+
+### Heartbeat Monitoring
+- **`list_heartbeats`** - List all heartbeat monitors for cron jobs and scheduled tasks
+  - Parameters: `page`, `page_size`, `status`
+
+### Incident Management
+- **`list_incidents`** - List all incidents and their current status
+  - Parameters: `page`, `page_size`, `status`
+
+### Connection Testing
 - **`test_pingera_connection`** - Test API connectivity
+
+### Write Operations
 - **Write operations** - Available only in read-write mode (future implementation)
 
 ## Operation Modes

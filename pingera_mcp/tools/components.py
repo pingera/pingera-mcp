@@ -84,40 +84,17 @@ class ComponentTools(BaseTools):
                 if page_size is not None:
                     kwargs['page_size'] = page_size
 
-                self.logger.info(f"##### About to call API with page_id: {page_id}")
-                self.logger.info(f"##### API call kwargs: {kwargs}")
-
-                try:
-                    response = components_api.v1_pages_page_id_components_get(
-                        page_id=page_id,
-                        **kwargs
-                    )
-                    self.logger.info(f"##### RESPONSE FROM API: {response}")
-                    self.logger.info(f"##### RESPONSE TYPE: {type(response)}")
-                    self.logger.info(f"##### RESPONSE DIR: {dir(response) if response is not None else 'None'}")
-                    if response is not None and hasattr(response, '__dict__'):
-                        self.logger.info(f"##### RESPONSE DICT: {response.__dict__}")
-                except Exception as api_error:
-                    self.logger.error(f"##### API CALL FAILED: {api_error}")
-                    self.logger.error(f"##### API ERROR TYPE: {type(api_error)}")
-                    raise api_error
-
-                # Handle None response (no components found)
-                if response is None:
-                    data = {
-                        "page_id": page_id,
-                        "components": [],
-                        "total": 0,
-                        "page": page or 1,
-                        "page_size": page_size or 0
-                    }
-                    return self._success_response(data)
+                response = components_api.v1_pages_page_id_components_get(
+                    page_id=page_id,
+                    **kwargs
+                )
+                self.logger.info(f"##### RESPONSE FROM API :{response}")
 
                 # The API returns a list of Component objects directly
                 if isinstance(response, list):
                     # Direct list of components
                     converted_components = [self._convert_sdk_object_to_dict(comp) for comp in response]
-
+                    
                     data = {
                         "page_id": page_id,
                         "components": converted_components,
@@ -128,14 +105,14 @@ class ComponentTools(BaseTools):
                 else:
                     # Check if response has pagination structure
                     components_data = getattr(response, 'components', None) if hasattr(response, 'components') else None
-
+                    
                     if components_data is not None:
                         # Response has pagination structure
                         if isinstance(components_data, list):
                             converted_components = [self._convert_sdk_object_to_dict(comp) for comp in components_data]
                         else:
                             converted_components = [self._convert_sdk_object_to_dict(components_data)]
-
+                        
                         data = {
                             "page_id": page_id,
                             "components": converted_components,
@@ -146,7 +123,7 @@ class ComponentTools(BaseTools):
                     else:
                         # Single component response
                         converted_component = self._convert_sdk_object_to_dict(response)
-
+                        
                         data = {
                             "page_id": page_id,
                             "components": [converted_component],

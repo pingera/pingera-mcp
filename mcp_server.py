@@ -10,7 +10,6 @@ from mcp.server.fastmcp import FastMCP
 from config import Config
 from pingera_mcp import PingeraClient
 from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools, AlertsTools, HeartbeatsTools, IncidentsTools
-from pingera_mcp.resources import PagesResources, StatusResources, ComponentResources
 
 # Configure logging
 logging.basicConfig(
@@ -49,22 +48,6 @@ checks_tools = ChecksTools(pingera_client)
 alerts_tools = AlertsTools(pingera_client)
 heartbeats_tools = HeartbeatsTools(pingera_client)
 incidents_tools = IncidentsTools(pingera_client)
-pages_resources = PagesResources(pingera_client)
-status_resources = StatusResources(pingera_client, config)
-component_resources = ComponentResources(pingera_client)
-
-# Register resources
-@mcp.resource("pingera://pages")
-async def get_pages_resource() -> str:
-    return await pages_resources.get_pages_resource()
-
-@mcp.resource("pingera://pages/{page_id}")
-async def get_page_resource(page_id: str) -> str:
-    return await pages_resources.get_page_resource(page_id)
-
-@mcp.resource("pingera://status")
-async def get_status_resource() -> str:
-    return await status_resources.get_status_resource()
 
 # Register read-only tools
 @mcp.tool()

@@ -45,16 +45,16 @@ class PagesTools(BaseTools):
             self.logger.info(f"=== SDK RESPONSE ANALYSIS ===")
             self.logger.info(f"Response type: {type(pages_response)}")
             self.logger.info(f"Response is list: {isinstance(pages_response, list)}")
-            
+
             if hasattr(pages_response, '__dict__'):
                 self.logger.info(f"Response __dict__: {pages_response.__dict__}")
-            
+
             if hasattr(pages_response, 'attribute_map'):
                 self.logger.info(f"Response attribute_map: {pages_response.attribute_map}")
-                
+
             all_attrs = [attr for attr in dir(pages_response) if not attr.startswith('_')]
             self.logger.info(f"Response public attributes: {all_attrs}")
-            
+
             # Handle SDK response format - the SDK returns pages directly as a list
             if isinstance(pages_response, list):
                 # SDK returns pages as direct list
@@ -65,15 +65,15 @@ class PagesTools(BaseTools):
                     self.logger.info(f"Page type: {type(page)}")
                     if hasattr(page, '__dict__'):
                         self.logger.info(f"Page __dict__: {page.__dict__}")
-                    
+
                     converted_page = self._convert_sdk_object_to_dict(page)
                     pages_list.append(converted_page)
                     self.logger.info(f"Converted page keys: {list(converted_page.keys())}")
-                    
+
             else:
                 # Try different response structures
                 self.logger.info("Response is not a direct list, trying nested structures...")
-                
+
                 if hasattr(pages_response, 'pages') and pages_response.pages:
                     self.logger.info(f"Found pages in response.pages: {len(pages_response.pages)}")
                     pages_list = [self._convert_sdk_object_to_dict(page) for page in pages_response.pages]
@@ -150,57 +150,49 @@ class PagesTools(BaseTools):
             str: JSON string containing the created page details
         """
         try:
-            self.logger.info(f"=== CREATE PAGE METHOD STARTED ===")
-            self.logger.info(f"Creating new page: {name}")
-            self.logger.info(f"Client type: {type(self.client)}")
+            self.logger.info(f"Creating status page: {name}")
+            self.logger.debug(f"Additional kwargs: {kwargs}")
 
-            page_data = {"name": name}
-            if subdomain:
-                page_data["subdomain"] = subdomain
-            if domain:
-                page_data["domain"] = domain
-            if url:
-                page_data["url"] = url
-            if language:
-                page_data["language"] = language
+            page_data = {
+                "name": name
+            }
 
             # Add any additional configuration
             page_data.update(kwargs)
-            
-            self.logger.info(f"Final page_data: {page_data}")
+            self.logger.debug(f"Final page_data: {page_data}")
 
-            self.logger.info("Getting API client...")
+            self.logger.debug("Getting API client...")
             with self.client._get_api_client() as api_client:
-                self.logger.info(f"API client type: {type(api_client)}")
-                
-                self.logger.info("Importing StatusPagesApi...")
+                self.logger.debug("API client obtained, importing StatusPagesApi...")
                 from pingera.api import StatusPagesApi
                 pages_api = StatusPagesApi(api_client)
-                self.logger.info(f"StatusPagesApi created: {type(pages_api)}")
+                self.logger.debug("StatusPagesApi created")
 
-                self.logger.info("Calling v1_pages_post...")
+                self.logger.debug("Calling v1_pages_post...")
                 response = pages_api.v1_pages_post(page=page_data)
-                self.logger.info(f"API response received: {type(response)}")
+                self.logger.debug(f"API response received: {type(response)}")
 
                 # Handle SDK response format
-                self.logger.info("Converting SDK response to dict...")
+                self.logger.debug("Converting SDK response to dict...")
                 page_data_result = self._convert_sdk_object_to_dict(response)
-                self.logger.info(f"Converted result: {type(page_data_result)}")
+                self.logger.debug(f"Converted response: {page_data_result}")
 
-                self.logger.info("Creating success response...")
-                result = self._success_response(page_data_result)
-                self.logger.info(f"Final result type: {type(result)}")
-                self.logger.info("=== CREATE PAGE METHOD COMPLETED ===")
-                
-                return result
+                return self._success_response(page_data_result)
 
+        except ImportError as e:
+            self.logger.error(f"Import error: {e}")
+            return self._error_response(f"Import error: {str(e)}", None)
+        except AttributeError as e:
+            self.logger.error(f"Attribute error: {e}")
+            return self._error_response(f"Attribute error: {str(e)}", None)
+        except PingeraError as e:
+            self.logger.error(f"Pingera API error creating page: {e}")
+            return self._error_response(f"Pingera API error: {str(e)}", None)
         except Exception as e:
-            self.logger.error(f"❌ CREATE PAGE ERROR: {e}")
+            self.logger.error(f"Unexpected error creating page: {e}")
             self.logger.error(f"Error type: {type(e)}")
             import traceback
-            self.logger.error(f"Full traceback: {traceback.format_exc()}")
-            
-            # Return proper error response even for unexpected errors
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
             return self._error_response(f"Unexpected error: {str(e)}", None)
 
     async def update_page(

@@ -237,11 +237,11 @@ async def main():
                         print(f"Could not get text from response: {e}")
                         print("Response likely contains function calls or other structured content")
 
-        except Exception as session_error:
-            print(f"❌ MCP session error: {session_error}")
-            print(f"📝 Session error type: {type(session_error)}")
-            traceback.print_exc()
-            raise
+    except Exception as session_error:
+        print(f"❌ MCP session error: {session_error}")
+        print(f"📝 Session error type: {type(session_error)}")
+        traceback.print_exc()
+        raise
 
     except Exception as e:
         print(f"❌ Error connecting to MCP server: {e}")

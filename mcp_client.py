@@ -200,11 +200,14 @@ async def main():
                                         else:
                                             print(content)
 
-                                        # Send result back to Gemini
-                                        function_response = genai.types.FunctionResponse(
-                                            name=function_call.name,
-                                            response={"result": content}
-                                        )
+                                        # Send result back to Gemini using the correct format
+                                        function_response = {
+                                            "function_call": function_call,
+                                            "function_response": {
+                                                "name": function_call.name,
+                                                "response": {"result": content}
+                                            }
+                                        }
                                         
                                         result_response = model.generate_content([
                                             prompt,

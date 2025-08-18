@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 """
 Simple MCP client to test Pingera MCP Server with Gemini.
@@ -9,6 +8,7 @@ import json
 import google.generativeai as genai
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+import traceback
 
 # Initialize Gemini client
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -38,7 +38,7 @@ server_params = StdioServerParameters(
 async def main():
     """Run simple MCP client test with Gemini."""
     import sys
-    
+
     # Get prompt from command line argument, stdin, or use default
     if len(sys.argv) > 1:
         prompt = " ".join(sys.argv[1:])
@@ -47,24 +47,24 @@ async def main():
         prompt = sys.stdin.read().strip()
     else:
         prompt = "How many monitoring checks do I have and what types are they?"
-    
+
     if not prompt:
         prompt = "How many monitoring checks do I have and what types are they?"
-    
+
     print(f"🤖 Query: {prompt}")
     print("\n" + "="*50)
-    
+
     try:
         async with stdio_client(server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 # Initialize MCP session
                 await session.initialize()
-                
+
                 # Get available tools from MCP server
                 mcp_tools = await session.list_tools()
-                
+
                 print(f"📋 Found {len(mcp_tools.tools)} MCP tools available")
-                
+
                 # Convert MCP tools to Gemini format
                 tools = []
                 for tool in mcp_tools.tools:
@@ -72,13 +72,13 @@ async def main():
                     input_schema = tool.inputSchema or {}
                     properties = input_schema.get("properties", {})
                     required = input_schema.get("required", [])
-                    
+
                     # Convert MCP schema properties to Gemini format
                     gemini_properties = {}
                     for prop_name, prop_schema in properties.items():
                         # Convert MCP property schema to Gemini format
                         gemini_prop = {}
-                        
+
                         # Handle type conversion
                         if isinstance(prop_schema, dict):
                             prop_type = prop_schema.get("type", "string")
@@ -103,15 +103,15 @@ async def main():
                                 gemini_prop["type"] = "BOOLEAN"
                             else:
                                 gemini_prop["type"] = "STRING"
-                            
+
                             # Add description if available
                             if "description" in prop_schema:
                                 gemini_prop["description"] = prop_schema["description"]
                         else:
                             gemini_prop["type"] = "STRING"
-                        
+
                         gemini_properties[prop_name] = gemini_prop
-                    
+
                     tool_schema = {
                         "name": tool.name,
                         "description": tool.description,
@@ -122,19 +122,19 @@ async def main():
                         }
                     }
                     tools.append(tool_schema)
-                
+
                 print(f"🔧 Available tools: {[tool['name'] for tool in tools]}")
                 print("\n" + "-"*50)
-                
+
                 # Ask Gemini to use the tools
                 print(f"🔧 Creating Gemini model with {len(tools)} tools...")
                 try:
                     model = genai.GenerativeModel('gemini-2.5-flash', tools=tools)
                     print("✓ Gemini model created successfully")
-                    
+
                     print(f"🤖 Generating content for prompt: {prompt}")
                     print(f"🔧 Using temperature: 0")
-                    
+
                     response = model.generate_content(
                         prompt,
                         generation_config=genai.types.GenerationConfig(temperature=0)
@@ -142,51 +142,90 @@ async def main():
                     print("✓ Gemini response generated successfully")
                     print(f"📝 Response type: {type(response)}")
                     print(f"📝 Response candidates count: {len(response.candidates) if hasattr(response, 'candidates') else 'N/A'}")
-                    
+
                 except Exception as gemini_error:
                     print(f"❌ Gemini error: {gemini_error}")
                     print(f"❌ Error type: {type(gemini_error)}")
-                    import traceback
                     print("❌ Full traceback:")
                     traceback.print_exc()
                     raise
-                
+
                 # Check if Gemini wants to call a function first
                 function_calls_made = False
                 if response.candidates[0].content.parts and len(response.candidates[0].content.parts) > 0:
                     for part in response.candidates[0].content.parts:
                         if hasattr(part, 'function_call'):
                             function_call = part.function_call
-                            function_calls_made = True
-                            
+
                             # Check if function call has a valid name
                             if not function_call.name or function_call.name.strip() == "":
                                 print("❌ Gemini generated an empty function call name")
                                 print("🤖 Falling back to text response...")
                                 function_calls_made = False
                                 break
-                            
-                            print(f"🔧 Gemini wants to call: {function_call.name}")
+
+                            # Execute the tool call via MCP
+                            print(f"🔧 Executing MCP tool: {function_call.name}")
                             print(f"📝 With arguments: {dict(function_call.args)}")
-                            
-                            # Execute the MCP tool
-                            result = await session.call_tool(
-                                function_call.name, 
-                                arguments=dict(function_call.args)
-                            )
-                            
-                            print(f"\n📊 Tool result:")
-                            print(json.dumps(json.loads(result.content[0].text), indent=2))
-                            
-                            # Ask Gemini to interpret the results
-                            follow_up_model = genai.GenerativeModel('gemini-2.5-flash')
-                            follow_up = follow_up_model.generate_content(
-                                f"Based on this monitoring data: {result.content[0].text}\n\nPlease summarize the results in a friendly way for the question: {prompt}"
-                            )
-                            
-                            print(f"\n🤖 Gemini's summary:")
-                            print(follow_up.text)
-                
+
+                            try:
+                                # Add timeout to tool calls
+                                tool_task = asyncio.create_task(session.call_tool(function_call.name, dict(function_call.args)))
+                                result = await asyncio.wait_for(tool_task, timeout=60.0)
+                                print(f"✓ Tool executed successfully")
+
+                                # Debug result structure
+                                print(f"📝 Result type: {type(result)}")
+                                print(f"📝 Result attributes: {[attr for attr in dir(result) if not attr.startswith('_')]}")
+
+                                # Handle different result types
+                                if hasattr(result, 'content') and result.content:
+                                    print(f"📝 Content type: {type(result.content)}")
+                                    print(f"📝 Content length: {len(result.content) if result.content else 0}")
+
+                                    if result.content and len(result.content) > 0:
+                                        print(f"📝 First content item type: {type(result.content[0])}")
+
+                                        if isinstance(result.content[0], dict):
+                                            content = json.dumps(result.content[0], indent=2)
+                                        elif hasattr(result.content[0], 'text'):
+                                            content = result.content[0].text
+                                        else:
+                                            content = str(result.content[0])
+
+                                        print(f"📊 Tool result:")
+                                        # Only show first 500 chars to avoid spam
+                                        if len(content) > 500:
+                                            print(f"{content[:500]}... (truncated)")
+                                        else:
+                                            print(content)
+
+                                        # Send result back to Gemini
+                                        result_response = model.generate_content([
+                                            {"role": "user", "parts": [{"text": prompt}]},
+                                            {"role": "model", "parts": [response.candidates[0].content.parts[0]]},
+                                            {"role": "function", "name": function_call.name, "parts": [{"text": content}]}
+                                        ])
+
+                                        print(f"\n🤖 Gemini's analysis:")
+                                        print(result_response.text)
+
+                                        function_calls_made = True
+                                    else:
+                                        print("⚠️ Tool returned empty content list")
+                                else:
+                                    print("⚠️ Tool returned no content attribute or empty content")
+                                    print(f"📝 Available result attributes: {[attr for attr in dir(result) if not attr.startswith('_')]}")
+
+                            except asyncio.TimeoutError:
+                                print(f"❌ Tool execution timed out after 60 seconds")
+                            except Exception as tool_error:
+                                print(f"❌ Tool execution failed: {tool_error}")
+                                print(f"📝 Tool error type: {type(tool_error)}")
+                                print(f"📝 Tool error details:")
+                                traceback.print_exc()
+
+
                 # Only try to access text if no function calls were made
                 if not function_calls_made:
                     print("🎯 Gemini's response:")
@@ -198,9 +237,18 @@ async def main():
                     except ValueError as e:
                         print(f"Could not get text from response: {e}")
                         print("Response likely contains function calls or other structured content")
-    
+
+            except Exception as session_error:
+                print(f"❌ MCP session error: {session_error}")
+                print(f"📝 Session error type: {type(session_error)}")
+                traceback.print_exc()
+                raise
+
     except Exception as e:
         print(f"❌ Error connecting to MCP server: {e}")
+        print(f"📝 Error type: {type(e)}")
+        print(f"📝 Error details:")
+        traceback.print_exc()
         print("\nMake sure the MCP server is properly configured for stdio communication.")
         print("The server should be running via 'python main.py' and listening on stdio.")
 

@@ -150,7 +150,9 @@ class PagesTools(BaseTools):
             str: JSON string containing the created page details
         """
         try:
+            self.logger.info(f"=== CREATE PAGE METHOD STARTED ===")
             self.logger.info(f"Creating new page: {name}")
+            self.logger.info(f"Client type: {type(self.client)}")
 
             page_data = {"name": name}
             if subdomain:
@@ -164,21 +166,42 @@ class PagesTools(BaseTools):
 
             # Add any additional configuration
             page_data.update(kwargs)
+            
+            self.logger.info(f"Final page_data: {page_data}")
 
+            self.logger.info("Getting API client...")
             with self.client._get_api_client() as api_client:
+                self.logger.info(f"API client type: {type(api_client)}")
+                
+                self.logger.info("Importing StatusPagesApi...")
                 from pingera.api import StatusPagesApi
                 pages_api = StatusPagesApi(api_client)
+                self.logger.info(f"StatusPagesApi created: {type(pages_api)}")
 
+                self.logger.info("Calling v1_pages_post...")
                 response = pages_api.v1_pages_post(page=page_data)
+                self.logger.info(f"API response received: {type(response)}")
 
                 # Handle SDK response format
+                self.logger.info("Converting SDK response to dict...")
                 page_data_result = self._convert_sdk_object_to_dict(response)
+                self.logger.info(f"Converted result: {type(page_data_result)}")
 
-                return self._success_response(page_data_result)
+                self.logger.info("Creating success response...")
+                result = self._success_response(page_data_result)
+                self.logger.info(f"Final result type: {type(result)}")
+                self.logger.info("=== CREATE PAGE METHOD COMPLETED ===")
+                
+                return result
 
-        except PingeraError as e:
-            self.logger.error(f"Error creating page: {e}")
-            return self._error_response(str(e), None)
+        except Exception as e:
+            self.logger.error(f"❌ CREATE PAGE ERROR: {e}")
+            self.logger.error(f"Error type: {type(e)}")
+            import traceback
+            self.logger.error(f"Full traceback: {traceback.format_exc()}")
+            
+            # Return proper error response even for unexpected errors
+            return self._error_response(f"Unexpected error: {str(e)}", None)
 
     async def update_page(
         self,

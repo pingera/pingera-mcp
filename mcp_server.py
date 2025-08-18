@@ -103,17 +103,18 @@ async def list_component_groups(
     show_deleted: Optional[bool] = False
 ) -> str:
     """
-    List all component groups for a specific status page.
+    Get only component groups (not individual components) for a status page.
 
-    Component groups organize related services/components on your status page.
-    Each group can contain multiple components and has its own status calculation.
+    Use this tool specifically when someone asks for "component groups", "groups only", 
+    or wants to see just the organizational containers for components. This excludes 
+    individual components and shows only the group containers.
 
     Args:
-        page_id: The ID of the status page
+        page_id: The ID of the status page (required, e.g., "tih6xo7z8v7n")
         show_deleted: Whether to include deleted component groups (default: False)
 
     Returns:
-        JSON with list of component groups including their names, IDs, positions, and component counts.
+        JSON with list of component groups only, including their names, IDs, positions, and component counts.
     """
     return await component_tools.list_component_groups(page_id, show_deleted)
 
@@ -124,18 +125,19 @@ async def list_components(
     page_size: Optional[int] = None
 ) -> str:
     """
-    List all components for a specific status page.
+    Get all components (individual services and groups) for a status page with their IDs.
 
-    This returns all components including both individual components and component groups.
-    Components represent services, systems, or features displayed on your status page.
+    Use this tool when someone asks for "components", "all components", "component list", 
+    or wants to see services/systems on a status page. This includes both individual 
+    components and component groups with their unique identifiers.
 
     Args:
-        page_id: The ID of the status page
-        page: Page number for pagination (default: 1)
-        page_size: Number of components per page (default: 20)
+        page_id: The ID of the status page (required, e.g., "tih6xo7z8v7n")
+        page: Page number for pagination (optional, default: 1)
+        page_size: Number of components per page (optional, default: 20)
 
     Returns:
-        JSON with list of all components including names, IDs, status, groups, and configuration.
+        JSON with complete list of components including names, IDs, status, type (group/individual), and configuration.
     """
     return await component_tools.list_components(page_id, page, page_size)
 

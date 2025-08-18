@@ -73,7 +73,16 @@ class ComponentTools(BaseTools):
                     component_id=component_id
                 )
 
-            return self._success_response(component.dict())
+            # Handle SDK response format properly
+            if hasattr(component, 'to_dict'):
+                component_dict = component.to_dict()
+            elif hasattr(component, '__dict__'):
+                component_dict = component.__dict__
+            else:
+                # If it's already a dict or simple type
+                component_dict = component if component is not None else {}
+
+            return self._success_response(component_dict)
 
         except PingeraError as e:
             self.logger.error(f"Error getting component {component_id} details: {e}")

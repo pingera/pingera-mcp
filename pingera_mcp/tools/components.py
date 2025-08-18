@@ -88,10 +88,18 @@ class ComponentTools(BaseTools):
                     **kwargs
                 )
 
+                # Log the response for debugging
+                self.logger.info(f"Components API response type: {type(response)}")
+                self.logger.info(f"Components API response: {response}")
+
                 # The API returns a list of Component objects directly
                 if isinstance(response, list):
                     # Direct list of components
-                    converted_components = [self._convert_sdk_object_to_dict(comp) for comp in response]
+                    converted_components = []
+                    for comp in response:
+                        converted_comp = self._convert_sdk_object_to_dict(comp)
+                        self.logger.info(f"Converted component: {converted_comp}")
+                        converted_components.append(converted_comp)
                     
                     data = {
                         "page_id": page_id,
@@ -107,9 +115,15 @@ class ComponentTools(BaseTools):
                     if components_data is not None:
                         # Response has pagination structure
                         if isinstance(components_data, list):
-                            converted_components = [self._convert_sdk_object_to_dict(comp) for comp in components_data]
+                            converted_components = []
+                            for comp in components_data:
+                                converted_comp = self._convert_sdk_object_to_dict(comp)
+                                self.logger.info(f"Converted component: {converted_comp}")
+                                converted_components.append(converted_comp)
                         else:
-                            converted_components = [self._convert_sdk_object_to_dict(components_data)]
+                            converted_comp = self._convert_sdk_object_to_dict(components_data)
+                            self.logger.info(f"Converted component: {converted_comp}")
+                            converted_components = [converted_comp]
                         
                         data = {
                             "page_id": page_id,
@@ -121,6 +135,7 @@ class ComponentTools(BaseTools):
                     else:
                         # Single component response
                         converted_component = self._convert_sdk_object_to_dict(response)
+                        self.logger.info(f"Converted single component: {converted_component}")
                         
                         data = {
                             "page_id": page_id,
@@ -357,3 +372,54 @@ class ComponentTools(BaseTools):
         except PingeraError as e:
             self.logger.error(f"Error deleting component {component_id}: {e}")
             return self._error_response(str(e), None)
+
+    def _convert_sdk_object_to_dict(self, obj):
+        """Convert SDK object to dictionary for JSON serialization."""
+        if obj is None:
+            return {}
+            
+        # If it's already a dict, return as-is
+        if isinstance(obj, dict):
+            return obj
+            
+        # Try to get the dict representation
+        if hasattr(obj, 'to_dict'):
+            try:
+                return obj.to_dict()
+            except Exception as e:
+                self.logger.warning(f"Failed to convert object using to_dict(): {e}")
+        
+        # Try model_dump for Pydantic models
+        if hasattr(obj, 'model_dump'):
+            try:
+                return obj.model_dump()
+            except Exception as e:
+                self.logger.warning(f"Failed to convert object using model_dump(): {e}")
+        
+        # Try dict() method
+        if hasattr(obj, 'dict'):
+            try:
+                return obj.dict()
+            except Exception as e:
+                self.logger.warning(f"Failed to convert object using dict(): {e}")
+        
+        # Use __dict__ if available
+        if hasattr(obj, '__dict__'):
+            try:
+                result = {}
+                for key, value in obj.__dict__.items():
+                    if not key.startswith('_'):  # Skip private attributes
+                        # Handle nested objects
+                        if hasattr(value, '__dict__') and not isinstance(value, (str, int, float, bool, list)):
+                            result[key] = self._convert_sdk_object_to_dict(value)
+                        elif isinstance(value, list):
+                            result[key] = [self._convert_sdk_object_to_dict(item) if hasattr(item, '__dict__') else item for item in value]
+                        else:
+                            result[key] = value
+                return result
+            except Exception as e:
+                self.logger.warning(f"Failed to convert object using __dict__: {e}")
+        
+        # If all else fails, try to convert to string representation
+        self.logger.warning(f"Could not convert object of type {type(obj)} to dict, returning string representation")
+        return {"_raw_value": str(obj), "_type": str(type(obj))}

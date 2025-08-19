@@ -35,10 +35,12 @@ class TestChecksTools:
     def mock_checks_list(self, mock_check_data):
         """Mock checks list response."""
         mock_response = Mock()
-        mock_response.data = [mock_check_data]
-        mock_response.total = 1
-        mock_response.page = 1
-        mock_response.page_size = 20
+        mock_response.checks = [mock_check_data]
+        mock_response.pagination = {
+            'total_items': 1,
+            'page': 1,
+            'page_size': 20
+        }
         return mock_response
 
     @pytest.fixture
@@ -465,6 +467,7 @@ class TestChecksTools:
         assert "checks" in formatted
         assert "total" in formatted
         assert formatted["total"] == 1
+        assert len(formatted["checks"]) == 1
 
         # Test format_check_response with dict-like object
         check_obj = Mock()

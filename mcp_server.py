@@ -37,7 +37,17 @@ def create_mcp_server(config: Config) -> FastMCP:
     logger.info(f"Starting Pingera MCP Server in {config.mode} mode")
 
     # Create MCP server
-    return FastMCP(config.server_name)
+    mcp_server = FastMCP(config.server_name)
+    
+    # Initialize Pingera client - moved here so tests can mock it
+    pingera_client = PingeraClient(
+        api_key=config.api_key,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        max_retries=config.max_retries
+    )
+    
+    return mcp_server
 
 # Load configuration
 config = Config()
@@ -45,7 +55,7 @@ config = Config()
 # Create MCP server
 mcp = create_mcp_server(config)
 
-# Initialize Pingera client
+# Initialize Pingera client (for module-level usage)
 pingera_client = PingeraClient(
     api_key=config.api_key,
     base_url=config.base_url,

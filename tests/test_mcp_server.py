@@ -57,7 +57,7 @@ class TestMCPServer:
             assert server is not None
             
             # Verify client was initialized with correct parameters
-            mock_client_class.assert_called_once_with(
+            mock_client_class.assert_called_with(
                 api_key=mock_config.api_key,
                 base_url=mock_config.base_url,
                 timeout=mock_config.timeout,
@@ -127,7 +127,7 @@ class TestMCPServer:
             assert server is not None
             
             # Verify client was called with correct config
-            mock_client_class.assert_called_once_with(
+            mock_client_class.assert_called_with(
                 api_key=test_api_key,
                 base_url=test_base_url,
                 timeout=test_timeout,

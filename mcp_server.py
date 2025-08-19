@@ -38,7 +38,7 @@ def create_mcp_server(config: Config) -> FastMCP:
 
     # Create MCP server
     mcp_server = FastMCP(config.server_name)
-    
+
     # Initialize Pingera client - moved here so tests can mock it
     pingera_client = PingeraClient(
         api_key=config.api_key,
@@ -46,7 +46,7 @@ def create_mcp_server(config: Config) -> FastMCP:
         timeout=config.timeout,
         max_retries=config.max_retries
     )
-    
+
     return mcp_server
 
 # Load configuration
@@ -1191,44 +1191,29 @@ if config.is_read_write():
 # Register Playwright script generation tools (always available)
 @mcp.tool()
 async def generate_synthetic_check_script(
-    url: str,
     description: str,
-    viewport_width: int = 1280,
-    viewport_height: int = 720,
-    wait_for_selector: Optional[str] = None,
-    click_selectors: Optional[List[str]] = None,
-    fill_forms: Optional[dict] = None,
-    custom_code: Optional[str] = None
+    target_url: str,
+    script_name: Optional[str] = None
 ) -> str:
     """
-    Generates a Playwright script for a synthetic browser check.
+    Generate a Playwright script for synthetic browser monitoring.
 
-    This tool helps create automated browser tests for user flows, page interactions,
-    and visual validation. It allows specifying actions like waiting for elements,
-    clicking buttons, filling forms, and executing custom JavaScript.
+    This tool creates a complete Playwright test script based on your description
+    of what should be tested. The script will include proper error handling,
+    screenshots, and basic validation.
 
     Args:
-        url: The starting URL for the synthetic check.
-        description: A clear description of the user flow or action to be performed.
-        viewport_width: The width of the browser viewport in pixels (default: 1280).
-        viewport_height: The height of the browser viewport in pixels (default: 720).
-        wait_for_selector: A CSS selector to wait for before proceeding. Useful for ensuring content is loaded.
-        click_selectors: A list of CSS selectors for elements to be clicked.
-        fill_forms: A dictionary where keys are CSS selectors for form inputs and values are the text to fill.
-        custom_code: A string containing custom JavaScript code to execute within the browser context.
+        description: Natural language description of what the test should do
+        target_url: The URL to test
+        script_name: Optional name for the test (auto-generated if not provided)
 
     Returns:
-        A string containing the generated Playwright script in TypeScript.
+        JSON with the generated Playwright script and usage instructions
     """
     return await playwright_tools.generate_synthetic_check_script(
-        url=url,
         description=description,
-        viewport_width=viewport_width,
-        viewport_height=viewport_height,
-        wait_for_selector=wait_for_selector,
-        click_selectors=click_selectors,
-        fill_forms=fill_forms,
-        custom_code=custom_code
+        target_url=target_url,
+        script_name=script_name
     )
 
 @mcp.tool()
@@ -1272,4 +1257,3 @@ async def generate_api_check_script(
         contains_string=contains_string,
         custom_code=custom_code
     )
-

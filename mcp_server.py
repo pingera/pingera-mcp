@@ -12,7 +12,7 @@ from pingera_mcp import PingeraClient
 from pingera_mcp.tools import (
         StatusTools,
         PagesTools,
-        ComponentsTools,
+        ComponentTools,
         ChecksTools,
         AlertsTools,
         HeartbeatsTools,
@@ -52,7 +52,7 @@ logger.info("Using Pingera SDK client")
 # Initialize tool instances
 status_tools = StatusTools(pingera_client)
 pages_tools = PagesTools(pingera_client)
-component_tools = ComponentsTools(pingera_client)
+component_tools = ComponentTools(pingera_client)
 checks_tools = ChecksTools(pingera_client)
 alerts_tools = AlertsTools(pingera_client)
 heartbeats_tools = HeartbeatsTools(pingera_client)

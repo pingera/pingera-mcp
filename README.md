@@ -6,7 +6,6 @@ A Model Context Protocol (MCP) server for the Pingera monitoring service, provid
 
 - **Modular Architecture**: Separate Pingera API client library with clean abstractions
 - **Flexible Operation Modes**: Run in read-only or read-write mode
-- **MCP Resources**: Access monitoring data as structured resources (`pingera://pages`, `pingera://status`)
 - **MCP Tools**: Execute monitoring operations through tools (list_pages, get_page_details, test_connection)
 - **Robust Error Handling**: Comprehensive error handling with custom exception hierarchy
 - **Real-time Data**: Direct integration with Pingera API v1 for live monitoring data
@@ -27,7 +26,7 @@ A Model Context Protocol (MCP) server for the Pingera monitoring service, provid
 uv sync
 
 # Set up your API key (required)
-# Add PINGERA_API_KEY to your environment or Replit secrets
+# Add PINGERA_API_KEY to your environment 
 
 # Run the server
 python main.py

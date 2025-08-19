@@ -88,6 +88,9 @@ Changelog = "https://github.com/pingera/pingera-mcp/blob/main/CHANGELOG.md"
 packages = ["pingera_mcp"]
 include = [
     "pingera_mcp/**/*.py",
+    "main.py",
+    "config.py", 
+    "mcp_server.py",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
@@ -121,4 +124,4 @@ exclude = [
 ]
 
 [project.scripts]
-pingera-mcp = "main:main"
+pingera-mcp = "mcp_server:mcp.run"

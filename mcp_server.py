@@ -328,16 +328,27 @@ async def execute_custom_check(
     This allows you to test connectivity and performance to any endpoint
     without creating a permanent monitoring check. Useful for troubleshooting
     or testing new services before setting up regular monitoring.
-
+    
     Args:
         url: The URL or endpoint to test
-        check_type: Type of check ('web', 'api', 'ping', 'tcp', 'ssl', 'dns')
+        check_type: Type of check ('web', 'api', 'tcp', 'ssl', 'multistep', 'synthetic')
         timeout: Timeout in seconds (default: 30)
         name: Optional name for the check
-        parameters: Additional check-specific parameters
-
+        parameters: A dictionary containing additional check-specific parameters.
+    
+        For 'synthetic' or 'multistep' checks, the 'parameters' dictionary must contain a 'pw_script' key. The value of this key should be the full Playwright script in Javascript or Typescript content as a string.
+    
+        Example of required arguments for a 'synthetic' check:
+        {
+          "check_type": "synthetic",
+          "url": "https://pingera.ru",
+          "parameters": {
+            "pw_script": "Playwright script content as a string"
+          }
+        }
+    
     Returns:
-        JSON with immediate check results including response time, status, and any errors.
+        JSON with the job id that is executed asyncronously.
     """
     return await checks_tools.execute_custom_check(url, check_type, timeout, name, parameters)
 

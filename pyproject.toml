@@ -88,9 +88,6 @@ Changelog = "https://github.com/pingera/pingera-mcp/blob/main/CHANGELOG.md"
 packages = ["pingera_mcp"]
 include = [
     "pingera_mcp/**/*.py",
-    "main.py",
-    "config.py", 
-    "mcp_server.py",
     "README.md",
     "LICENSE",
     "CHANGELOG.md",
@@ -111,9 +108,6 @@ include = [
     "LICENSE", 
     "CHANGELOG.md",
     ".env.example",
-    "main.py",
-    "config.py",
-    "mcp_server.py",
 ]
 exclude = [
     ".replit",
@@ -124,4 +118,4 @@ exclude = [
 ]
 
 [project.scripts]
-pingera-mcp = "main:main"
+pingera-mcp = "pingera_mcp.main:main"

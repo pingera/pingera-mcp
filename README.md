@@ -1,6 +1,6 @@
 # Pingera MCP Server
 
-A Model Context Protocol (MCP) server for the Pingera monitoring service, providing seamless integration between AI models and monitoring data.
+A Model Context Protocol (MCP) server for the [Pingera monitoring service](https://pingera.ru?utm_source=mcp_readme), providing seamless integration between AI models and monitoring data.
 
 ## Features
 

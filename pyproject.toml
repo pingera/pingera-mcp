@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pingera-mcp-server"
-version = "0.1.4"
+version = "0.1.5"
 description = "Model Context Protocol (MCP) server for Pingera monitoring service integration"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -108,6 +108,9 @@ include = [
     "LICENSE", 
     "CHANGELOG.md",
     ".env.example",
+    "main.py",
+    "config.py",
+    "mcp_server.py",
 ]
 exclude = [
     ".replit",
@@ -116,6 +119,3 @@ exclude = [
     "test_mcp_server.py",
     "uv.lock",
 ]
-
-[project.scripts]
-pingera-mcp = "pingera_mcp.main:main"

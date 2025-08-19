@@ -6,7 +6,7 @@ import os
 import pytest
 from unittest.mock import patch
 
-from config import Config, OperationMode
+from pingera_mcp.config import Config, OperationMode
 
 
 class TestConfig:

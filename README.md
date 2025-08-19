@@ -66,7 +66,9 @@ Add the following configuration:
         "pingera-mcp-server",
         "--python",
         "3.10",
-        "pingera-mcp"
+        "python",
+        "-m",
+        "pingera_mcp"
       ],
       "env": {
         "PINGERA_API_KEY": "your_api_key_here",

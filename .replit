@@ -28,7 +28,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pip install -e . && python main.py"
+args = "pip install -e . && python -m pingera_mcp"
 
 [workflows.workflow.metadata]
 outputType = "console"
@@ -51,7 +51,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python -m pingera_mcp.main"
+args = "python main.py"
 
 [[ports]]
 localPort = 6274

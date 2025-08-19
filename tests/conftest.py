@@ -5,7 +5,7 @@ import pytest
 import os
 from unittest.mock import Mock, patch
 
-from config import Config, OperationMode
+from pingera_mcp.config import Config, OperationMode
 from pingera_mcp.sdk_client import PingeraSDKClient as PingeraClient
 
 

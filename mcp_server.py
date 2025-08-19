@@ -27,18 +27,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger("pingera-mcp-server")
 
+def create_mcp_server(config: Config) -> FastMCP:
+    """Create and configure MCP server with the given configuration."""
+    # Validate API key
+    if not config.api_key:
+        logger.error("PINGERA_API_KEY environment variable is required")
+        raise ValueError("PINGERA_API_KEY is required")
+
+    logger.info(f"Starting Pingera MCP Server in {config.mode} mode")
+
+    # Create MCP server
+    return FastMCP(config.server_name)
+
 # Load configuration
 config = Config()
 
-# Validate API key
-if not config.api_key:
-    logger.error("PINGERA_API_KEY environment variable is required")
-    raise ValueError("PINGERA_API_KEY is required")
-
-logger.info(f"Starting Pingera MCP Server in {config.mode} mode")
-
 # Create MCP server
-mcp = FastMCP(config.server_name)
+mcp = create_mcp_server(config)
 
 # Initialize Pingera client
 pingera_client = PingeraClient(

@@ -160,7 +160,71 @@ Available tools for AI agents:
 - **`test_pingera_connection`** - Test API connectivity
 
 ### Write Operations
-- **Write operations** - Available only in read-write mode (future implementation)
+Available only in read-write mode (`PINGERA_MODE=read_write`):
+
+#### Pages Management
+- **`create_page`** - Create a new status page
+  - Parameters: `name` (required), `subdomain`, `domain`, `url`, `language`
+- **`update_page`** - Update existing status page configuration
+  - Parameters: `page_id` (required), `name`, `subdomain`, `domain`, `url`, `language`, additional kwargs
+- **`patch_page`** - Partially update specific page fields
+  - Parameters: `page_id` (required), kwargs for specific fields
+- **`delete_page`** - Permanently delete a status page
+  - Parameters: `page_id` (required)
+
+#### Component Management
+- **`create_component`** - Create new component or component group
+  - Parameters: `page_id` (required), `name` (required), `description`, `group`, `group_id`, `only_show_if_degraded`, `position`, `showcase`, `status`
+- **`update_component`** - Update existing component configuration
+  - Parameters: `page_id` (required), `component_id` (required), `name`, `description`, `group`, `group_id`, `only_show_if_degraded`, `position`, `showcase`, `status`, additional kwargs
+- **`patch_component`** - Partially update specific component fields
+  - Parameters: `page_id` (required), `component_id` (required), kwargs for specific fields
+- **`delete_component`** - Delete a component permanently
+  - Parameters: `page_id` (required), `component_id` (required)
+
+#### Monitoring Checks
+- **`create_check`** - Create new monitoring check
+  - Parameters: `check_data` (dict with check configuration)
+- **`update_check`** - Update existing monitoring check
+  - Parameters: `check_id` (required), `check_data` (dict with updated configuration)
+- **`delete_check`** - Delete monitoring check permanently
+  - Parameters: `check_id` (required)
+- **`pause_check`** - Temporarily pause monitoring check
+  - Parameters: `check_id` (required)
+- **`resume_check`** - Resume paused monitoring check
+  - Parameters: `check_id` (required)
+
+#### Alert Rules
+- **`create_alert`** - Create new alert rule
+  - Parameters: `alert_data` (dict with alert configuration)
+- **`update_alert`** - Update existing alert rule
+  - Parameters: `alert_id` (required), `alert_data` (dict with updated configuration)
+- **`delete_alert`** - Delete alert rule permanently
+  - Parameters: `alert_id` (required)
+
+#### Heartbeat Management
+- **`create_heartbeat`** - Create new heartbeat monitor
+  - Parameters: `heartbeat_data` (dict with heartbeat configuration)
+- **`update_heartbeat`** - Update existing heartbeat monitor
+  - Parameters: `heartbeat_id` (required), `heartbeat_data` (dict with updated configuration)
+- **`delete_heartbeat`** - Delete heartbeat monitor permanently
+  - Parameters: `heartbeat_id` (required)
+- **`send_heartbeat_ping`** - Manually send ping to heartbeat
+  - Parameters: `heartbeat_id` (required)
+
+#### Incident Management
+- **`create_incident`** - Create new incident on status page
+  - Parameters: `page_id` (required), `incident_data` (dict with incident details)
+- **`update_incident`** - Update existing incident details
+  - Parameters: `page_id` (required), `incident_id` (required), `incident_data` (dict with updated details)
+- **`delete_incident`** - Delete incident permanently
+  - Parameters: `page_id` (required), `incident_id` (required)
+- **`add_incident_update`** - Add status update to incident
+  - Parameters: `page_id` (required), `incident_id` (required), `update_data` (dict with update details)
+- **`update_incident_update`** - Edit existing incident update
+  - Parameters: `page_id` (required), `incident_id` (required), `update_id` (required), `update_data` (dict with updated content)
+- **`delete_incident_update`** - Delete specific incident update
+  - Parameters: `page_id` (required), `incident_id` (required), `update_id` (required)
 
 ## Operation Modes
 

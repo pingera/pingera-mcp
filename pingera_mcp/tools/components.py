@@ -76,7 +76,6 @@ class ComponentTools(BaseTools):
             with self.client._get_api_client() as api_client:
                 from pingera.api import StatusPagesComponentsApi
                 components_api = StatusPagesComponentsApi(api_client)
-                self.logger.info(components_api)
 
                 kwargs = {}
                 if page is not None:
@@ -88,7 +87,6 @@ class ComponentTools(BaseTools):
                     page_id=page_id,
                     **kwargs
                 )
-                self.logger.info(f"##### RESPONSE FROM API :{response}")
 
                 # The API returns a list of Component objects directly
                 if isinstance(response, list):

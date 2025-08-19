@@ -1,22 +1,23 @@
-
 """
 MCP tools for Pingera monitoring service.
 """
 
-from .pages import PagesTools
 from .status import StatusTools
-from .components import ComponentTools
+from .pages import PagesTools
+from .components import ComponentsTools
 from .checks import ChecksTools
 from .alerts import AlertsTools
 from .heartbeats import HeartbeatsTools
 from .incidents import IncidentsTools
+from .playwright_generator import PlaywrightGeneratorTools
 
 __all__ = [
-    "PagesTools",
     "StatusTools",
-    "ComponentTools",
+    "PagesTools",
+    "ComponentsTools",
     "ChecksTools",
     "AlertsTools",
     "HeartbeatsTools",
     "IncidentsTools",
+    "PlaywrightGeneratorTools",
 ]

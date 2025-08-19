@@ -9,7 +9,16 @@ from mcp.server.fastmcp import FastMCP
 
 from config import Config
 from pingera_mcp import PingeraClient
-from pingera_mcp.tools import PagesTools, StatusTools, ComponentTools, ChecksTools, AlertsTools, HeartbeatsTools, IncidentsTools
+from pingera_mcp.tools import (
+        StatusTools,
+        PagesTools,
+        ComponentsTools,
+        ChecksTools,
+        AlertsTools,
+        HeartbeatsTools,
+        IncidentsTools,
+        PlaywrightGeneratorTools,
+    )
 
 # Configure logging
 logging.basicConfig(
@@ -40,20 +49,21 @@ pingera_client = PingeraClient(
 )
 logger.info("Using Pingera SDK client")
 
-# Initialize tool and resource handlers
-pages_tools = PagesTools(pingera_client)
+# Initialize tool instances
 status_tools = StatusTools(pingera_client)
-component_tools = ComponentTools(pingera_client)
+pages_tools = PagesTools(pingera_client)
+component_tools = ComponentsTools(pingera_client)
 checks_tools = ChecksTools(pingera_client)
 alerts_tools = AlertsTools(pingera_client)
 heartbeats_tools = HeartbeatsTools(pingera_client)
 incidents_tools = IncidentsTools(pingera_client)
+playwright_tools = PlaywrightGeneratorTools(pingera_client)
 
 # Register read-only tools
 @mcp.tool()
 async def list_pages(
-    page: Optional[int] = None, 
-    per_page: Optional[int] = None, 
+    page: Optional[int] = None,
+    per_page: Optional[int] = None,
     status: Optional[str] = None
 ) -> str:
     """
@@ -105,8 +115,8 @@ async def list_component_groups(
     """
     Get only component groups (not individual components) for a status page.
 
-    Use this tool specifically when someone asks for "component groups", "groups only", 
-    or wants to see just the organizational containers for components. This excludes 
+    Use this tool specifically when someone asks for "component groups", "groups only",
+    or wants to see just the organizational containers for components. This excludes
     individual components and shows only the group containers.
 
     Args:
@@ -127,8 +137,8 @@ async def list_components(
     """
     Get all components (individual services and groups) for a status page with their IDs.
 
-    Use this tool when someone asks for "components", "all components", "component list", 
-    or wants to see services/systems on a status page. This includes both individual 
+    Use this tool when someone asks for "components", "all components", "component list",
+    or wants to see services/systems on a status page. This includes both individual
     components and component groups with their unique identifiers.
 
     Args:
@@ -191,7 +201,7 @@ async def get_check_details(check_id: str) -> str:
         check_id: The unique identifier of the monitoring check
 
     Returns:
-        JSON with complete check configuration including URL, intervals, timeouts, 
+        JSON with complete check configuration including URL, intervals, timeouts,
         expected responses, notification settings, and linked components.
     """
     return await checks_tools.get_check_details(check_id)
@@ -282,7 +292,7 @@ async def get_unified_results(
     Args:
         check_ids: List of check IDs to include (if None, includes all checks)
         from_date: Start date in ISO format
-        to_date: End date in ISO format  
+        to_date: End date in ISO format
         status: Filter by result status ('success', 'failure', 'timeout')
         page: Page number for pagination
         page_size: Number of results per page
@@ -328,16 +338,16 @@ async def execute_custom_check(
     This allows you to test connectivity and performance to any endpoint
     without creating a permanent monitoring check. Useful for troubleshooting
     or testing new services before setting up regular monitoring.
-    
+
     Args:
         url: The URL or endpoint to test
         check_type: Type of check ('web', 'api', 'tcp', 'ssl', 'multistep', 'synthetic')
         timeout: Timeout in seconds (default: 30)
         name: Optional name for the check
         parameters: A dictionary containing additional check-specific parameters.
-    
+
         For 'synthetic' or 'multistep' checks, the 'parameters' dictionary must contain a 'pw_script' key. The value of this key should be the full Playwright script in Javascript or Typescript content as a string.
-    
+
         Example of required arguments for a 'synthetic' check:
         {
           "check_type": "synthetic",
@@ -346,7 +356,7 @@ async def execute_custom_check(
             "pw_script": "Playwright script content as a string"
           }
         }
-    
+
     Returns:
         JSON with the job id that is executed asyncronously.
     """
@@ -358,7 +368,7 @@ async def execute_existing_check(check_id: str) -> str:
     Manually trigger an existing monitoring check to run immediately.
 
     Forces an immediate execution of a configured check, bypassing the normal
-    scheduled interval. Useful for testing after configuration changes or 
+    scheduled interval. Useful for testing after configuration changes or
     getting fresh data on demand.
 
     Args:
@@ -1046,6 +1056,320 @@ if config.is_read_write():
             JSON confirming successful deletion.
         """
         return await alerts_tools.delete_alert(alert_id)
+
+    @mcp.tool()
+    async def create_incident(page_id: str, incident_data: dict) -> str:
+        """
+        Create a new incident on a status page to communicate issues to users.
+
+        Post an incident when you need to inform users about service outages,
+        maintenance, or other events affecting your services.
+
+        Args:
+            page_id: The ID of the status page to post the incident on
+            incident_data: Dictionary with incident details including:
+                - name: Incident title
+                - status: Current status ('investigating', 'identified', 'monitoring', 'resolved')
+                - impact: Impact level ('none', 'minor', 'major', 'critical')
+                - body: Initial incident description
+                - component_ids: List of affected component IDs
+                - deliver_notifications: Whether to send notifications
+
+        Returns:
+            JSON with created incident details including ID and public URL.
+        """
+        return await incidents_tools.create_incident(page_id, incident_data)
+
+    @mcp.tool()
+    async def update_incident(page_id: str, incident_id: str, incident_data: dict) -> str:
+        """
+        Update an existing incident's details and status.
+
+        Modify the incident title, status, impact level, or other properties.
+        For status updates that users will see, use add_incident_update instead.
+
+        Args:
+            page_id: The ID of the status page
+            incident_id: The unique identifier of the incident
+            incident_data: Dictionary with updated incident configuration
+
+        Returns:
+            JSON with updated incident details.
+        """
+        return await incidents_tools.update_incident(page_id, incident_id, incident_data)
+
+    @mcp.tool()
+    async def delete_incident(page_id: str, incident_id: str) -> str:
+        """
+        Delete an incident from a status page permanently.
+
+        This removes the incident and all its updates from the status page.
+        Use with caution as this action cannot be undone.
+
+        Args:
+            page_id: The ID of the status page
+            incident_id: The unique identifier of the incident to delete
+
+        Returns:
+            JSON confirming successful deletion.
+        """
+        return await incidents_tools.delete_incident(page_id, incident_id)
+
+    @mcp.tool()
+    async def add_incident_update(page_id: str, incident_id: str, update_data: dict) -> str:
+        """
+        Add a new status update to an existing incident.
+
+        Post updates to keep users informed about incident progress,
+        investigation findings, or resolution steps.
+
+        Args:
+            page_id: The ID of the status page
+            incident_id: The unique identifier of the incident
+            update_data: Dictionary with update details including:
+                - body: The update message text
+                - status: New incident status if changed
+                - deliver_notifications: Whether to notify subscribers
+
+        Returns:
+            JSON with created update details including timestamp and content.
+        """
+        return await incidents_tools.add_incident_update(page_id, incident_id, update_data)
+
+    @mcp.tool()
+    async def update_incident_update(page_id: str, incident_id: str, update_id: str, update_data: dict) -> str:
+        """
+        Edit an existing incident status update.
+
+        Modify the content or status of a previously posted incident update.
+        Useful for correcting typos or adding additional information.
+
+        Args:
+            page_id: The ID of the status page
+            incident_id: The unique identifier of the incident
+            update_id: The unique identifier of the update to modify
+            update_data: Dictionary with updated content and settings
+
+        Returns:
+            JSON with updated incident update details.
+        """
+        return await incidents_tools.update_incident_update(page_id, incident_id, update_id, update_data)
+
+    @mcp.tool()
+    async def delete_incident_update(page_id: str, incident_id: str, update_id: str) -> str:
+        """
+        Delete a specific incident status update.
+
+        Remove an incident update from the timeline. This action cannot
+        be undone and may confuse users if the update was already public.
+
+        Args:
+            page_id: The ID of the status page
+            incident_id: The unique identifier of the incident
+            update_id: The unique identifier of the update to delete
+
+        Returns:
+            JSON confirming successful deletion.
+        """
+        return await incidents_tools.delete_incident_update(page_id, incident_id, update_id)
+
+# Register Playwright script generation tools (always available)
+@mcp.tool()
+async def generate_synthetic_check_script(
+    url: str,
+    description: str,
+    viewport_width: int = 1280,
+    viewport_height: int = 720,
+    wait_for_selector: Optional[str] = None,
+    click_selectors: Optional[List[str]] = None,
+    fill_forms: Optional[dict] = None,
+    custom_code: Optional[str] = None
+) -> str:
+    """
+    Generates a Playwright script for a synthetic browser check.
+
+    This tool helps create automated browser tests for user flows, page interactions,
+    and visual validation. It allows specifying actions like waiting for elements,
+    clicking buttons, filling forms, and executing custom JavaScript.
+
+    Args:
+        url: The starting URL for the synthetic check.
+        description: A clear description of the user flow or action to be performed.
+        viewport_width: The width of the browser viewport in pixels (default: 1280).
+        viewport_height: The height of the browser viewport in pixels (default: 720).
+        wait_for_selector: A CSS selector to wait for before proceeding. Useful for ensuring content is loaded.
+        click_selectors: A list of CSS selectors for elements to be clicked.
+        fill_forms: A dictionary where keys are CSS selectors for form inputs and values are the text to fill.
+        custom_code: A string containing custom JavaScript code to execute within the browser context.
+
+    Returns:
+        A string containing the generated Playwright script in TypeScript.
+    """
+    return await playwright_tools.generate_synthetic_check_script(
+        url=url,
+        description=description,
+        viewport_width=viewport_width,
+        viewport_height=viewport_height,
+        wait_for_selector=wait_for_selector,
+        click_selectors=click_selectors,
+        fill_forms=fill_forms,
+        custom_code=custom_code
+    )
+
+@mcp.tool()
+async def generate_api_check_script(
+    url: str,
+    description: str,
+    method: str = "GET",
+    headers: Optional[dict] = None,
+    payload: Optional[dict] = None,
+    expected_status: Optional[int] = None,
+    contains_string: Optional[str] = None,
+    custom_code: Optional[str] = None
+) -> str:
+    """
+    Generates a Playwright script for an API check.
+
+    This tool creates automated API tests that can validate endpoint responses,
+    check status codes, and verify response content. It supports various HTTP methods
+    and allows for custom request payloads and response assertions.
+
+    Args:
+        url: The API endpoint URL to check.
+        description: A clear description of the API endpoint and what it verifies.
+        method: The HTTP method to use (e.g., GET, POST, PUT, DELETE) (default: GET).
+        headers: A dictionary of HTTP headers to include in the request.
+        payload: A dictionary representing the request body (for POST, PUT, etc.).
+        expected_status: The expected HTTP status code for the response.
+        contains_string: A string that is expected to be present in the response body.
+        custom_code: A string containing custom JavaScript code to execute for more complex assertions.
+
+    Returns:
+        A string containing the generated Playwright script in TypeScript.
+    """
+    return await playwright_tools.generate_api_check_script(
+        url=url,
+        description=description,
+        method=method,
+        headers=headers,
+        payload=payload,
+        expected_status=expected_status,
+        contains_string=contains_string,
+        custom_code=custom_code
+    )
+
+# Register Playwright script generation tools (always available)
+@mcp.tool()(
+    help="Generates a Playwright script for a synthetic browser check. This tool helps create automated browser tests for user flows, page interactions, and visual validation. It allows specifying actions like waiting for elements, clicking buttons, filling forms, and executing custom JavaScript.",
+    parameters={
+        "url": {"type": "string", "description": "The starting URL for the synthetic check."},
+        "description": {"type": "string", "description": "A clear description of the user flow or action to be performed."},
+        "viewport_width": {"type": "integer", "description": "The width of the browser viewport in pixels (default: 1280).", "default": 1280},
+        "viewport_height": {"type": "integer", "description": "The height of the browser viewport in pixels (default: 720).", "default": 720},
+        "wait_for_selector": {"type": "string", "description": "A CSS selector to wait for before proceeding. Useful for ensuring content is loaded.", "required": False},
+        "click_selectors": {"type": "array", "items": {"type": "string"}, "description": "A list of CSS selectors for elements to be clicked.", "required": False},
+        "fill_forms": {"type": "object", "description": "A dictionary where keys are CSS selectors for form inputs and values are the text to fill.", "required": False, "additionalProperties": {"type": "string"}},
+        "custom_code": {"type": "string", "description": "A string containing custom JavaScript code to execute within the browser context.", "required": False}
+    }
+)
+async def generate_synthetic_check_script_tool_spec(
+    url: str,
+    description: str,
+    viewport_width: int = 1280,
+    viewport_height: int = 720,
+    wait_for_selector: Optional[str] = None,
+    click_selectors: Optional[List[str]] = None,
+    fill_forms: Optional[dict] = None,
+    custom_code: Optional[str] = None
+) -> str:
+    """
+    Generates a Playwright script for a synthetic browser check.
+
+    This tool helps create automated browser tests for user flows, page interactions,
+    and visual validation. It allows specifying actions like waiting for elements,
+    clicking buttons, filling forms, and executing custom JavaScript.
+
+    Args:
+        url: The starting URL for the synthetic check.
+        description: A clear description of the user flow or action to be performed.
+        viewport_width: The width of the browser viewport in pixels (default: 1280).
+        viewport_height: The height of the browser viewport in pixels (default: 720).
+        wait_for_selector: A CSS selector to wait for before proceeding. Useful for ensuring content is loaded.
+        click_selectors: A list of CSS selectors for elements to be clicked.
+        fill_forms: A dictionary where keys are CSS selectors for form inputs and values are the text to fill.
+        custom_code: A string containing custom JavaScript code to execute within the browser context.
+
+    Returns:
+        A string containing the generated Playwright script in TypeScript.
+    """
+    return await playwright_tools.generate_synthetic_check_script(
+        url=url,
+        description=description,
+        viewport_width=viewport_width,
+        viewport_height=viewport_height,
+        wait_for_selector=wait_for_selector,
+        click_selectors=click_selectors,
+        fill_forms=fill_forms,
+        custom_code=custom_code
+    )
+
+@mcp.tool()(
+    help="Generates a Playwright script for an API check. This tool creates automated API tests that can validate endpoint responses, check status codes, and verify response content. It supports various HTTP methods and allows for custom request payloads and response assertions.",
+    parameters={
+        "url": {"type": "string", "description": "The API endpoint URL to check."},
+        "description": {"type": "string", "description": "A clear description of the API endpoint and what it verifies."},
+        "method": {"type": "string", "description": "The HTTP method to use (e.g., GET, POST, PUT, DELETE) (default: GET).", "default": "GET"},
+        "headers": {"type": "object", "description": "A dictionary of HTTP headers to include in the request.", "required": False, "additionalProperties": {"type": "string"}},
+        "payload": {"type": "object", "description": "A dictionary representing the request body (for POST, PUT, etc.).", "required": False, "additionalProperties": {}},
+        "expected_status": {"type": "integer", "description": "The expected HTTP status code for the response.", "required": False},
+        "contains_string": {"type": "string", "description": "A string that is expected to be present in the response body.", "required": False},
+        "custom_code": {"type": "string", "description": "A string containing custom JavaScript code to execute for more complex assertions.", "required": False}
+    }
+)
+async def generate_api_check_script_tool_spec(
+    url: str,
+    description: str,
+    method: str = "GET",
+    headers: Optional[dict] = None,
+    payload: Optional[dict] = None,
+    expected_status: Optional[int] = None,
+    contains_string: Optional[str] = None,
+    custom_code: Optional[str] = None
+) -> str:
+    """
+    Generates a Playwright script for an API check.
+
+    This tool creates automated API tests that can validate endpoint responses,
+    check status codes, and verify response content. It supports various HTTP methods
+    and allows for custom request payloads and response assertions.
+
+    Args:
+        url: The API endpoint URL to check.
+        description: A clear description of the API endpoint and what it verifies.
+        method: The HTTP method to use (e.g., GET, POST, PUT, DELETE) (default: GET).
+        headers: A dictionary of HTTP headers to include in the request.
+        payload: A dictionary representing the request body (for POST, PUT, etc.).
+        expected_status: The expected HTTP status code for the response.
+        contains_string: A string that is expected to be present in the response body.
+        custom_code: A string containing custom JavaScript code to execute for more complex assertions.
+
+    Returns:
+        A string containing the generated Playwright script in TypeScript.
+    """
+    return await playwright_tools.generate_api_check_script(
+        url=url,
+        description=description,
+        method=method,
+        headers=headers,
+        payload=payload,
+        expected_status=expected_status,
+        contains_string=contains_string,
+        custom_code=custom_code
+    )
+
+# Register incident management tools (read-write mode)
+if config.is_read_write():
+    logger.info("Read-write mode enabled - adding write operations")
 
     @mcp.tool()
     async def create_incident(page_id: str, incident_data: dict) -> str:

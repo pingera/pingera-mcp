@@ -291,6 +291,60 @@ The test suite includes:
 - **Integration Tests**: Testing MCP server functionality 
 - **Mock Tests**: Testing with simulated API responses
 
+### Testing with MCP Inspector
+
+The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is an official debugging tool that provides a web interface to test MCP servers interactively. It allows you to explore available resources, execute tools, and inspect the server's responses in real-time.
+
+#### Setup Inspector
+
+1. Create an `mcp.json` configuration file:
+
+```json
+{
+  "mcpServers": {
+    "pingera": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "pingera-mcp-server",
+        "--python",
+        "3.10",
+        "python",
+        "-m",
+        "pingera_mcp"
+      ],
+      "env": {
+        "PINGERA_API_KEY": "your_pingera_api_key",
+        "PINGERA_MODE": "read_only",
+        "PINGERA_BASE_URL": "https://api.pingera.ru/v1",
+        "PINGERA_TIMEOUT": "30",
+        "PINGERA_MAX_RETRIES": "3",
+        "PINGERA_DEBUG": "false"
+      }
+    }
+  }
+}
+```
+
+2. Run the inspector:
+
+```bash
+npx @modelcontextprotocol/inspector --config mcp.json
+```
+
+3. Open your browser to the provided URL (typically `http://localhost:5173`)
+
+#### Using Inspector
+
+The inspector provides:
+- **Resources Tab**: Browse available monitoring data resources
+- **Tools Tab**: Execute MCP tools like `list_pages`, `get_page_details`, etc.
+- **Logs Tab**: View detailed communication logs between the inspector and server
+- **Interactive Testing**: Test tool parameters and see real-time responses
+
+This is the recommended way to test your MCP server integration before deploying with Claude Desktop or other MCP clients.
+
 ### Manual Testing
 
 Test the client library directly:

@@ -17,7 +17,7 @@ A Model Context Protocol (MCP) server for the [Pingera monitoring service](https
 ### Prerequisites
 - Python 3.10+
 - UV package manager
-- Pingera API key - get one at [app.pingera.ru][https://app.pingera.ru]
+- Pingera API key - get one at [app.pingera.ru](https://app.pingera.ru)
 
 ### Installation and Setup
 

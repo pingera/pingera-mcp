@@ -17,7 +17,7 @@ A Model Context Protocol (MCP) server for the [Pingera monitoring service](https
 ### Prerequisites
 - Python 3.10+
 - UV package manager
-- Pingera API key
+- Pingera API key - get one at [app.pingera.ru][https://app.pingera.ru]
 
 ### Installation and Setup
 
@@ -29,7 +29,7 @@ uv sync
 # Add PINGERA_API_KEY to your environment 
 
 # Run the server
-python main.py
+python -m pingera_mcp
 ```
 
 The server will start in read-only mode by default and connect to the Pingera API.
@@ -104,10 +104,10 @@ After updating the configuration file, restart Claude Desktop to load the new MC
 ### Verify Installation
 
 Once configured, you can ask Claude to:
-- "List my monitored status pages"
-- "Show details for a specific page"
-- "Test the Pingera API connection"
-- "Get the current monitoring status"
+- "What are my status pages and their names?"
+- "Show details of a page with id ..."
+- "When was the last failed check for check ..."
+- "Run a simple synthetic check for the website with URL https://"
 
 ## Configuration
 
@@ -238,8 +238,9 @@ Available only in read-write mode (`PINGERA_MODE=read_write`):
 
 ### Read-Write Mode
 - All read-only features
-- Create, update, and delete monitoring pages (future implementation)
-- Manage incidents and notifications (future implementation)
+- Create, update and delete resources: status pages, checks, alerts, heartbeats
+- Execute checks and get their results
+- Manage incidents and notifications
 
 Set `PINGERA_MODE=read_write` to enable write operations.
 
@@ -333,7 +334,7 @@ The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is an off
 npx @modelcontextprotocol/inspector --config mcp.json
 ```
 
-3. Open your browser to the provided URL (typically `http://localhost:5173`)
+3. Open your browser to the provided URL (typically `http://localhost:6274`)
 
 #### Using Inspector
 
@@ -345,16 +346,12 @@ The inspector provides:
 
 This is the recommended way to test your MCP server integration before deploying with Claude Desktop or other MCP clients.
 
-### Manual Testing
+### Manual Testing with `mcp_client.py`
 
-Test the client library directly:
-```bash
-python -c "from pingera import PingeraClient; import os; client = PingeraClient(os.getenv('PINGERA_API_KEY')); print(f'Pages: {len(client.get_pages().pages)}')"
-```
+`mcp_client.py` uses Gemini models and integrates with the MCP server to execute various tools. It is just an example and can be easly modified to use any other Large Language Model.
 
-Test MCP server functionality:
 ```bash
-python test_mcp_server.py
+python mcp_client.py "Show me my status pages"
 ```
 
 ## Error Handling

@@ -51,7 +51,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "python main.py"
+args = "python -m pingera_mcp"
 
 [[ports]]
 localPort = 6274

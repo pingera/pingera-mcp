@@ -497,23 +497,36 @@ class ChecksTools(BaseTools):
     def _format_results_response(self, response) -> dict:
         """Format check results response."""
         if hasattr(response, '__dict__'):
-            # Convert model objects to dictionaries for JSON serialization
-            data = getattr(response, 'data', [])
-            if isinstance(data, list):
+            # SDK returns results in 'results' attribute, not 'data'
+            results_data = getattr(response, 'results', [])
+            pagination = getattr(response, 'pagination', {})
+            
+            if isinstance(results_data, list):
                 formatted_data = []
-                for item in data:
+                for item in results_data:
                     if hasattr(item, '__dict__'):
-                        formatted_data.append(item.__dict__)
+                        # Use the base class method to properly convert SDK objects
+                        formatted_data.append(self._convert_sdk_object_to_dict(item))
                     else:
                         formatted_data.append(item)
             else:
-                formatted_data = data
+                formatted_data = results_data
+
+            # Extract pagination info properly
+            if isinstance(pagination, dict):
+                total = pagination.get('total_items', 0)
+                page = pagination.get('page', 1)
+                page_size = pagination.get('page_size', 50)
+            else:
+                total = getattr(response, 'total', 0)
+                page = getattr(response, 'page', 1)
+                page_size = getattr(response, 'page_size', 50)
 
             return {
                 "results": formatted_data,
-                "total": getattr(response, 'total', 0),
-                "page": getattr(response, 'page', 1),
-                "page_size": getattr(response, 'page_size', 50)
+                "total": total,
+                "page": page,
+                "page_size": page_size
             }
         return {"results": [], "total": 0}
 

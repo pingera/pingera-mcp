@@ -194,22 +194,28 @@ class ChecksTools(BaseTools):
         try:
             self.logger.info(f"Getting results for check {check_id}")
 
-            # Filter out None values
-            kwargs = {"check_id": check_id}
-            if from_date is not None:
-                kwargs["from_date"] = from_date
-            if to_date is not None:
-                kwargs["to_date"] = to_date
-            if page is not None:
-                kwargs["page"] = page
-            if page_size is not None:
-                kwargs["page_size"] = page_size
+            with self.client._get_api_client() as api_client:
+                from pingera.api import ChecksApi
+                checks_api = ChecksApi(api_client)
 
-            # Call the SDK method
-            results = await self.client.get_check_results(**kwargs)
+                # Only pass non-None parameters
+                kwargs = {}
+                if from_date is not None:
+                    kwargs['from_date'] = from_date
+                if to_date is not None:
+                    kwargs['to_date'] = to_date
+                if page is not None:
+                    kwargs['page'] = page
+                if page_size is not None:
+                    kwargs['page_size'] = page_size
 
-            results_data = self._format_results_response(results)
-            return self._success_response(results_data)
+                response = checks_api.v1_checks_check_id_results_get(
+                    check_id=check_id,
+                    **kwargs
+                )
+
+                results_data = self._format_results_response(response)
+                return self._success_response(results_data)
 
         except Exception as e:
             self.logger.error(f"Error getting results for check {check_id}: {e}")
@@ -374,26 +380,29 @@ class ChecksTools(BaseTools):
         try:
             self.logger.info("Getting unified results from multiple checks")
 
-            # Filter out None values
-            kwargs = {}
-            if check_ids is not None:
-                kwargs["check_ids"] = check_ids
-            if from_date is not None:
-                kwargs["from_date"] = from_date
-            if to_date is not None:
-                kwargs["to_date"] = to_date
-            if status is not None:
-                kwargs["status"] = status
-            if page is not None:
-                kwargs["page"] = page
-            if page_size is not None:
-                kwargs["page_size"] = page_size
+            with self.client._get_api_client() as api_client:
+                from pingera.api import ChecksApi
+                checks_api = ChecksApi(api_client)
 
-            # Call the SDK method
-            results = await self.client.get_unified_results(**kwargs)
+                # Only pass non-None parameters
+                kwargs = {}
+                if check_ids is not None:
+                    kwargs['check_ids'] = check_ids
+                if from_date is not None:
+                    kwargs['from_date'] = from_date
+                if to_date is not None:
+                    kwargs['to_date'] = to_date
+                if status is not None:
+                    kwargs['status'] = status
+                if page is not None:
+                    kwargs['page'] = page
+                if page_size is not None:
+                    kwargs['page_size'] = page_size
 
-            unified_data = self._format_unified_results_response(results)
-            return self._success_response(unified_data)
+                response = checks_api.v1_checks_results_get(**kwargs)
+
+                unified_data = self._format_unified_results_response(response)
+                return self._success_response(unified_data)
 
         except Exception as e:
             self.logger.error(f"Error getting unified results: {e}")
@@ -419,20 +428,23 @@ class ChecksTools(BaseTools):
         try:
             self.logger.info("Getting unified statistics from multiple checks")
 
-            # Filter out None values
-            kwargs = {}
-            if check_ids is not None:
-                kwargs["check_ids"] = check_ids
-            if from_date is not None:
-                kwargs["from_date"] = from_date
-            if to_date is not None:
-                kwargs["to_date"] = to_date
+            with self.client._get_api_client() as api_client:
+                from pingera.api import ChecksApi
+                checks_api = ChecksApi(api_client)
 
-            # Call the SDK method
-            results = await self.client.get_unified_statistics(**kwargs)
+                # Only pass non-None parameters
+                kwargs = {}
+                if check_ids is not None:
+                    kwargs['check_ids'] = check_ids
+                if from_date is not None:
+                    kwargs['from_date'] = from_date
+                if to_date is not None:
+                    kwargs['to_date'] = to_date
 
-            stats_data = self._format_unified_stats_response(results)
-            return self._success_response(stats_data)
+                response = checks_api.v1_checks_statistics_get(**kwargs)
+
+                stats_data = self._format_unified_stats_response(response)
+                return self._success_response(stats_data)
 
         except Exception as e:
             self.logger.error(f"Error getting unified statistics: {e}")

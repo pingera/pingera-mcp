@@ -198,22 +198,28 @@ class HeartbeatsTools(BaseTools):
         try:
             self.logger.info(f"Getting logs for heartbeat {heartbeat_id}")
 
-            # Filter out None values
-            kwargs = {"heartbeat_id": heartbeat_id}
-            if from_date is not None:
-                kwargs["from_date"] = from_date
-            if to_date is not None:
-                kwargs["to_date"] = to_date
-            if page is not None:
-                kwargs["page"] = page
-            if page_size is not None:
-                kwargs["page_size"] = page_size
+            with self.client._get_api_client() as api_client:
+                from pingera.api import HeartbeatsApi
+                heartbeats_api = HeartbeatsApi(api_client)
 
-            # Call the SDK method
-            logs = await self.client.get_heartbeat_logs(**kwargs)
+                # Only pass non-None parameters
+                kwargs = {}
+                if from_date is not None:
+                    kwargs['from_date'] = from_date
+                if to_date is not None:
+                    kwargs['to_date'] = to_date
+                if page is not None:
+                    kwargs['page'] = page
+                if page_size is not None:
+                    kwargs['page_size'] = page_size
 
-            logs_data = self._format_logs_response(logs)
-            return self._success_response(logs_data)
+                response = heartbeats_api.v1_heartbeats_heartbeat_id_logs_get(
+                    heartbeat_id=heartbeat_id,
+                    **kwargs
+                )
+
+                logs_data = self._format_logs_response(response)
+                return self._success_response(logs_data)
 
         except Exception as e:
             self.logger.error(f"Error getting logs for heartbeat {heartbeat_id}: {e}")

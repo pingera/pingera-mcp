@@ -946,9 +946,9 @@ if config.is_read_write():
             Optional:
             url: str (for 'web' and 'api' checks): The URL to monitor.
             host: str (for 'tcp' and 'ssl' checks): The hostname or IP address.
-            port: int (for 'tcp' checks): The port number to monitor. Range: 1-65535.
-            interval: int: The frequency of checks in seconds. Range: 30-86400.
-            timeout: int: The request timeout in seconds. Range: 1-30.
+            port: integer (for 'tcp' checks): The port number to monitor. Range: 1-65535.
+            interval: integer: The frequency of checks in seconds. Range: 30-86400.
+            timeout: integer: The request timeout in seconds. Range: 1-30.
             active: bool: A flag to set the check as active or paused.
             parameters: dict (for 'synthetic' and 'multistep' checks): Additional parameters specific to the check type. Must include 'pw_script' with a valid Playwright script.
             Returns:

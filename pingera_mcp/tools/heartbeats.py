@@ -1,4 +1,3 @@
-
 """
 MCP tools for heartbeat monitoring.
 """
@@ -21,12 +20,12 @@ class HeartbeatsTools(BaseTools):
     ) -> str:
         """
         List all heartbeats with optional filtering.
-        
+
         Args:
             page: Page number for pagination
             page_size: Number of items per page  
             status: Filter by heartbeat status
-            
+
         Returns:
             JSON string with heartbeats data
         """
@@ -57,10 +56,10 @@ class HeartbeatsTools(BaseTools):
     async def get_heartbeat_details(self, heartbeat_id: str) -> str:
         """
         Get details for a specific heartbeat.
-        
+
         Args:
             heartbeat_id: ID of the heartbeat to retrieve
-            
+
         Returns:
             JSON string with heartbeat details
         """
@@ -83,10 +82,10 @@ class HeartbeatsTools(BaseTools):
     async def create_heartbeat(self, heartbeat_data: dict) -> str:
         """
         Create a new heartbeat.
-        
+
         Args:
             heartbeat_data: Heartbeat configuration data
-            
+
         Returns:
             JSON string with created heartbeat data
         """
@@ -109,11 +108,11 @@ class HeartbeatsTools(BaseTools):
     async def update_heartbeat(self, heartbeat_id: str, heartbeat_data: dict) -> str:
         """
         Update an existing heartbeat.
-        
+
         Args:
             heartbeat_id: ID of the heartbeat to update
             heartbeat_data: Updated heartbeat data
-            
+
         Returns:
             JSON string with updated heartbeat data
         """
@@ -139,10 +138,10 @@ class HeartbeatsTools(BaseTools):
     async def delete_heartbeat(self, heartbeat_id: str) -> str:
         """
         Delete a heartbeat.
-        
+
         Args:
             heartbeat_id: ID of the heartbeat to delete
-            
+
         Returns:
             JSON string with deletion status
         """
@@ -164,10 +163,10 @@ class HeartbeatsTools(BaseTools):
     async def send_heartbeat_ping(self, heartbeat_id: str) -> str:
         """
         Send a ping to a heartbeat.
-        
+
         Args:
             heartbeat_id: ID of the heartbeat to ping
-            
+
         Returns:
             JSON string with ping status
         """
@@ -195,43 +194,26 @@ class HeartbeatsTools(BaseTools):
         page: Optional[int] = None,
         page_size: Optional[int] = None
     ) -> str:
-        """
-        Get logs for a heartbeat.
-        
-        Args:
-            heartbeat_id: ID of the heartbeat
-            from_date: Start date for log filtering (ISO 8601 format)
-            to_date: End date for log filtering (ISO 8601 format)
-            page: Page number for pagination
-            page_size: Number of items per page
-            
-        Returns:
-            JSON string with heartbeat logs
-        """
+        """Get historical ping logs for a heartbeat monitor."""
         try:
             self.logger.info(f"Getting logs for heartbeat {heartbeat_id}")
 
-            with self.client._get_api_client() as api_client:
-                from pingera.api import HeartbeatsApi
-                heartbeats_api = HeartbeatsApi(api_client)
+            # Filter out None values
+            kwargs = {"heartbeat_id": heartbeat_id}
+            if from_date is not None:
+                kwargs["from_date"] = from_date
+            if to_date is not None:
+                kwargs["to_date"] = to_date
+            if page is not None:
+                kwargs["page"] = page
+            if page_size is not None:
+                kwargs["page_size"] = page_size
 
-                kwargs = {}
-                if from_date is not None:
-                    kwargs['from_date'] = from_date
-                if to_date is not None:
-                    kwargs['to_date'] = to_date
-                if page is not None:
-                    kwargs['page'] = page
-                if page_size is not None:
-                    kwargs['page_size'] = page_size
+            # Call the SDK method
+            logs = await self.client.get_heartbeat_logs(**kwargs)
 
-                response = heartbeats_api.v1_heartbeats_heartbeat_id_logs_get(
-                    heartbeat_id=heartbeat_id,
-                    **kwargs
-                )
-
-                logs_data = self._format_logs_response(response)
-                return self._success_response(logs_data)
+            logs_data = self._format_logs_response(logs)
+            return self._success_response(logs_data)
 
         except Exception as e:
             self.logger.error(f"Error getting logs for heartbeat {heartbeat_id}: {e}")

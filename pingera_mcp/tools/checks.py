@@ -194,20 +194,22 @@ class ChecksTools(BaseTools):
         try:
             self.logger.info(f"Getting results for check {check_id}")
 
-            with self.client._get_api_client() as api_client:
-                from pingera.api import ChecksApi
-                checks_api = ChecksApi(api_client)
+            # Filter out None values
+            kwargs = {"check_id": check_id}
+            if from_date is not None:
+                kwargs["from_date"] = from_date
+            if to_date is not None:
+                kwargs["to_date"] = to_date
+            if page is not None:
+                kwargs["page"] = page
+            if page_size is not None:
+                kwargs["page_size"] = page_size
 
-                response = checks_api.v1_checks_check_id_results_get(
-                    check_id=check_id,
-                    from_date=from_date,
-                    to_date=to_date,
-                    page=page,
-                    page_size=page_size
-                )
+            # Call the SDK method
+            results = await self.client.get_check_results(**kwargs)
 
-                results_data = self._format_results_response(response)
-                return self._success_response(results_data)
+            results_data = self._format_results_response(results)
+            return self._success_response(results_data)
 
         except Exception as e:
             self.logger.error(f"Error getting results for check {check_id}: {e}")
@@ -370,23 +372,28 @@ class ChecksTools(BaseTools):
             JSON string containing unified results
         """
         try:
-            self.logger.info(f"Getting unified results for checks: {check_ids}")
+            self.logger.info("Getting unified results from multiple checks")
 
-            with self.client._get_api_client() as api_client:
-                from pingera.api import ChecksUnifiedResultsApi
-                unified_api = ChecksUnifiedResultsApi(api_client)
+            # Filter out None values
+            kwargs = {}
+            if check_ids is not None:
+                kwargs["check_ids"] = check_ids
+            if from_date is not None:
+                kwargs["from_date"] = from_date
+            if to_date is not None:
+                kwargs["to_date"] = to_date
+            if status is not None:
+                kwargs["status"] = status
+            if page is not None:
+                kwargs["page"] = page
+            if page_size is not None:
+                kwargs["page_size"] = page_size
 
-                response = unified_api.v1_checks_unified_results_get(
-                    check_ids=check_ids,
-                    from_date=from_date,
-                    to_date=to_date,
-                    status=status,
-                    page=page,
-                    page_size=page_size
-                )
+            # Call the SDK method
+            results = await self.client.get_unified_results(**kwargs)
 
-                unified_data = self._format_unified_results_response(response)
-                return self._success_response(unified_data)
+            unified_data = self._format_unified_results_response(results)
+            return self._success_response(unified_data)
 
         except Exception as e:
             self.logger.error(f"Error getting unified results: {e}")
@@ -410,20 +417,22 @@ class ChecksTools(BaseTools):
             JSON string containing aggregated statistics
         """
         try:
-            self.logger.info(f"Getting unified statistics for checks: {check_ids}")
+            self.logger.info("Getting unified statistics from multiple checks")
 
-            with self.client._get_api_client() as api_client:
-                from pingera.api import ChecksUnifiedResultsApi
-                unified_api = ChecksUnifiedResultsApi(api_client)
+            # Filter out None values
+            kwargs = {}
+            if check_ids is not None:
+                kwargs["check_ids"] = check_ids
+            if from_date is not None:
+                kwargs["from_date"] = from_date
+            if to_date is not None:
+                kwargs["to_date"] = to_date
 
-                response = unified_api.v1_checks_unified_results_stats_get(
-                    check_ids=check_ids,
-                    from_date=from_date,
-                    to_date=to_date
-                )
+            # Call the SDK method
+            results = await self.client.get_unified_statistics(**kwargs)
 
-                stats_data = self._format_unified_stats_response(response)
-                return self._success_response(stats_data)
+            stats_data = self._format_unified_stats_response(results)
+            return self._success_response(stats_data)
 
         except Exception as e:
             self.logger.error(f"Error getting unified statistics: {e}")
@@ -435,7 +444,7 @@ class ChecksTools(BaseTools):
             # Handle the actual API response structure with pagination and checks
             checks_data = getattr(response, 'checks', [])
             pagination = getattr(response, 'pagination', {})
-            
+
             # Convert model objects to dictionaries for JSON serialization
             if isinstance(checks_data, list):
                 formatted_checks = []

@@ -936,20 +936,23 @@ if config.is_read_write():
 
         Set up automated monitoring that will test your service at regular
         intervals and alert you when issues are detected.
+        If name is not set, AI agent should generate it from the URL or description.
 
         Args:
-            check_data: Dictionary with check configuration including:
-                - name: Check name
-                - url: URL to monitor
-                - check_type: Type of check ('http', 'https', 'ping', 'tcp', 'ssl', 'dns')
-                - interval: Check frequency in seconds
-                - timeout: Request timeout in seconds
-                - expected_status: Expected HTTP status code
-                - keyword: Keyword to look for in response (optional)
-                - alert_settings: Notification configuration
-
-        Returns:
-            JSON with created check details including ID and configuration.
+            Required:
+            name: A user-friendly name for the monitor check. Max 100 characters. 
+            type: The type of check to perform. Valid values: 'web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep'.
+            
+            Optional:
+            url: str (for 'web' and 'api' checks): The URL to monitor.
+            host: str (for 'tcp' and 'ssl' checks): The hostname or IP address.
+            port: int (for 'tcp' checks): The port number to monitor. Range: 1-65535.
+            interval: int: The frequency of checks in seconds. Range: 30-86400.
+            timeout: int: The request timeout in seconds. Range: 1-30.
+            active: bool: A flag to set the check as active or paused.
+            parameters: dict (for 'synthetic' and 'multistep' checks): Additional parameters specific to the check type. Must include 'pw_script' with a valid Playwright script.
+            Returns:
+            dict: A JSON object with the created check's details, including its unique id and configuration.
         """
         return await checks_tools.create_check(check_data)
 

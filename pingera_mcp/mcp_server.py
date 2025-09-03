@@ -188,7 +188,9 @@ async def list_checks(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
     check_type: Optional[str] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
+    group_id: Optional[str] = None,
+    name: Optional[str] = None
 ) -> str:
     """
     List all monitoring checks in your account.
@@ -197,15 +199,17 @@ async def list_checks(
     They run at regular intervals and can trigger alerts when issues are detected.
 
     Args:
-        page: Page number for pagination
-        page_size: Number of items per page (max: 100)
-        check_type: Filter by check type ('http', 'https', 'ping', 'tcp', 'ssl', 'dns', 'keyword')
-        status: Filter by status ('active', 'paused', 'disabled')
+        page: Page number for pagination (default: 1)
+        page_size: Number of items per page (default: 20, max: 100)
+        check_type: Filter by check type ('web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep')
+        status: Filter by status (can specify multiple statuses separated by commas)
+        group_id: Filter checks by group ID (use "ungrouped" for checks not assigned to any group)
+        name: Filter checks by name using case-insensitive partial matching
 
     Returns:
         JSON with list of checks including names, URLs, types, intervals, and current status.
     """
-    return await checks_tools.list_checks(page, page_size, check_type, status)
+    return await checks_tools.list_checks(page, page_size, check_type, status, group_id, name)
 
 @mcp.tool()
 async def get_check_details(check_id: str) -> str:

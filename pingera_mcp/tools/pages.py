@@ -315,9 +315,8 @@ class PagesTools(BaseTools):
                 from pingera.models import Page
                 pages_api = StatusPagesApi(api_client)
 
-                page_id_int = int(page_id)
                 page_model = Page(**filtered_page_data)
-                response = pages_api.v1_pages_page_id_put(page_id=page_id_int, page=page_model)
+                response = pages_api.v1_pages_page_id_put(page_id=page_id, page=page_model)
 
                 page_data_result = self._convert_sdk_object_to_dict(response)
                 return self._success_response(page_data_result)
@@ -421,9 +420,8 @@ class PagesTools(BaseTools):
                 from pingera.models import Page1
                 pages_api = StatusPagesApi(api_client)
 
-                page_id_int = int(page_id)
                 patch_model = Page1(**filtered_patch_data)
-                response = pages_api.v1_pages_page_id_patch(page_id=page_id_int, page1=patch_model)
+                response = pages_api.v1_pages_page_id_patch(page_id=page_id, page1=patch_model)
 
                 page_data_result = self._convert_sdk_object_to_dict(response)
                 return self._success_response(page_data_result)

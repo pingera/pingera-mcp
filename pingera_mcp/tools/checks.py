@@ -2,7 +2,8 @@
 MCP tools for monitoring checks.
 """
 import json
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
+
 from datetime import datetime
 
 from .base import BaseTools
@@ -94,57 +95,38 @@ class ChecksTools(BaseTools):
             self.logger.error(f"Error getting check details for {check_id}: {e}")
             return self._error_response(str(e))
 
-    async def create_check(self, check_data) -> str:
-        """
-        Create a new monitoring check to watch a website, API, or service.
-
-        Set up automated monitoring that will test your service at regular
-        intervals and alert you when issues are detected.
-        If name is not set, AI agent should generate it from the URL or description.
-
-        Args:
-            Required:
-            name: A user-friendly name for the monitor check. Max 100 characters. 
-            type: The type of check to perform. Valid values: 'web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep'.
-
-            Optional:
-            url: str (for 'web' and 'api' checks): The URL to monitor.
-            host: str (for 'tcp' and 'ssl' checks): The hostname or IP address.
-            port: integer (for 'tcp' checks): The port number to monitor. Range: 1-65535.
-            interval: integer only: The frequency of checks in seconds. Range: 30-86400.
-            timeout: integer only: The request timeout in seconds. Range: 1-30.
-            active: bool: A flag to set the check as active or paused.
-            parameters: dict (for 'synthetic' and 'multistep' checks): Additional parameters specific to the check type. Must include 'pw_script' with a valid Playwright script.
-            Returns:
-            dict: A JSON object with the created check's details, including its unique id and configuration.
-        """
+    async def create_check(
+        self,
+        name: str,
+        type: str,
+        url: Optional[str] = None,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        interval: int = 300,
+        timeout: int = 10,
+        active: bool = True,
+        parameters: Optional[Dict[str, Any]] = None,
+    ) -> str:
         try:
-            # Convert protobuf objects to dict if needed
-            if hasattr(check_data, '__dict__'):
-                # Handle protobuf objects
-                clean_data = {}
-                for key, value in check_data.items():
-                    clean_data[key] = value
-                check_data = clean_data
-            elif not isinstance(check_data, dict):
-                # Try to convert to dict
-                try:
-                    check_data = dict(check_data)
-                except:
-                    self.logger.error(f"Cannot convert check_data to dict: {type(check_data)}")
-                    return self._error_response(f"Invalid check_data format: {type(check_data)}")
+            # 1. Collect all arguments into a dictionary
+            check_data = {
+                "name": name, "type": type, "url": url, "host": host,
+                "port": port, "interval": interval, "timeout": timeout,
+                "active": active, "parameters": parameters
+            }
 
-            self.logger.info(f"Creating new check: {check_data.get('name', 'Unnamed')}")
+            # 2. Filter out optional arguments that were not provided (are None)
+            filtered_check_data = {k: v for k, v in check_data.items() if v is not None}
 
-            # Use the SDK client to create check
+            self.logger.info(f"Creating new check: {filtered_check_data.get('name', 'Unnamed')}")
+
+            # 3. Use the clean dictionary with your SDK
             with self.client._get_api_client() as api_client:
                 from pingera.api import ChecksApi
                 from pingera.models import MonitorCheck
                 checks_api = ChecksApi(api_client)
 
-                # Create MonitorCheck model from data
-                monitor_check = MonitorCheck(**check_data)
-
+                monitor_check = MonitorCheck(**filtered_check_data)
                 response = checks_api.v1_checks_post(monitor_check)
 
                 created_check = self._format_check_response(response)
@@ -154,31 +136,45 @@ class ChecksTools(BaseTools):
             self.logger.error(f"Error creating check: {e}")
             return self._error_response(str(e))
 
-    async def update_check(self, check_id: str, check_data: dict) -> str:
+    async def update_check(
+        self,
+        check_id: str,
+        name: Optional[str] = None,
+        url: Optional[str] = None,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        interval: Optional[int] = None,
+        timeout: Optional[int] = None,
+        active: Optional[bool] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """
-        Update an existing monitoring check.
-
-        Args:
-            check_id: ID of the check to update
-            check_data: Dictionary containing updated check configuration
-
-        Returns:
-            JSON string containing updated check data
+        (Your docstring here)
         """
         try:
-            self.logger.info(f"Updating check {check_id}")
+            update_data = {
+                "name": name, "url": url, "host": host, "port": port,
+                "interval": interval, "timeout": timeout, "active": active,
+                "parameters": parameters
+            }
+
+            payload = {k: v for k, v in update_data.items() if v is not None}
+
+            if not payload:
+                return self._error_response("No update data provided. Please specify at least one field to update.")
+
+            self.logger.info(f"Updating check {check_id} with data: {payload}")
 
             with self.client._get_api_client() as api_client:
                 from pingera.api import ChecksApi
-                from pingera.models import MonitorCheck
+                from pingera.models import MonitorCheck1 
                 checks_api = ChecksApi(api_client)
 
-                # Create MonitorCheck model from the data
-                monitor_check = MonitorCheck(**check_data)
+                update_model = MonitorCheck1(**payload)
 
-                response = checks_api.v1_checks_check_id_put(
+                response = checks_api.v1_checks_check_id_patch(
                     check_id=check_id,
-                    monitor_check=monitor_check
+                    monitor_check1=update_model
                 )
 
                 updated_check = self._format_check_response(response)

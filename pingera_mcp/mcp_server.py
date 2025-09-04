@@ -3,7 +3,7 @@ MCP Server implementation for Pingera monitoring service.
 """
 import logging
 import json
-from typing import Optional, List
+from typing import Optional, Dict, Any, List
 
 from mcp.server.fastmcp import FastMCP
 
@@ -990,7 +990,17 @@ if config.is_read_write():
         return await component_tools.delete_component(page_id, component_id)
 
     @mcp.tool()
-    async def create_check(check_data) -> str:
+    async def create_check(
+        name: str,
+        type: str,
+        url: Optional[str] = None,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        interval: int = 300,
+        timeout: int = 10,
+        active: bool = True,
+        parameters: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """
         Create a new monitoring check to watch a website, API, or service.
 
@@ -999,39 +1009,76 @@ if config.is_read_write():
         If name is not set, AI agent should generate it from the URL or description.
 
         Args:
-            Required:
-            name: A user-friendly name for the monitor check. Max 100 characters. 
-            type: The type of check to perform. Valid values: 'web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep'.
+            name: A user-friendly name for the monitor check. Max 100 characters.
+            type: The type of check. Valid: 'web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep'.
+            url: The URL to monitor (for 'web' and 'api' checks).
+            host: The hostname or IP address (for 'tcp' and 'ssl' checks).
+            port: The port number to monitor (for 'tcp' checks). Range: 1-65535.
+            interval: Frequency of checks in seconds. Range: 30-86400. Default: 300.
+            timeout: Request timeout in seconds. Range: 1-30. Default: 10.
+            active: A flag to set the check as active or paused. Default: True.
+            parameters: Additional parameters for 'synthetic' and 'multistep' checks.
 
-            Optional:
-            url: str (for 'web' and 'api' checks): The URL to monitor.
-            host: str (for 'tcp' and 'ssl' checks): The hostname or IP address.
-            port: integer (for 'tcp' checks): The port number to monitor. Range: 1-65535.
-            interval: integer only: The frequency of checks in seconds. Range: 30-86400.
-            timeout: integer only: The request timeout in seconds. Range: 1-30.
-            active: bool: A flag to set the check as active or paused.
-            parameters: dict (for 'synthetic' and 'multistep' checks): Additional parameters specific to the check type. Must include 'pw_script' with a valid Playwright script.
-            Returns:
-            dict: A JSON object with the created check's details, including its unique id and configuration.
+        Returns:
+            A JSON object with the created check's details.
         """
-        return await checks_tools.create_check(check_data)
+
+        return await checks_tools.create_check(
+            name=name,
+            type=type,
+            url=url,
+            host=host,
+            port=port,
+            interval=interval,
+            timeout=timeout,
+            active=active,
+            parameters=parameters,
+        )
+
 
     @mcp.tool()
-    async def update_check(check_id: str, check_data: dict) -> str:
+    async def update_check(
+        check_id: str,
+        name: Optional[str] = None,
+        url: Optional[str] = None,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        interval: Optional[int] = None,
+        timeout: Optional[int] = None,
+        active: Optional[bool] = None,
+        parameters: Optional[Dict[str, Any]] = None,
+    ) -> str:
         """
         Update configuration for an existing monitoring check.
 
-        Modify check settings like URL, interval, timeout, alert thresholds,
-        or notification preferences.
+        Modify check settings like its name, URL, interval, or active status.
+        Only include the parameters you wish to change.
 
         Args:
-            check_id: The unique identifier of the check to update
-            check_data: Dictionary with updated check configuration
+            check_id: The unique identifier of the check to update. (Required)
+            name: A new user-friendly name for the monitor check.
+            url: The new URL to monitor.
+            host: The new hostname or IP address.
+            port: The new port number to monitor.
+            interval: The new frequency of checks in seconds.
+            timeout: The new request timeout in seconds.
+            active: A new flag to set the check as active (true) or paused (false).
+            parameters: New additional parameters. For synthetic or multistep checks, the 'parameters' dictionary must contain a 'pw_script' key. The value of this key should be the full Playwright script in Javascript or Typescript content as a string.
 
         Returns:
-            JSON with updated check details and configuration.
+            A JSON object with the updated check details.
         """
-        return await checks_tools.update_check(check_id, check_data)
+        return await checks_tools.update_check(
+            check_id=check_id,
+            name=name,
+            url=url,
+            host=host,
+            port=port,
+            interval=interval,
+            timeout=timeout,
+            active=active,
+            parameters=parameters,
+        )
 
     @mcp.tool()
     async def delete_check(check_id: str) -> str:

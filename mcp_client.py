@@ -9,6 +9,22 @@ import google.generativeai as genai
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 import traceback
+from proto.marshal.collections.maps import MapComposite
+
+# ADD THIS HELPER FUNCTION
+def convert_proto_map_to_dict(proto_map):
+    """Recursively converts a Proto MapComposite to a standard Python dict."""
+    if not isinstance(proto_map, MapComposite):
+        return proto_map
+
+    py_dict = {}
+    for key, value in proto_map.items():
+        if isinstance(value, MapComposite):
+            py_dict[key] = convert_proto_map_to_dict(value)
+        else:
+            py_dict[key] = value
+    return py_dict
+
 
 # Initialize Gemini client
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -174,7 +190,12 @@ async def main():
 
                             try:
                                 # Add timeout to tool calls
-                                tool_task = asyncio.create_task(session.call_tool(function_call.name, dict(function_call.args)))
+                                args_dict = convert_proto_map_to_dict(function_call.args)
+                                print(f"📝 With converted arguments: {args_dict}")
+
+                                tool_task = asyncio.create_task(
+                                    session.call_tool(function_call.name, args_dict) # Use the converted dict
+                                )
                                 result = await asyncio.wait_for(tool_task, timeout=60.0)
                                 print(f"✓ Tool executed successfully")
 

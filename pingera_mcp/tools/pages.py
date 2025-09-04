@@ -321,9 +321,6 @@ class PagesTools(BaseTools):
                 page_data_result = self._convert_sdk_object_to_dict(response)
                 return self._success_response(page_data_result)
 
-        except ValueError:
-            self.logger.error(f"Invalid page ID: {page_id}")
-            return self._error_response(f"Invalid page ID: {page_id}")
         except Exception as e:
             self.logger.error(f"Error updating page {page_id}: {e}")
             return self._error_response(str(e))
@@ -426,9 +423,6 @@ class PagesTools(BaseTools):
                 page_data_result = self._convert_sdk_object_to_dict(response)
                 return self._success_response(page_data_result)
 
-        except ValueError:
-            self.logger.error(f"Invalid page ID: {page_id}")
-            return self._error_response(f"Invalid page ID: {page_id}")
         except Exception as e:
             self.logger.error(f"Error patching page {page_id}: {e}")
             return self._error_response(str(e))
@@ -451,8 +445,7 @@ class PagesTools(BaseTools):
                 from pingera.api import StatusPagesApi
                 pages_api = StatusPagesApi(api_client)
 
-                page_id_int = int(page_id)
-                pages_api.v1_pages_page_id_delete(page_id=page_id_int)
+                pages_api.v1_pages_page_id_delete(page_id=page_id)
 
                 return self._success_response({
                     "deleted": True,
@@ -460,9 +453,6 @@ class PagesTools(BaseTools):
                     "message": f"Page {page_id} deleted successfully"
                 })
 
-        except ValueError:
-            self.logger.error(f"Invalid page ID: {page_id}")
-            return self._error_response(f"Invalid page ID: {page_id}", None)
         except PingeraError as e:
             self.logger.error(f"Error deleting page {page_id}: {e}")
             return self._error_response(str(e), None)

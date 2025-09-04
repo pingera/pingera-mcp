@@ -300,14 +300,35 @@ class ComponentTools(BaseTools):
             self.logger.error(f"Error updating component {component_id}: {e}")
             return self._error_response(str(e), None)
 
-    async def patch_component(self, page_id: str, component_id: str, **kwargs) -> str:
+    async def patch_component(
+        self,
+        page_id: str,
+        component_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        group: Optional[bool] = None,
+        group_id: Optional[str] = None,
+        only_show_if_degraded: Optional[bool] = None,
+        position: Optional[int] = None,
+        showcase: Optional[bool] = None,
+        status: Optional[str] = None,
+        start_date: Optional[str] = None
+    ) -> str:
         """
         Partially update an existing component.
 
         Args:
             page_id: The ID of the status page
             component_id: The ID of the component to update
-            **kwargs: Component fields to update (only provided fields will be updated)
+            name: Display name of the component
+            description: Detailed description of the component
+            group: Whether this component is a group container for other components
+            group_id: ID of the group this component belongs to (if any)
+            only_show_if_degraded: Whether to show this component only when it's not operational
+            position: Display order position of the component on the status page
+            showcase: Whether to prominently display this component on the status page
+            status: Current operational status of the component
+            start_date: Date when monitoring for this component started (ISO format)
 
         Returns:
             str: JSON string containing the updated component details
@@ -315,10 +336,31 @@ class ComponentTools(BaseTools):
         try:
             self.logger.info(f"Patching component {component_id} on page {page_id}")
 
-            if not kwargs:
+            # Build component data dict with only provided fields
+            component_data = {}
+            if name is not None:
+                component_data["name"] = name
+            if description is not None:
+                component_data["description"] = description
+            if group is not None:
+                component_data["group"] = group
+            if group_id is not None:
+                component_data["group_id"] = group_id
+            if only_show_if_degraded is not None:
+                component_data["only_show_if_degraded"] = only_show_if_degraded
+            if position is not None:
+                component_data["position"] = position
+            if showcase is not None:
+                component_data["showcase"] = showcase
+            if status is not None:
+                component_data["status"] = status
+            if start_date is not None:
+                component_data["start_date"] = start_date
+
+            if not component_data:
                 return self._error_response("No fields provided for update", None)
 
-            component = self.client.components.patch_component(page_id, component_id, kwargs)
+            component = self.client.components.patch_component(page_id, component_id, component_data)
 
             # Convert SDK Component object to dict
             component_dict = self._convert_sdk_object_to_dict(component)

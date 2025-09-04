@@ -1120,7 +1120,19 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    async def patch_component(page_id: str, component_id: str, **kwargs) -> str:
+    async def patch_component(
+        page_id: str, 
+        component_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        group: Optional[bool] = None,
+        group_id: Optional[str] = None,
+        only_show_if_degraded: Optional[bool] = None,
+        position: Optional[int] = None,
+        showcase: Optional[bool] = None,
+        status: Optional[str] = None,
+        start_date: Optional[str] = None
+    ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a component (PATCH method).
         
@@ -1131,12 +1143,23 @@ if config.is_read_write():
         Args:
             page_id: The ID of the status page
             component_id: The unique identifier of the component
-            **kwargs: Specific fields to update with their new values
+            name: Display name of the component
+            description: Detailed description of the component
+            group: Whether this component is a group container for other components
+            group_id: ID of the group this component belongs to (if any)
+            only_show_if_degraded: Whether to show this component only when it's not operational
+            position: Display order position of the component on the status page
+            showcase: Whether to prominently display this component on the status page
+            status: Current operational status of the component
+            start_date: Date when monitoring for this component started (ISO format)
 
         Returns:
             JSON with updated component configuration.
         """
-        return await component_tools.patch_component(page_id, component_id, **kwargs)
+        return await component_tools.patch_component(
+            page_id, component_id, name, description, group, group_id,
+            only_show_if_degraded, position, showcase, status, start_date
+        )
 
     @mcp.tool()
     async def delete_component(page_id: str, component_id: str) -> str:

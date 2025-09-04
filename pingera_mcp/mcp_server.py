@@ -881,10 +881,10 @@ if config.is_read_write():
         support_url: Optional[str] = None,
     ) -> str:
         """
-        Update configuration and settings for an existing status page. Use patch_page for partial updates.
-
-        Modify page properties like name, domain settings, branding, or
-        other configuration options. Only specified fields will be updated.
+        FULL UPDATE: Replace all page configuration (PUT method). Requires many fields to be specified.
+        
+        WARNING: This is a full replacement operation. For simple changes like updating just the name, 
+        use patch_page instead which is designed for partial updates.
 
         Args:
             page_id: The unique identifier of the page to update
@@ -961,10 +961,11 @@ if config.is_read_write():
         support_url: Optional[str] = None,
     ) -> str:
         """
-        Partially update specific fields of a status page.
-
-        Similar to update_page but for making targeted changes to specific
-        configuration fields without specifying all parameters.
+        RECOMMENDED: Partially update specific fields of a status page (PATCH method).
+        
+        Use this for simple updates like changing the name, description, or other individual fields.
+        Only the fields you specify will be updated, leaving other settings unchanged.
+        This is the preferred method for most page updates.
 
         Args:
             page_id: The unique identifier of the page to patch

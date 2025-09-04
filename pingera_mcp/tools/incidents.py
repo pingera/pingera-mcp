@@ -355,17 +355,31 @@ class IncidentsTools(BaseTools):
 
             with self.client._get_api_client() as api_client:
                 from pingera.api import StatusPagesIncidentsApi
-                from pingera.models import Incident
                 incidents_api = StatusPagesIncidentsApi(api_client)
 
-                # Create Incident model from data for PATCH operation
-                incident = Incident(**incident_data)
-
-                response = incidents_api.v1_pages_page_id_incidents_incident_id_patch(
-                    page_id=page_id,
-                    incident_id=incident_id,
-                    incident=incident
-                )
+                # Try passing incident data with various possible parameter names
+                try:
+                    # First try with 'body' parameter
+                    response = incidents_api.v1_pages_page_id_incidents_incident_id_patch(
+                        page_id=page_id,
+                        incident_id=incident_id,
+                        body=incident_data
+                    )
+                except Exception as e1:
+                    try:
+                        # If that fails, try with direct incident_data
+                        response = incidents_api.v1_pages_page_id_incidents_incident_id_patch(
+                            page_id=page_id,
+                            incident_id=incident_id,
+                            **incident_data
+                        )
+                    except Exception as e2:
+                        # If both fail, try with unnamed parameter
+                        response = incidents_api.v1_pages_page_id_incidents_incident_id_patch(
+                            page_id,
+                            incident_id,
+                            incident_data
+                        )
 
                 updated_incident = self._format_incident_response(response)
                 return self._success_response(updated_incident)

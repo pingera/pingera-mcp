@@ -18,6 +18,7 @@ from pingera_mcp.tools import (
         HeartbeatsTools,
         IncidentsTools,
         PlaywrightGeneratorTools,
+        CheckGroupsTools, # Import CheckGroupsTools
     )
 
 # Configure logging
@@ -73,6 +74,7 @@ alerts_tools = AlertsTools(pingera_client)
 heartbeats_tools = HeartbeatsTools(pingera_client)
 incidents_tools = IncidentsTools(pingera_client)
 playwright_tools = PlaywrightGeneratorTools(pingera_client)
+check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
 
 # Register read-only tools
 @mcp.tool()
@@ -420,19 +422,73 @@ async def list_on_demand_checks(
     page_size: Optional[int] = None
 ) -> str:
     """
-    List all on-demand (manually executed) check jobs and their status.
-
-    Shows recent manual check executions, both custom checks and manually
-    triggered existing checks, with their current status and results.
+    List on-demand checks.
 
     Args:
         page: Page number for pagination
-        page_size: Number of jobs per page
+        page_size: Number of items per page
 
     Returns:
-        JSON with list of on-demand check jobs including status, timestamps, and results.
+        JSON string containing on-demand checks data
     """
     return await checks_tools.list_on_demand_checks(page, page_size)
+
+# --- New Check Groups Tools ---
+@mcp.tool()
+async def list_check_groups(
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
+) -> str:
+    """
+    List all check groups in your account.
+
+    Check groups are containers that help organize monitoring checks into logical
+    collections. Use this tool to see all available groups and their basic information.
+
+    Args:
+        page: Page number for pagination (default: 1)
+        page_size: Number of items per page (default: 20, max: 100)
+
+    Returns:
+        JSON with list of check groups including their names, IDs, and check counts.
+    """
+    return await check_groups_tools.list_check_groups(page, page_size)
+
+@mcp.tool()
+async def get_check_group_details(group_id: str) -> str:
+    """
+    Get detailed information about a specific check group.
+
+    Args:
+        group_id: The unique identifier of the check group
+
+    Returns:
+        JSON with check group details including name, description, and configuration.
+    """
+    return await check_groups_tools.get_check_group_details(group_id)
+
+@mcp.tool()
+async def get_checks_in_group(
+    group_id: str,
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
+) -> str:
+    """
+    Get all monitoring checks that belong to a specific check group.
+
+    Use this tool to see which checks are organized under a particular group.
+    This helps understand the monitoring setup and check organization.
+
+    Args:
+        group_id: The unique identifier of the check group
+        page: Page number for pagination (default: 1)
+        page_size: Number of items per page (default: 20, max: 100)
+
+    Returns:
+        JSON with list of checks in the group including their names, URLs, types, and status.
+    """
+    return await check_groups_tools.get_checks_in_group(group_id, page, page_size)
+# --- End New Check Groups Tools ---
 
 @mcp.tool()
 async def list_alerts(
@@ -946,7 +1002,7 @@ if config.is_read_write():
             Required:
             name: A user-friendly name for the monitor check. Max 100 characters. 
             type: The type of check to perform. Valid values: 'web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep'.
-            
+
             Optional:
             url: str (for 'web' and 'api' checks): The URL to monitor.
             host: str (for 'tcp' and 'ssl' checks): The hostname or IP address.

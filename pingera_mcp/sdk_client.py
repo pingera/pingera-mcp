@@ -13,6 +13,7 @@ from pingera.api import (
     StatusPagesComponentsApi,
     StatusPagesIncidentsApi,
     ChecksApi,
+    CheckGroupsApi,
     AlertsApi,
     HeartbeatsApi,
     OnDemandChecksApi,

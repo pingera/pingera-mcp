@@ -6,6 +6,7 @@ from .status import StatusTools
 from .pages import PagesTools
 from .components import ComponentTools
 from .checks import ChecksTools
+from .check_groups import CheckGroupsTools
 from .alerts import AlertsTools
 from .heartbeats import HeartbeatsTools
 from .incidents import IncidentsTools
@@ -16,6 +17,7 @@ __all__ = [
     "PagesTools",
     "ComponentTools",
     "ChecksTools",
+    "CheckGroupsTools",
     "AlertsTools",
     "HeartbeatsTools",
     "IncidentsTools",

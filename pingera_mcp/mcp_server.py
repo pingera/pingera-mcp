@@ -1093,10 +1093,10 @@ if config.is_read_write():
         **kwargs
     ) -> str:
         """
-        Update configuration and properties of an existing component.
-
-        Modify component settings like name, description, status, display options,
-        or grouping. Only specified fields will be updated.
+        FULL UPDATE: Replace all component configuration (PUT method). Requires many fields to be specified.
+        
+        WARNING: This is a full replacement operation. For simple changes like updating just the name or status, 
+        use patch_component instead which is designed for partial updates.
 
         Args:
             page_id: The ID of the status page
@@ -1122,10 +1122,11 @@ if config.is_read_write():
     @mcp.tool()
     async def patch_component(page_id: str, component_id: str, **kwargs) -> str:
         """
-        Partially update specific fields of a component.
-
-        Make targeted updates to specific component properties without
-        having to specify all configuration parameters.
+        RECOMMENDED: Partially update specific fields of a component (PATCH method).
+        
+        Use this for simple updates like changing the name, status, description, or other individual fields.
+        Only the fields you specify will be updated, leaving other settings unchanged.
+        This is the preferred method for most component updates.
 
         Args:
             page_id: The ID of the status page

@@ -89,19 +89,48 @@ class IncidentsTools(BaseTools):
             self.logger.error(f"Error getting incident details for {incident_id}: {e}")
             return self._error_response(str(e))
 
-    async def create_incident(self, page_id: str, incident_data: dict) -> str:
+    async def create_incident(
+        self,
+        page_id: str,
+        name: str,
+        status: str,
+        body: Optional[str] = None,
+        impact: Optional[str] = None,
+        deliver_notifications: Optional[bool] = True,
+        components: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Create a new incident.
         
         Args:
             page_id: ID of the status page
-            incident_data: Incident configuration data
+            name: The name/title of the incident (1-200 characters)
+            status: The current status of the incident
+            body: The initial update body content for the incident
+            impact: The impact level of the incident
+            deliver_notifications: Whether to send notifications when creating this incident
+            components: A dictionary mapping component IDs to their status during incident creation
             
         Returns:
             JSON string with created incident data
         """
         try:
-            self.logger.info(f"Creating incident on page {page_id}: {incident_data.get('name', 'Unnamed')}")
+            self.logger.info(f"Creating incident on page {page_id}: {name}")
+
+            # Build incident data from parameters
+            incident_data = {
+                "name": name,
+                "status": status
+            }
+            
+            if body is not None:
+                incident_data["body"] = body
+            if impact is not None:
+                incident_data["impact"] = impact
+            if deliver_notifications is not None:
+                incident_data["deliver_notifications"] = deliver_notifications
+            if components is not None:
+                incident_data["components"] = components
 
             with self.client._get_api_client() as api_client:
                 from pingera.api import StatusPagesIncidentsApi
@@ -119,20 +148,95 @@ class IncidentsTools(BaseTools):
             self.logger.error(f"Error creating incident on page {page_id}: {e}")
             return self._error_response(str(e))
 
-    async def update_incident(self, page_id: str, incident_id: str, incident_data: dict) -> str:
+    async def update_incident(
+        self,
+        page_id: str,
+        incident_id: str,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        body: Optional[str] = None,
+        impact: Optional[str] = None,
+        deliver_notifications: Optional[bool] = None,
+        components: Optional[Dict[str, str]] = None,
+        auto_transition_to_maintenance_state: Optional[bool] = None,
+        auto_transition_to_operational_state: Optional[bool] = None,
+        auto_transition_deliver_notifications_at_start: Optional[bool] = None,
+        auto_transition_deliver_notifications_at_end: Optional[bool] = None,
+        scheduled_for: Optional[str] = None,
+        scheduled_until: Optional[str] = None,
+        scheduled_remind_prior: Optional[bool] = None,
+        scheduled_auto_in_progress: Optional[bool] = None,
+        scheduled_auto_completed: Optional[bool] = None,
+        reminder_intervals: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
-        Update an existing incident.
+        Update an existing incident (full update - PUT method).
         
         Args:
             page_id: ID of the status page
             incident_id: ID of the incident to update
-            incident_data: Updated incident data
+            name: The name/title of the incident
+            status: The current status of the incident
+            body: The main description/body content of the incident
+            impact: The impact level of the incident
+            deliver_notifications: Whether to send notifications when updating this incident
+            components: Dictionary mapping component IDs to their status
+            auto_transition_to_maintenance_state: Whether to auto transition components to maintenance
+            auto_transition_to_operational_state: Whether to auto transition components to operational
+            auto_transition_deliver_notifications_at_start: Whether to deliver notifications at start
+            auto_transition_deliver_notifications_at_end: Whether to deliver notifications at end
+            scheduled_for: For scheduled maintenance, when maintenance starts (ISO format)
+            scheduled_until: For scheduled maintenance, when maintenance ends (ISO format)
+            scheduled_remind_prior: Whether to send reminder notifications before scheduled maintenance
+            scheduled_auto_in_progress: Whether scheduled maintenance should auto be marked in progress
+            scheduled_auto_completed: Whether scheduled maintenance should auto be marked completed
+            reminder_intervals: Intervals for reminder notifications
+            metadata: Additional metadata associated with the incident
             
         Returns:
             JSON string with updated incident data
         """
         try:
             self.logger.info(f"Updating incident {incident_id} on page {page_id}")
+
+            # Build incident data from parameters
+            incident_data = {}
+            
+            if name is not None:
+                incident_data["name"] = name
+            if status is not None:
+                incident_data["status"] = status
+            if body is not None:
+                incident_data["body"] = body
+            if impact is not None:
+                incident_data["impact"] = impact
+            if deliver_notifications is not None:
+                incident_data["deliver_notifications"] = deliver_notifications
+            if components is not None:
+                incident_data["components"] = components
+            if auto_transition_to_maintenance_state is not None:
+                incident_data["auto_transition_to_maintenance_state"] = auto_transition_to_maintenance_state
+            if auto_transition_to_operational_state is not None:
+                incident_data["auto_transition_to_operational_state"] = auto_transition_to_operational_state
+            if auto_transition_deliver_notifications_at_start is not None:
+                incident_data["auto_transition_deliver_notifications_at_start"] = auto_transition_deliver_notifications_at_start
+            if auto_transition_deliver_notifications_at_end is not None:
+                incident_data["auto_transition_deliver_notifications_at_end"] = auto_transition_deliver_notifications_at_end
+            if scheduled_for is not None:
+                incident_data["scheduled_for"] = scheduled_for
+            if scheduled_until is not None:
+                incident_data["scheduled_until"] = scheduled_until
+            if scheduled_remind_prior is not None:
+                incident_data["scheduled_remind_prior"] = scheduled_remind_prior
+            if scheduled_auto_in_progress is not None:
+                incident_data["scheduled_auto_in_progress"] = scheduled_auto_in_progress
+            if scheduled_auto_completed is not None:
+                incident_data["scheduled_auto_completed"] = scheduled_auto_completed
+            if reminder_intervals is not None:
+                incident_data["reminder_intervals"] = reminder_intervals
+            if metadata is not None:
+                incident_data["metadata"] = metadata
 
             with self.client._get_api_client() as api_client:
                 from pingera.api import StatusPagesIncidentsApi
@@ -149,6 +253,113 @@ class IncidentsTools(BaseTools):
 
         except Exception as e:
             self.logger.error(f"Error updating incident {incident_id}: {e}")
+            return self._error_response(str(e))
+
+    async def patch_incident(
+        self,
+        page_id: str,
+        incident_id: str,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        body: Optional[str] = None,
+        impact: Optional[str] = None,
+        deliver_notifications: Optional[bool] = None,
+        components: Optional[Dict[str, str]] = None,
+        auto_transition_to_maintenance_state: Optional[bool] = None,
+        auto_transition_to_operational_state: Optional[bool] = None,
+        auto_transition_deliver_notifications_at_start: Optional[bool] = None,
+        auto_transition_deliver_notifications_at_end: Optional[bool] = None,
+        scheduled_for: Optional[str] = None,
+        scheduled_until: Optional[str] = None,
+        scheduled_remind_prior: Optional[bool] = None,
+        scheduled_auto_in_progress: Optional[bool] = None,
+        scheduled_auto_completed: Optional[bool] = None,
+        reminder_intervals: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """
+        Partially update an existing incident (PATCH method).
+        
+        Args:
+            page_id: ID of the status page
+            incident_id: ID of the incident to patch
+            name: The name/title of the incident
+            status: The current status of the incident
+            body: The main description/body content of the incident
+            impact: The impact level of the incident
+            deliver_notifications: Whether to send notifications when updating this incident
+            components: Dictionary mapping component IDs to their status
+            auto_transition_to_maintenance_state: Whether to auto transition components to maintenance
+            auto_transition_to_operational_state: Whether to auto transition components to operational
+            auto_transition_deliver_notifications_at_start: Whether to deliver notifications at start
+            auto_transition_deliver_notifications_at_end: Whether to deliver notifications at end
+            scheduled_for: For scheduled maintenance, when maintenance starts (ISO format)
+            scheduled_until: For scheduled maintenance, when maintenance ends (ISO format)
+            scheduled_remind_prior: Whether to send reminder notifications before scheduled maintenance
+            scheduled_auto_in_progress: Whether scheduled maintenance should auto be marked in progress
+            scheduled_auto_completed: Whether scheduled maintenance should auto be marked completed
+            reminder_intervals: Intervals for reminder notifications
+            metadata: Additional metadata associated with the incident
+            
+        Returns:
+            JSON string with updated incident data
+        """
+        try:
+            self.logger.info(f"Patching incident {incident_id} on page {page_id}")
+
+            # Build incident data from parameters (only include non-None values)
+            incident_data = {}
+            
+            if name is not None:
+                incident_data["name"] = name
+            if status is not None:
+                incident_data["status"] = status
+            if body is not None:
+                incident_data["body"] = body
+            if impact is not None:
+                incident_data["impact"] = impact
+            if deliver_notifications is not None:
+                incident_data["deliver_notifications"] = deliver_notifications
+            if components is not None:
+                incident_data["components"] = components
+            if auto_transition_to_maintenance_state is not None:
+                incident_data["auto_transition_to_maintenance_state"] = auto_transition_to_maintenance_state
+            if auto_transition_to_operational_state is not None:
+                incident_data["auto_transition_to_operational_state"] = auto_transition_to_operational_state
+            if auto_transition_deliver_notifications_at_start is not None:
+                incident_data["auto_transition_deliver_notifications_at_start"] = auto_transition_deliver_notifications_at_start
+            if auto_transition_deliver_notifications_at_end is not None:
+                incident_data["auto_transition_deliver_notifications_at_end"] = auto_transition_deliver_notifications_at_end
+            if scheduled_for is not None:
+                incident_data["scheduled_for"] = scheduled_for
+            if scheduled_until is not None:
+                incident_data["scheduled_until"] = scheduled_until
+            if scheduled_remind_prior is not None:
+                incident_data["scheduled_remind_prior"] = scheduled_remind_prior
+            if scheduled_auto_in_progress is not None:
+                incident_data["scheduled_auto_in_progress"] = scheduled_auto_in_progress
+            if scheduled_auto_completed is not None:
+                incident_data["scheduled_auto_completed"] = scheduled_auto_completed
+            if reminder_intervals is not None:
+                incident_data["reminder_intervals"] = reminder_intervals
+            if metadata is not None:
+                incident_data["metadata"] = metadata
+
+            with self.client._get_api_client() as api_client:
+                from pingera.api import StatusPagesIncidentsApi
+                incidents_api = StatusPagesIncidentsApi(api_client)
+
+                response = incidents_api.v1_pages_page_id_incidents_incident_id_patch(
+                    page_id=page_id,
+                    incident_id=incident_id,
+                    incident=incident_data
+                )
+
+                updated_incident = self._format_incident_response(response)
+                return self._success_response(updated_incident)
+
+        except Exception as e:
+            self.logger.error(f"Error patching incident {incident_id}: {e}")
             return self._error_response(str(e))
 
     async def delete_incident(self, page_id: str, incident_id: str) -> str:

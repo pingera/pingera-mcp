@@ -1372,7 +1372,15 @@ if config.is_read_write():
         return await alerts_tools.delete_alert(alert_id)
 
     @mcp.tool()
-    async def create_incident(page_id: str, incident_data: dict) -> str:
+    async def create_incident(
+        page_id: str,
+        name: str,
+        status: str,
+        body: Optional[str] = None,
+        impact: Optional[str] = None,
+        deliver_notifications: Optional[bool] = True,
+        components: Optional[Dict[str, str]] = None
+    ) -> str:
         """
         Create a new incident on a status page to communicate issues to users.
 
@@ -1381,36 +1389,174 @@ if config.is_read_write():
 
         Args:
             page_id: The ID of the status page to post the incident on
-            incident_data: Dictionary with incident details including:
-                - name: Incident title
-                - status: Current status ('investigating', 'identified', 'monitoring', 'resolved')
-                - impact: Impact level ('none', 'minor', 'major', 'critical')
-                - body: Initial incident description
-                - component_ids: List of affected component IDs
-                - deliver_notifications: Whether to send notifications
+            name: The name/title of the incident (1-200 characters, required)
+            status: Current status of the incident (required, e.g., 'investigating', 'identified', 'monitoring', 'resolved')
+            body: The initial update body content for the incident
+            impact: Impact level ('none', 'minor', 'major', 'critical')
+            deliver_notifications: Whether to send notifications when creating this incident (default: True)
+            components: A dictionary mapping component IDs to their status during incident creation
 
         Returns:
             JSON with created incident details including ID and public URL.
         """
-        return await incidents_tools.create_incident(page_id, incident_data)
+        return await incidents_tools.create_incident(
+            page_id=page_id,
+            name=name,
+            status=status,
+            body=body,
+            impact=impact,
+            deliver_notifications=deliver_notifications,
+            components=components
+        )
 
     @mcp.tool()
-    async def update_incident(page_id: str, incident_id: str, incident_data: dict) -> str:
+    async def update_incident(
+        page_id: str,
+        incident_id: str,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        body: Optional[str] = None,
+        impact: Optional[str] = None,
+        deliver_notifications: Optional[bool] = None,
+        components: Optional[Dict[str, str]] = None,
+        auto_transition_to_maintenance_state: Optional[bool] = None,
+        auto_transition_to_operational_state: Optional[bool] = None,
+        auto_transition_deliver_notifications_at_start: Optional[bool] = None,
+        auto_transition_deliver_notifications_at_end: Optional[bool] = None,
+        scheduled_for: Optional[str] = None,
+        scheduled_until: Optional[str] = None,
+        scheduled_remind_prior: Optional[bool] = None,
+        scheduled_auto_in_progress: Optional[bool] = None,
+        scheduled_auto_completed: Optional[bool] = None,
+        reminder_intervals: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
         """
-        Update an existing incident's details and status.
-
-        Modify the incident title, status, impact level, or other properties.
-        For status updates that users will see, use add_incident_update instead.
+        FULL UPDATE: Replace all incident configuration (PUT method). Requires many fields to be specified.
+        
+        WARNING: This is a full replacement operation. For simple changes like updating just the name or status, 
+        use patch_incident instead which is designed for partial updates.
 
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
-            incident_data: Dictionary with updated incident configuration
+            name: The name/title of the incident
+            status: The current status of the incident
+            body: The main description/body content of the incident
+            impact: The impact level of the incident
+            deliver_notifications: Whether to send notifications when updating this incident
+            components: Dictionary mapping component IDs to their status
+            auto_transition_to_maintenance_state: Whether to auto transition components to maintenance
+            auto_transition_to_operational_state: Whether to auto transition components to operational
+            auto_transition_deliver_notifications_at_start: Whether to deliver notifications at start
+            auto_transition_deliver_notifications_at_end: Whether to deliver notifications at end
+            scheduled_for: For scheduled maintenance, when maintenance starts (ISO format)
+            scheduled_until: For scheduled maintenance, when maintenance ends (ISO format)
+            scheduled_remind_prior: Whether to send reminder notifications before scheduled maintenance
+            scheduled_auto_in_progress: Whether scheduled maintenance should auto be marked in progress
+            scheduled_auto_completed: Whether scheduled maintenance should auto be marked completed
+            reminder_intervals: Intervals for reminder notifications
+            metadata: Additional metadata associated with the incident
 
         Returns:
             JSON with updated incident details.
         """
-        return await incidents_tools.update_incident(page_id, incident_id, incident_data)
+        return await incidents_tools.update_incident(
+            page_id=page_id,
+            incident_id=incident_id,
+            name=name,
+            status=status,
+            body=body,
+            impact=impact,
+            deliver_notifications=deliver_notifications,
+            components=components,
+            auto_transition_to_maintenance_state=auto_transition_to_maintenance_state,
+            auto_transition_to_operational_state=auto_transition_to_operational_state,
+            auto_transition_deliver_notifications_at_start=auto_transition_deliver_notifications_at_start,
+            auto_transition_deliver_notifications_at_end=auto_transition_deliver_notifications_at_end,
+            scheduled_for=scheduled_for,
+            scheduled_until=scheduled_until,
+            scheduled_remind_prior=scheduled_remind_prior,
+            scheduled_auto_in_progress=scheduled_auto_in_progress,
+            scheduled_auto_completed=scheduled_auto_completed,
+            reminder_intervals=reminder_intervals,
+            metadata=metadata
+        )
+
+    @mcp.tool()
+    async def patch_incident(
+        page_id: str,
+        incident_id: str,
+        name: Optional[str] = None,
+        status: Optional[str] = None,
+        body: Optional[str] = None,
+        impact: Optional[str] = None,
+        deliver_notifications: Optional[bool] = None,
+        components: Optional[Dict[str, str]] = None,
+        auto_transition_to_maintenance_state: Optional[bool] = None,
+        auto_transition_to_operational_state: Optional[bool] = None,
+        auto_transition_deliver_notifications_at_start: Optional[bool] = None,
+        auto_transition_deliver_notifications_at_end: Optional[bool] = None,
+        scheduled_for: Optional[str] = None,
+        scheduled_until: Optional[str] = None,
+        scheduled_remind_prior: Optional[bool] = None,
+        scheduled_auto_in_progress: Optional[bool] = None,
+        scheduled_auto_completed: Optional[bool] = None,
+        reminder_intervals: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """
+        RECOMMENDED: Partially update specific fields of an incident (PATCH method).
+        
+        Use this for simple updates like changing the name, status, description, or other individual fields.
+        Only the fields you specify will be updated, leaving other settings unchanged.
+        This is the preferred method for most incident updates.
+
+        Args:
+            page_id: The ID of the status page
+            incident_id: The unique identifier of the incident
+            name: The name/title of the incident
+            status: The current status of the incident
+            body: The main description/body content of the incident
+            impact: The impact level of the incident
+            deliver_notifications: Whether to send notifications when updating this incident
+            components: Dictionary mapping component IDs to their status
+            auto_transition_to_maintenance_state: Whether to auto transition components to maintenance
+            auto_transition_to_operational_state: Whether to auto transition components to operational
+            auto_transition_deliver_notifications_at_start: Whether to deliver notifications at start
+            auto_transition_deliver_notifications_at_end: Whether to deliver notifications at end
+            scheduled_for: For scheduled maintenance, when maintenance starts (ISO format)
+            scheduled_until: For scheduled maintenance, when maintenance ends (ISO format)
+            scheduled_remind_prior: Whether to send reminder notifications before scheduled maintenance
+            scheduled_auto_in_progress: Whether scheduled maintenance should auto be marked in progress
+            scheduled_auto_completed: Whether scheduled maintenance should auto be marked completed
+            reminder_intervals: Intervals for reminder notifications
+            metadata: Additional metadata associated with the incident
+
+        Returns:
+            JSON with updated incident configuration.
+        """
+        return await incidents_tools.patch_incident(
+            page_id=page_id,
+            incident_id=incident_id,
+            name=name,
+            status=status,
+            body=body,
+            impact=impact,
+            deliver_notifications=deliver_notifications,
+            components=components,
+            auto_transition_to_maintenance_state=auto_transition_to_maintenance_state,
+            auto_transition_to_operational_state=auto_transition_to_operational_state,
+            auto_transition_deliver_notifications_at_start=auto_transition_deliver_notifications_at_start,
+            auto_transition_deliver_notifications_at_end=auto_transition_deliver_notifications_at_end,
+            scheduled_for=scheduled_for,
+            scheduled_until=scheduled_until,
+            scheduled_remind_prior=scheduled_remind_prior,
+            scheduled_auto_in_progress=scheduled_auto_in_progress,
+            scheduled_auto_completed=scheduled_auto_completed,
+            reminder_intervals=reminder_intervals,
+            metadata=metadata
+        )
 
     @mcp.tool()
     async def delete_incident(page_id: str, incident_id: str) -> str:

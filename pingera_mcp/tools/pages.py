@@ -133,67 +133,95 @@ class PagesTools(BaseTools):
         domain: Optional[str] = None,
         url: Optional[str] = None,
         language: Optional[str] = None,
-        **kwargs
+        headline: Optional[str] = None,
+        page_description: Optional[str] = None,
+        time_zone: Optional[str] = None,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        state: Optional[str] = None,
+        viewers_must_be_team_members: Optional[bool] = None,
+        hidden_from_search: Optional[bool] = None,
+        allow_page_subscribers: Optional[bool] = None,
+        allow_incident_subscribers: Optional[bool] = None,
+        allow_email_subscribers: Optional[bool] = None,
+        allow_sms_subscribers: Optional[bool] = None,
+        allow_webhook_subscribers: Optional[bool] = None,
+        allow_rss_atom_feeds: Optional[bool] = None,
+        support_url: Optional[str] = None,
     ) -> str:
         """
         Create a new status page.
 
         Args:
             name: Display name of the status page (required)
-            subdomain: Subdomain for accessing the status page
+            subdomain: Subdomain for accessing the status page (e.g., 'mycompany' for mycompany.pingera.ru)
             domain: Custom domain for the status page
-            url: Company URL for logo redirect
+            url: Company URL - users will be redirected there when clicking on the logo
             language: Language for the status page interface ("ru" or "en")
-            **kwargs: Additional page configuration options
+            headline: Headline text displayed on the status page
+            page_description: Brief description of what this status page monitors
+            time_zone: Timezone for displaying dates and times on the status page
+            country: Country where your organization is located
+            city: City where your organization is located
+            state: State/region where your organization is located
+            viewers_must_be_team_members: Whether only team members can view this page (True = private, False = public)
+            hidden_from_search: Whether to hide this page from search engines
+            allow_page_subscribers: Whether to allow users to subscribe to page updates
+            allow_incident_subscribers: Whether to allow users to subscribe to incident updates
+            allow_email_subscribers: Whether to allow email subscriptions
+            allow_sms_subscribers: Whether to allow SMS subscriptions
+            allow_webhook_subscribers: Whether to allow webhook subscriptions
+            allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
+            support_url: URL to your support or contact page
 
         Returns:
             str: JSON string containing the created page details
         """
         try:
-            self.logger.info(f"Creating status page: {name}")
-            self.logger.debug(f"Additional kwargs: {kwargs}")
-
+            # 1. Collect all arguments into a dictionary
             page_data = {
-                "name": name
+                "name": name,
+                "subdomain": subdomain,
+                "domain": domain,
+                "url": url,
+                "language": language,
+                "headline": headline,
+                "page_description": page_description,
+                "time_zone": time_zone,
+                "country": country,
+                "city": city,
+                "state": state,
+                "viewers_must_be_team_members": viewers_must_be_team_members,
+                "hidden_from_search": hidden_from_search,
+                "allow_page_subscribers": allow_page_subscribers,
+                "allow_incident_subscribers": allow_incident_subscribers,
+                "allow_email_subscribers": allow_email_subscribers,
+                "allow_sms_subscribers": allow_sms_subscribers,
+                "allow_webhook_subscribers": allow_webhook_subscribers,
+                "allow_rss_atom_feeds": allow_rss_atom_feeds,
+                "support_url": support_url,
             }
 
-            # Add any additional configuration
-            page_data.update(kwargs)
-            self.logger.debug(f"Final page_data: {page_data}")
+            # 2. Filter out optional arguments that were not provided (are None)
+            filtered_page_data = {k: v for k, v in page_data.items() if v is not None}
 
-            self.logger.debug("Getting API client...")
+            self.logger.info(f"Creating status page: {filtered_page_data.get('name', 'Unnamed')}")
+
+            # 3. Use the clean dictionary with your SDK
             with self.client._get_api_client() as api_client:
-                self.logger.debug("API client obtained, importing StatusPagesApi...")
                 from pingera.api import StatusPagesApi
+                from pingera.models import Page
                 pages_api = StatusPagesApi(api_client)
-                self.logger.debug("StatusPagesApi created")
 
-                self.logger.debug("Calling v1_pages_post...")
-                response = pages_api.v1_pages_post(page=page_data)
-                self.logger.debug(f"API response received: {type(response)}")
+                page_model = Page(**filtered_page_data)
+                response = pages_api.v1_pages_post(page=page_model)
 
-                # Handle SDK response format
-                self.logger.debug("Converting SDK response to dict...")
                 page_data_result = self._convert_sdk_object_to_dict(response)
-                self.logger.debug(f"Converted response: {page_data_result}")
-
                 return self._success_response(page_data_result)
 
-        except ImportError as e:
-            self.logger.error(f"Import error: {e}")
-            return self._error_response(f"Import error: {str(e)}", None)
-        except AttributeError as e:
-            self.logger.error(f"Attribute error: {e}")
-            return self._error_response(f"Attribute error: {str(e)}", None)
-        except PingeraError as e:
-            self.logger.error(f"Pingera API error creating page: {e}")
-            return self._error_response(f"Pingera API error: {str(e)}", None)
         except Exception as e:
-            self.logger.error(f"Unexpected error creating page: {e}")
-            self.logger.error(f"Error type: {type(e)}")
-            import traceback
-            self.logger.error(f"Traceback: {traceback.format_exc()}")
-            return self._error_response(f"Unexpected error: {str(e)}", None)
+            self.logger.error(f"Error creating page: {e}")
+            return self._error_response(str(e))
 
     async def update_page(
         self,

@@ -239,7 +239,7 @@ class CheckGroupsTools(BaseTools):
         """Format check groups list response."""
         if hasattr(response, '__dict__'):
             # Handle the actual API response structure with pagination and groups
-            groups_data = getattr(response, 'check_groups', [])
+            groups_data = getattr(response, 'groups', [])
             pagination = getattr(response, 'pagination', {})
 
             # Convert model objects to dictionaries for JSON serialization
@@ -261,12 +261,12 @@ class CheckGroupsTools(BaseTools):
             page_size = pagination.get('page_size', 20) if isinstance(pagination, dict) else 20
 
             return {
-                "check_groups": formatted_groups,
+                "groups": formatted_groups,
                 "total": total,
                 "page": page,
                 "page_size": page_size
             }
-        return {"check_groups": [], "total": 0}
+        return {"groups": [], "total": 0}
 
     def _format_check_group_response(self, response) -> dict:
         """Format single check group response."""

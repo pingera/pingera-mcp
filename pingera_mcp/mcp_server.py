@@ -864,7 +864,21 @@ if config.is_read_write():
         domain: Optional[str] = None,
         url: Optional[str] = None,
         language: Optional[str] = None,
-        **kwargs
+        headline: Optional[str] = None,
+        page_description: Optional[str] = None,
+        time_zone: Optional[str] = None,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        state: Optional[str] = None,
+        viewers_must_be_team_members: Optional[bool] = None,
+        hidden_from_search: Optional[bool] = None,
+        allow_page_subscribers: Optional[bool] = None,
+        allow_incident_subscribers: Optional[bool] = None,
+        allow_email_subscribers: Optional[bool] = None,
+        allow_sms_subscribers: Optional[bool] = None,
+        allow_webhook_subscribers: Optional[bool] = None,
+        allow_rss_atom_feeds: Optional[bool] = None,
+        support_url: Optional[str] = None,
     ) -> str:
         """
         Update configuration and settings for an existing status page.
@@ -879,15 +893,73 @@ if config.is_read_write():
             domain: New custom domain
             url: Updated company/service URL
             language: New language setting
-            **kwargs: Additional configuration updates
+            headline: Headline text displayed on the status page
+            page_description: Brief description of what this status page monitors
+            time_zone: Timezone for displaying dates and times on the status page
+            country: Country where your organization is located
+            city: City where your organization is located
+            state: State/region where your organization is located
+            viewers_must_be_team_members: Whether only team members can view this page
+            hidden_from_search: Whether to hide this page from search engines
+            allow_page_subscribers: Whether to allow users to subscribe to page updates
+            allow_incident_subscribers: Whether to allow users to subscribe to incident updates
+            allow_email_subscribers: Whether to allow email subscriptions
+            allow_sms_subscribers: Whether to allow SMS subscriptions
+            allow_webhook_subscribers: Whether to allow webhook subscriptions
+            allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
+            support_url: URL to your support or contact page
 
         Returns:
             JSON with updated page details and configuration.
         """
-        return await pages_tools.update_page(page_id, name, subdomain, domain, url, language, **kwargs)
+        return await pages_tools.update_page(
+            page_id=page_id,
+            name=name,
+            subdomain=subdomain,
+            domain=domain,
+            url=url,
+            language=language,
+            headline=headline,
+            page_description=page_description,
+            time_zone=time_zone,
+            country=country,
+            city=city,
+            state=state,
+            viewers_must_be_team_members=viewers_must_be_team_members,
+            hidden_from_search=hidden_from_search,
+            allow_page_subscribers=allow_page_subscribers,
+            allow_incident_subscribers=allow_incident_subscribers,
+            allow_email_subscribers=allow_email_subscribers,
+            allow_sms_subscribers=allow_sms_subscribers,
+            allow_webhook_subscribers=allow_webhook_subscribers,
+            allow_rss_atom_feeds=allow_rss_atom_feeds,
+            support_url=support_url,
+        )
 
     @mcp.tool()
-    async def patch_page(page_id: str, **kwargs) -> str:
+    async def patch_page(
+        page_id: str,
+        name: Optional[str] = None,
+        subdomain: Optional[str] = None,
+        domain: Optional[str] = None,
+        url: Optional[str] = None,
+        language: Optional[str] = None,
+        headline: Optional[str] = None,
+        page_description: Optional[str] = None,
+        time_zone: Optional[str] = None,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        state: Optional[str] = None,
+        viewers_must_be_team_members: Optional[bool] = None,
+        hidden_from_search: Optional[bool] = None,
+        allow_page_subscribers: Optional[bool] = None,
+        allow_incident_subscribers: Optional[bool] = None,
+        allow_email_subscribers: Optional[bool] = None,
+        allow_sms_subscribers: Optional[bool] = None,
+        allow_webhook_subscribers: Optional[bool] = None,
+        allow_rss_atom_feeds: Optional[bool] = None,
+        support_url: Optional[str] = None,
+    ) -> str:
         """
         Partially update specific fields of a status page.
 
@@ -896,12 +968,53 @@ if config.is_read_write():
 
         Args:
             page_id: The unique identifier of the page to patch
-            **kwargs: Specific fields to update with their new values
+            name: Display name of the status page
+            subdomain: Subdomain for accessing the status page
+            domain: Custom domain for the status page
+            url: Company URL for logo redirect
+            language: Language for the status page interface ("ru" or "en")
+            headline: Headline text displayed on the status page
+            page_description: Brief description of what this status page monitors
+            time_zone: Timezone for displaying dates and times on the status page
+            country: Country where your organization is located
+            city: City where your organization is located
+            state: State/region where your organization is located
+            viewers_must_be_team_members: Whether only team members can view this page
+            hidden_from_search: Whether to hide this page from search engines
+            allow_page_subscribers: Whether to allow users to subscribe to page updates
+            allow_incident_subscribers: Whether to allow users to subscribe to incident updates
+            allow_email_subscribers: Whether to allow email subscriptions
+            allow_sms_subscribers: Whether to allow SMS subscriptions
+            allow_webhook_subscribers: Whether to allow webhook subscriptions
+            allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
+            support_url: URL to your support or contact page
 
         Returns:
             JSON with updated page configuration.
         """
-        return await pages_tools.patch_page(page_id, **kwargs)
+        return await pages_tools.patch_page(
+            page_id=page_id,
+            name=name,
+            subdomain=subdomain,
+            domain=domain,
+            url=url,
+            language=language,
+            headline=headline,
+            page_description=page_description,
+            time_zone=time_zone,
+            country=country,
+            city=city,
+            state=state,
+            viewers_must_be_team_members=viewers_must_be_team_members,
+            hidden_from_search=hidden_from_search,
+            allow_page_subscribers=allow_page_subscribers,
+            allow_incident_subscribers=allow_incident_subscribers,
+            allow_email_subscribers=allow_email_subscribers,
+            allow_sms_subscribers=allow_sms_subscribers,
+            allow_webhook_subscribers=allow_webhook_subscribers,
+            allow_rss_atom_feeds=allow_rss_atom_feeds,
+            support_url=support_url,
+        )
 
     @mcp.tool()
     async def delete_page(page_id: str) -> str:

@@ -231,7 +231,21 @@ class PagesTools(BaseTools):
         domain: Optional[str] = None,
         url: Optional[str] = None,
         language: Optional[str] = None,
-        **kwargs
+        headline: Optional[str] = None,
+        page_description: Optional[str] = None,
+        time_zone: Optional[str] = None,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        state: Optional[str] = None,
+        viewers_must_be_team_members: Optional[bool] = None,
+        hidden_from_search: Optional[bool] = None,
+        allow_page_subscribers: Optional[bool] = None,
+        allow_incident_subscribers: Optional[bool] = None,
+        allow_email_subscribers: Optional[bool] = None,
+        allow_sms_subscribers: Optional[bool] = None,
+        allow_webhook_subscribers: Optional[bool] = None,
+        allow_rss_atom_feeds: Optional[bool] = None,
+        support_url: Optional[str] = None,
     ) -> str:
         """
         Update an existing status page (full update).
@@ -243,83 +257,183 @@ class PagesTools(BaseTools):
             domain: Custom domain for the status page
             url: Company URL for logo redirect
             language: Language for the status page interface ("ru" or "en")
-            **kwargs: Additional page configuration options
+            headline: Headline text displayed on the status page
+            page_description: Brief description of what this status page monitors
+            time_zone: Timezone for displaying dates and times on the status page
+            country: Country where your organization is located
+            city: City where your organization is located
+            state: State/region where your organization is located
+            viewers_must_be_team_members: Whether only team members can view this page
+            hidden_from_search: Whether to hide this page from search engines
+            allow_page_subscribers: Whether to allow users to subscribe to page updates
+            allow_incident_subscribers: Whether to allow users to subscribe to incident updates
+            allow_email_subscribers: Whether to allow email subscriptions
+            allow_sms_subscribers: Whether to allow SMS subscriptions
+            allow_webhook_subscribers: Whether to allow webhook subscriptions
+            allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
+            support_url: URL to your support or contact page
 
         Returns:
             str: JSON string containing the updated page details
         """
         try:
-            self.logger.info(f"Updating page: {page_id}")
+            # 1. Collect all arguments into a dictionary
+            page_data = {
+                "name": name,
+                "subdomain": subdomain,
+                "domain": domain,
+                "url": url,
+                "language": language,
+                "headline": headline,
+                "page_description": page_description,
+                "time_zone": time_zone,
+                "country": country,
+                "city": city,
+                "state": state,
+                "viewers_must_be_team_members": viewers_must_be_team_members,
+                "hidden_from_search": hidden_from_search,
+                "allow_page_subscribers": allow_page_subscribers,
+                "allow_incident_subscribers": allow_incident_subscribers,
+                "allow_email_subscribers": allow_email_subscribers,
+                "allow_sms_subscribers": allow_sms_subscribers,
+                "allow_webhook_subscribers": allow_webhook_subscribers,
+                "allow_rss_atom_feeds": allow_rss_atom_feeds,
+                "support_url": support_url,
+            }
 
-            page_data = {}
-            if name:
-                page_data["name"] = name
-            if subdomain:
-                page_data["subdomain"] = subdomain
-            if domain:
-                page_data["domain"] = domain
-            if url:
-                page_data["url"] = url
-            if language:
-                page_data["language"] = language
+            # 2. Filter out optional arguments that were not provided (are None)
+            filtered_page_data = {k: v for k, v in page_data.items() if v is not None}
 
-            # Add any additional configuration
-            page_data.update(kwargs)
+            if not filtered_page_data:
+                return self._error_response("No update data provided. Please specify at least one field to update.")
 
+            self.logger.info(f"Updating page {page_id} with data: {filtered_page_data}")
+
+            # 3. Use the clean dictionary with your SDK
             with self.client._get_api_client() as api_client:
                 from pingera.api import StatusPagesApi
+                from pingera.models import Page
                 pages_api = StatusPagesApi(api_client)
 
                 page_id_int = int(page_id)
-                response = pages_api.v1_pages_page_id_put(page_id=page_id_int, page=page_data)
+                page_model = Page(**filtered_page_data)
+                response = pages_api.v1_pages_page_id_put(page_id=page_id_int, page=page_model)
 
-                # Handle SDK response format
                 page_data_result = self._convert_sdk_object_to_dict(response)
-
                 return self._success_response(page_data_result)
 
         except ValueError:
             self.logger.error(f"Invalid page ID: {page_id}")
-            return self._error_response(f"Invalid page ID: {page_id}", None)
-        except PingeraError as e:
+            return self._error_response(f"Invalid page ID: {page_id}")
+        except Exception as e:
             self.logger.error(f"Error updating page {page_id}: {e}")
-            return self._error_response(str(e), None)
+            return self._error_response(str(e))
 
-    async def patch_page(self, page_id: str, **kwargs) -> str:
+    async def patch_page(
+        self,
+        page_id: str,
+        name: Optional[str] = None,
+        subdomain: Optional[str] = None,
+        domain: Optional[str] = None,
+        url: Optional[str] = None,
+        language: Optional[str] = None,
+        headline: Optional[str] = None,
+        page_description: Optional[str] = None,
+        time_zone: Optional[str] = None,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        state: Optional[str] = None,
+        viewers_must_be_team_members: Optional[bool] = None,
+        hidden_from_search: Optional[bool] = None,
+        allow_page_subscribers: Optional[bool] = None,
+        allow_incident_subscribers: Optional[bool] = None,
+        allow_email_subscribers: Optional[bool] = None,
+        allow_sms_subscribers: Optional[bool] = None,
+        allow_webhook_subscribers: Optional[bool] = None,
+        allow_rss_atom_feeds: Optional[bool] = None,
+        support_url: Optional[str] = None,
+    ) -> str:
         """
         Partially update an existing status page.
 
         Args:
             page_id: ID of the page to update
-            **kwargs: Page fields to update (only provided fields will be updated)
+            name: Display name of the status page
+            subdomain: Subdomain for accessing the status page
+            domain: Custom domain for the status page
+            url: Company URL for logo redirect
+            language: Language for the status page interface ("ru" or "en")
+            headline: Headline text displayed on the status page
+            page_description: Brief description of what this status page monitors
+            time_zone: Timezone for displaying dates and times on the status page
+            country: Country where your organization is located
+            city: City where your organization is located
+            state: State/region where your organization is located
+            viewers_must_be_team_members: Whether only team members can view this page
+            hidden_from_search: Whether to hide this page from search engines
+            allow_page_subscribers: Whether to allow users to subscribe to page updates
+            allow_incident_subscribers: Whether to allow users to subscribe to incident updates
+            allow_email_subscribers: Whether to allow email subscriptions
+            allow_sms_subscribers: Whether to allow SMS subscriptions
+            allow_webhook_subscribers: Whether to allow webhook subscriptions
+            allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
+            support_url: URL to your support or contact page
 
         Returns:
             str: JSON string containing the updated page details
         """
         try:
-            self.logger.info(f"Patching page: {page_id}")
+            # 1. Collect all arguments into a dictionary
+            patch_data = {
+                "name": name,
+                "subdomain": subdomain,
+                "domain": domain,
+                "url": url,
+                "language": language,
+                "headline": headline,
+                "page_description": page_description,
+                "time_zone": time_zone,
+                "country": country,
+                "city": city,
+                "state": state,
+                "viewers_must_be_team_members": viewers_must_be_team_members,
+                "hidden_from_search": hidden_from_search,
+                "allow_page_subscribers": allow_page_subscribers,
+                "allow_incident_subscribers": allow_incident_subscribers,
+                "allow_email_subscribers": allow_email_subscribers,
+                "allow_sms_subscribers": allow_sms_subscribers,
+                "allow_webhook_subscribers": allow_webhook_subscribers,
+                "allow_rss_atom_feeds": allow_rss_atom_feeds,
+                "support_url": support_url,
+            }
 
-            if not kwargs:
-                return self._error_response("No fields provided for update", None)
+            # 2. Filter out optional arguments that were not provided (are None)
+            filtered_patch_data = {k: v for k, v in patch_data.items() if v is not None}
 
+            if not filtered_patch_data:
+                return self._error_response("No update data provided. Please specify at least one field to update.")
+
+            self.logger.info(f"Patching page {page_id} with data: {filtered_patch_data}")
+
+            # 3. Use the clean dictionary with your SDK
             with self.client._get_api_client() as api_client:
                 from pingera.api import StatusPagesApi
+                from pingera.models import Page1
                 pages_api = StatusPagesApi(api_client)
 
                 page_id_int = int(page_id)
-                response = pages_api.v1_pages_page_id_patch(page_id=page_id_int, page=kwargs)
+                patch_model = Page1(**filtered_patch_data)
+                response = pages_api.v1_pages_page_id_patch(page_id=page_id_int, page1=patch_model)
 
-                # Handle SDK response format
                 page_data_result = self._convert_sdk_object_to_dict(response)
-
                 return self._success_response(page_data_result)
 
         except ValueError:
             self.logger.error(f"Invalid page ID: {page_id}")
-            return self._error_response(f"Invalid page ID: {page_id}", None)
-        except PingeraError as e:
+            return self._error_response(f"Invalid page ID: {page_id}")
+        except Exception as e:
             self.logger.error(f"Error patching page {page_id}: {e}")
-            return self._error_response(str(e), None)
+            return self._error_response(str(e))
 
     async def delete_page(self, page_id: str) -> str:
         """

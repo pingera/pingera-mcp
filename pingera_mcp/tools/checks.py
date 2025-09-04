@@ -109,9 +109,13 @@ class ChecksTools(BaseTools):
 
             with self.client._get_api_client() as api_client:
                 from pingera.api import ChecksApi
+                from pingera.models import MonitorCheck
                 checks_api = ChecksApi(api_client)
 
-                response = checks_api.v1_checks_post(check_data)
+                # Create MonitorCheck model from the data
+                monitor_check = MonitorCheck(**check_data)
+
+                response = checks_api.v1_checks_post(monitor_check)
 
                 created_check = self._format_check_response(response)
                 return self._success_response(created_check)
@@ -136,11 +140,15 @@ class ChecksTools(BaseTools):
 
             with self.client._get_api_client() as api_client:
                 from pingera.api import ChecksApi
+                from pingera.models import MonitorCheck
                 checks_api = ChecksApi(api_client)
+
+                # Create MonitorCheck model from the data
+                monitor_check = MonitorCheck(**check_data)
 
                 response = checks_api.v1_checks_check_id_put(
                     check_id=check_id,
-                    check_data=check_data
+                    monitor_check=monitor_check
                 )
 
                 updated_check = self._format_check_response(response)

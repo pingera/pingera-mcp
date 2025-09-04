@@ -94,25 +94,55 @@ class ChecksTools(BaseTools):
             self.logger.error(f"Error getting check details for {check_id}: {e}")
             return self._error_response(str(e))
 
-    async def create_check(self, check_data: dict) -> str:
+    async def create_check(self, check_data) -> str:
         """
-        Create a new monitoring check.
+        Create a new monitoring check to watch a website, API, or service.
+
+        Set up automated monitoring that will test your service at regular
+        intervals and alert you when issues are detected.
+        If name is not set, AI agent should generate it from the URL or description.
 
         Args:
-            check_data: Dictionary containing check configuration
+            Required:
+            name: A user-friendly name for the monitor check. Max 100 characters. 
+            type: The type of check to perform. Valid values: 'web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep'.
 
-        Returns:
-            JSON string containing created check data
+            Optional:
+            url: str (for 'web' and 'api' checks): The URL to monitor.
+            host: str (for 'tcp' and 'ssl' checks): The hostname or IP address.
+            port: integer (for 'tcp' checks): The port number to monitor. Range: 1-65535.
+            interval: integer only: The frequency of checks in seconds. Range: 30-86400.
+            timeout: integer only: The request timeout in seconds. Range: 1-30.
+            active: bool: A flag to set the check as active or paused.
+            parameters: dict (for 'synthetic' and 'multistep' checks): Additional parameters specific to the check type. Must include 'pw_script' with a valid Playwright script.
+            Returns:
+            dict: A JSON object with the created check's details, including its unique id and configuration.
         """
         try:
+            # Convert protobuf objects to dict if needed
+            if hasattr(check_data, '__dict__'):
+                # Handle protobuf objects
+                clean_data = {}
+                for key, value in check_data.items():
+                    clean_data[key] = value
+                check_data = clean_data
+            elif not isinstance(check_data, dict):
+                # Try to convert to dict
+                try:
+                    check_data = dict(check_data)
+                except:
+                    self.logger.error(f"Cannot convert check_data to dict: {type(check_data)}")
+                    return self._error_response(f"Invalid check_data format: {type(check_data)}")
+
             self.logger.info(f"Creating new check: {check_data.get('name', 'Unnamed')}")
 
+            # Use the SDK client to create check
             with self.client._get_api_client() as api_client:
                 from pingera.api import ChecksApi
                 from pingera.models import MonitorCheck
                 checks_api = ChecksApi(api_client)
 
-                # Create MonitorCheck model from the data
+                # Create MonitorCheck model from data
                 monitor_check = MonitorCheck(**check_data)
 
                 response = checks_api.v1_checks_post(monitor_check)
@@ -516,7 +546,7 @@ class ChecksTools(BaseTools):
             # SDK returns results in 'results' attribute, not 'data'
             results_data = getattr(response, 'results', [])
             pagination = getattr(response, 'pagination', {})
-            
+
             if isinstance(results_data, list):
                 formatted_data = []
                 for item in results_data:

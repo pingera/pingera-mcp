@@ -990,7 +990,7 @@ if config.is_read_write():
         return await component_tools.delete_component(page_id, component_id)
 
     @mcp.tool()
-    async def create_check(check_data: dict) -> str:
+    async def create_check(check_data) -> str:
         """
         Create a new monitoring check to watch a website, API, or service.
 

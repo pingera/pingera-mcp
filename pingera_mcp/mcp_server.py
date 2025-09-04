@@ -881,7 +881,7 @@ if config.is_read_write():
         support_url: Optional[str] = None,
     ) -> str:
         """
-        Update configuration and settings for an existing status page.
+        Update configuration and settings for an existing status page. Use patch_page for partial updates.
 
         Modify page properties like name, domain settings, branding, or
         other configuration options. Only specified fields will be updated.

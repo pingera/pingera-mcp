@@ -1357,7 +1357,7 @@ requires-dist = [
     { name = "isort", marker = "extra == 'dev'", specifier = ">=5.12.0" },
     { name = "mcp", specifier = ">=1.2.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.0" },
-    { name = "pingera-sdk", specifier = ">=1.0.3" },
+    { name = "pingera-sdk", specifier = ">=1.0.5" },
     { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.21.0" },
@@ -1372,7 +1372,7 @@ requires-dist = [
 
 [[package]]
 name = "pingera-sdk"
-version = "1.0.3"
+version = "1.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -1385,9 +1385,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a9/a5/f5763eff629b0f428e348c67bdccd72f007e8cb93c0c17af513ff824643e/pingera_sdk-1.0.3.tar.gz", hash = "sha256:5ff32c828d480da3f4a57060c507229203f1921b6f7ba1e17247c6f5f2ce2773", size = 101810 }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/59/60b518a6a94d6062570c9fa2b9ee6c80ceb6f65ed7a55848cf7b41b684e2/pingera_sdk-1.0.5.tar.gz", hash = "sha256:774184596a8d6bea03d72da7c9b8d1404d322b507003298f127ca85fae943950", size = 108629 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/a1/47db85d66459aa463058a8cf3dbe94bc96d9fa11a94f4c71e5aff477d5e8/pingera_sdk-1.0.3-py3-none-any.whl", hash = "sha256:6a2d6d0604f9bc8f46aa5bbe8b5c3fbe289a26b93933c937489728348a5b0614", size = 230774 },
+    { url = "https://files.pythonhosted.org/packages/cb/f3/77e2662eae2e80267fb2c4ac9853f1284e25a4fb8ed5ba9c351c129f2ee2/pingera_sdk-1.0.5-py3-none-any.whl", hash = "sha256:a846bcedbe3b6c01aa716f3427764cafd48976f205bd39026cbceeba6e6b4175", size = 258341 },
 ]
 
 [[package]]

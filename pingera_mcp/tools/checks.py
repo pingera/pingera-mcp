@@ -16,7 +16,7 @@ class ChecksTools(BaseTools):
         self,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
-        check_type: Optional[str] = None,
+        type: Optional[str] = None,
         status: Optional[str] = None,
         group_id: Optional[str] = None,
         name: Optional[str] = None
@@ -27,7 +27,7 @@ class ChecksTools(BaseTools):
         Args:
             page: Page number for pagination (default: 1)
             page_size: Number of items per page (default: 20, max: 100)
-            check_type: Filter by check type ('web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep')
+            type: Filter by check type ('web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep')
             status: Filter by status (can specify multiple statuses separated by commas)
             group_id: Filter checks by group ID (use "ungrouped" for checks not in any group)
             name: Filter checks by name using case-insensitive partial matching
@@ -36,7 +36,7 @@ class ChecksTools(BaseTools):
             JSON string containing checks data
         """
         try:
-            self.logger.info(f"Listing checks (page={page}, page_size={page_size}, type={check_type}, status={status}, group_id={group_id}, name={name})")
+            self.logger.info(f"Listing checks (page={page}, page_size={page_size}, type={type}, status={status}, group_id={group_id}, name={name})")
 
             # Use the SDK client to get checks
             with self.client._get_api_client() as api_client:
@@ -49,8 +49,8 @@ class ChecksTools(BaseTools):
                     kwargs['page'] = page
                 if page_size is not None:
                     kwargs['page_size'] = page_size
-                if check_type is not None:
-                    kwargs['type'] = check_type
+                if type is not None:
+                    kwargs['type'] = type
                 if status is not None:
                     kwargs['status'] = status
                 if group_id is not None:

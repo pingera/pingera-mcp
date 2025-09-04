@@ -187,7 +187,7 @@ async def get_component_details(page_id: str, component_id: str) -> str:
 async def list_checks(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
-    check_type: Optional[str] = None,
+    type: Optional[str] = None,
     status: Optional[str] = None,
     group_id: Optional[str] = None,
     name: Optional[str] = None
@@ -201,7 +201,7 @@ async def list_checks(
     Args:
         page: Page number for pagination (default: 1)
         page_size: Number of items per page (default: 20, max: 100)
-        check_type: Filter by check type ('web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep')
+        type: Filter by check type ('web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep')
         status: Filter by status (can specify multiple statuses separated by commas)
         group_id: Filter checks by group ID (use "ungrouped" for checks not assigned to any group)
         name: Filter checks by name using case-insensitive partial matching
@@ -209,7 +209,7 @@ async def list_checks(
     Returns:
         JSON with list of checks including names, URLs, types, intervals, and current status.
     """
-    return await checks_tools.list_checks(page, page_size, check_type, status, group_id, name)
+    return await checks_tools.list_checks(page, page_size, type, status, group_id, name)
 
 @mcp.tool()
 async def get_check_details(check_id: str) -> str:

@@ -638,42 +638,59 @@ class ChecksTools(BaseTools):
 
     async def execute_custom_check(
         self,
-        url: str,
-        check_type: str = "web",
+        type: str,
+        name: str,
+        url: Optional[str] = None,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
         timeout: Optional[int] = 30,
-        name: Optional[str] = None,
         parameters: Optional[dict] = None
     ) -> str:
         """
         Execute a custom check on demand.
 
         Args:
-            url: URL to check
-            check_type: Type of check ('web', 'synthetic', 'api')
-            timeout: Timeout in seconds
-            name: Name for the check
+            type: Type of check ('web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep')
+            name: A user-friendly name for the custom check (max 100 characters)
+            url: URL to check (required for web/api checks)
+            host: Hostname or IP address (required for TCP/SSL checks, max 255 characters)
+            port: Port number (required for TCP/SSL checks, range: 1-65535)
+            timeout: Timeout in seconds (range: 1-30)
             parameters: Additional parameters (e.g., pw_script for synthetic checks)
 
         Returns:
             JSON string containing job information
         """
         try:
-            self.logger.info(f"Executing custom check for URL: {url}")
+            self.logger.info(f"Executing custom check: {name} ({type})")
 
-            # Prepare check request data
-            check_request = {
-                "url": url,
-                "type": check_type,
-                "timeout": timeout,
-                "name": name or f"On-demand check for {url}",
-                "parameters": parameters or {}
+            # Build request data according to ExecuteCustomCheckRequest model
+            request_data = {
+                "type": type,
+                "name": name
             }
+            
+            # Add optional parameters only if provided
+            if url is not None:
+                request_data["url"] = url
+            if host is not None:
+                request_data["host"] = host
+            if port is not None:
+                request_data["port"] = port
+            if timeout is not None:
+                request_data["timeout"] = timeout
+            if parameters is not None:
+                request_data["parameters"] = parameters
 
             with self.client._get_api_client() as api_client:
                 from pingera.api import OnDemandChecksApi
+                from pingera.models import ExecuteCustomCheckRequest
                 on_demand_api = OnDemandChecksApi(api_client)
 
-                response = on_demand_api.v1_checks_execute_post(check_request)
+                # Create ExecuteCustomCheckRequest model
+                check_request = ExecuteCustomCheckRequest(**request_data)
+                
+                response = on_demand_api.v1_checks_execute_post(execute_custom_check_request=check_request)
 
                 job_data = self._format_job_response(response)
                 return self._success_response(job_data)

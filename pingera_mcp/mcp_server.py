@@ -347,10 +347,12 @@ async def get_unified_statistics(
 
 @mcp.tool()
 async def execute_custom_check(
-    url: str,
-    check_type: str = "web",
+    type: str,
+    name: str,
+    url: Optional[str] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
     timeout: Optional[int] = 30,
-    name: Optional[str] = None,
     parameters: Optional[dict] = None
 ) -> str:
     """
@@ -361,27 +363,38 @@ async def execute_custom_check(
     or testing new services before setting up regular monitoring.
 
     Args:
-        url: The URL or endpoint to test
-        check_type: Type of check ('web', 'api', 'tcp', 'ssl', 'multistep', 'synthetic')
-        timeout: Timeout in seconds (default: 30)
-        name: Optional name for the check
-        parameters: A dictionary containing additional check-specific parameters.
+        type: Type of check ('web', 'api', 'tcp', 'ssl', 'multistep', 'synthetic') - REQUIRED
+        name: A user-friendly name for the custom check (max 100 characters) - REQUIRED
+        url: The URL to monitor (required for web/api checks). Supports international domain names.
+        host: The hostname or IP address to monitor (required for TCP/SSL checks, max 255 characters)
+        port: The port number to monitor (required for TCP/SSL checks, range: 1-65535)
+        timeout: Timeout in seconds (range: 1-30, default: 30)
+        parameters: Additional parameters specific to the check type.
 
         For 'synthetic' or 'multistep' checks, the 'parameters' dictionary must contain a 'pw_script' key. The value of this key should be the full Playwright script in Javascript or Typescript content as a string.
 
-        Example of required arguments for a 'synthetic' check:
+        Example for a 'synthetic' check:
         {
-          "check_type": "synthetic",
+          "type": "synthetic",
+          "name": "Login Test",
           "url": "https://pingera.ru",
           "parameters": {
             "pw_script": "Playwright script content as a string"
           }
         }
 
+        Example for a 'tcp' check:
+        {
+          "type": "tcp",
+          "name": "Database Connection",
+          "host": "db.example.com",
+          "port": 5432
+        }
+
     Returns:
-        JSON with the job id that is executed asyncronously.
+        JSON with the job id that is executed asynchronously.
     """
-    return await checks_tools.execute_custom_check(url, check_type, timeout, name, parameters)
+    return await checks_tools.execute_custom_check(type, name, url, host, port, timeout, parameters)
 
 @mcp.tool()
 async def execute_existing_check(check_id: str) -> str:

@@ -313,16 +313,16 @@ class ComponentsEndpointSDK:
         """Patch component using SDK."""
         try:
             with ApiClient(self.client.configuration) as api_client:
-                from pingera.models import Component
+                from pingera.models import Component1
                 components_api = StatusPagesComponentsApi(api_client)
                 
-                # Create component model from data
-                component = Component(**component_data)
+                # Create Component1 model from data for PATCH operation
+                component1 = Component1(**component_data)
                 
-                updated_component = components_api.v1_pages_page_id_components_component_id_put(
+                updated_component = components_api.v1_pages_page_id_components_component_id_patch(
                     page_id=page_id,
                     component_id=component_id,
-                    component=component
+                    component1=component1
                 )
                 return updated_component
         except ApiException as e:

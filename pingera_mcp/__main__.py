@@ -12,8 +12,8 @@ def main():
     """
     if config.mode == 'http':
         logger.info(f"Starting Uvicorn server on http://0.0.0.0:8000")
-        # Get the ASGI application from the FastMCP instance
-        uvicorn.run(mcp.create_app(), host="0.0.0.0", port=8000)
+        # FastMCP instance is directly callable as ASGI app
+        uvicorn.run(mcp, host="0.0.0.0", port=8000)
     elif config.mode == 'stdio':
         logger.info("Starting MCP server in STDIO mode.")
         # mcp.run() starts the server listening on stdin/stdout.

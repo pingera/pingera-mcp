@@ -298,3 +298,22 @@ async def _get_on_demand_job_status_logic(client: PingeraClient, job_id: str) ->
     """
     tools = ChecksTools(client)
     return await tools.get_on_demand_job_status(job_id)
+
+
+async def _list_on_demand_checks_logic(
+    client: PingeraClient,
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
+) -> str:
+    """
+    List on-demand checks.
+
+    Args:
+        page: Page number for pagination
+        page_size: Number of items per page
+
+    Returns:
+        JSON string containing on-demand checks data
+    """
+    tools = ChecksTools(client)
+    return await tools.list_on_demand_checks(page, page_size)

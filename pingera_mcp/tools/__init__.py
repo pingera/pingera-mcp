@@ -44,6 +44,14 @@ from .mcp_checks import (
     _get_unified_statistics_logic,
     _execute_existing_check_logic,
     _get_on_demand_job_status_logic,
+    _list_on_demand_checks_logic,
+)
+from .mcp_alerts import (
+    _list_alerts_logic,
+    _get_alert_details_logic,
+    _get_alert_statistics_logic,
+    _list_alert_channels_logic,
+    _list_alert_rules_logic,
 )
 from .mcp_check_groups import (
     _list_check_groups_logic,
@@ -80,6 +88,12 @@ READ_ONLY_TOOLS = [
     ("get_unified_statistics", _get_unified_statistics_logic),
     ("execute_existing_check", _execute_existing_check_logic),
     ("get_on_demand_job_status", _get_on_demand_job_status_logic),
+    ("list_on_demand_checks", _list_on_demand_checks_logic),
+    ("list_alerts", _list_alerts_logic),
+    ("get_alert_details", _get_alert_details_logic),
+    ("get_alert_statistics", _get_alert_statistics_logic),
+    ("list_alert_channels", _list_alert_channels_logic),
+    ("list_alert_rules", _list_alert_rules_logic),
     ("list_check_groups", _list_check_groups_logic),
     ("get_check_group_details", _get_check_group_details_logic),
     ("get_checks_in_group", _get_checks_in_group_logic),

@@ -21,5 +21,19 @@ def main():
     else:
         logger.error(f"Invalid MCP_MODE: '{config.mode}'. Choose 'stdio' or 'http'.")
 
+try:
+    # Access the internal tool manager to get the registered tool object
+    tool_object = mcp._tool_manager.get_tool("list_pages")
+
+    print("\n" + "="*50)
+    print("TOOL VERIFICATION")
+    print("="*50)
+    print(f"Successfully retrieved tool: '{tool_object.name}'")
+    print("\n--- Registered Description ---")
+    print(tool_object.description)
+    print("------------------------------\n")
+except Exception as e:
+    print(f"Could not verify tool registration: {e}")
+
 if __name__ == "__main__":
     main()

@@ -1,14 +1,10 @@
+
 """
 MCP tool logic for component management.
 """
 from typing import Optional
 from pingera_mcp import PingeraClient
 from pingera_mcp.tools import ComponentTools
-import json
-import logging
-from pingera.models import Component
-
-logger = logging.getLogger(__name__)
 
 async def _list_component_groups_logic(
     client: PingeraClient,
@@ -171,101 +167,21 @@ async def _patch_component_logic(
         only_show_if_degraded, position, showcase, status, start_date
     )
 
-async def _delete_component_logic(client, page_id: str, component_id: str) -> str:
-    """Delete a component from a status page permanently."""
-    try:
-        logger.info(f"Deleting component {component_id} from page {page_id}")
+async def _delete_component_logic(client: PingeraClient, page_id: str, component_id: str) -> str:
+    """
+    Delete a component from a status page permanently.
 
-        with client._get_api_client() as api_client:
-            from pingera.api import ComponentsApi
-            components_api = ComponentsApi(api_client)
+    This removes the component from the status page display and
+    deletes all associated historical status data.
 
-            components_api.v1_pages_page_id_components_component_id_delete(
-                page_id=page_id, component_id=component_id
-            )
+    Args:
+        page_id: The ID of the status page
+        component_id: The unique identifier of the component to delete
 
-            return json.dumps({
-                "success": True,
-                "deleted": True,
-                "page_id": page_id,
-                "component_id": component_id,
-                "message": f"Component {component_id} deleted successfully"
-            })
-
-    except Exception as e:
-        logger.error(f"Error deleting component {component_id}: {e}")
-        return json.dumps({
-            "success": False,
-            "error": str(e)
-        })
-
-async def _update_component_logic(
-    client,
-    page_id: str,
-    component_id: str,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    group: Optional[bool] = None,
-    group_id: Optional[str] = None,
-    only_show_if_degraded: Optional[bool] = None,
-    position: Optional[int] = None,
-    showcase: Optional[bool] = None,
-    status: Optional[str] = None,
-    **kwargs
-) -> str:
-    """Update configuration for an existing component (full update)."""
-    try:
-        component_data = {
-            "name": name,
-            "description": description,
-            "group": group,
-            "group_id": group_id,
-            "only_show_if_degraded": only_show_if_degraded,
-            "position": position,
-            "showcase": showcase,
-            "status": status,
-            **kwargs  # Include any additional parameters
-        }
-
-        # Filter out None values
-        filtered_data = {k: v for k, v in component_data.items() if v is not None}
-
-        if not filtered_data:
-            return json.dumps({
-                "success": False,
-                "error": "No update data provided"
-            })
-
-        logger.info(f"Updating component {component_id} on page {page_id} with data: {filtered_data}")
-
-        with client._get_api_client() as api_client:
-            from pingera.api import ComponentsApi
-            from pingera.models import Component
-            components_api = ComponentsApi(api_client)
-
-            component_model = Component(**filtered_data)
-            result = components_api.v1_pages_page_id_components_component_id_put(
-                page_id=page_id, component_id=component_id, component=component_model
-            )
-
-            result_data = {}
-            if hasattr(result, '__dict__'):
-                result_data = result.__dict__
-            elif hasattr(result, 'to_dict'):
-                result_data = result.to_dict()
-            else:
-                result_data = {"raw_response": str(result)}
-
-            return json.dumps({
-                "success": True,
-                "page_id": page_id,
-                "component_id": component_id,
-                "component": result_data
-            })
-
-    except Exception as e:
-        logger.error(f"Error updating component {component_id}: {e}")
-        return json.dumps({
-            "success": False,
-            "error": str(e)
-        })
+    Returns:
+        JSON confirming successful deletion.
+    """
+    if not client:
+        raise RuntimeError("Pingera client could not be initialized for this operation.")
+    component_tools = ComponentTools(client)
+    return await component_tools.delete_component(page_id, component_id)

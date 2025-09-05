@@ -1,10 +1,14 @@
-
 """
 MCP tool logic for page management.
 """
 from typing import Optional
 from pingera_mcp import PingeraClient
 from pingera_mcp.tools import PagesTools
+import json
+import logging
+from pingera.models import Page
+
+logger = logging.getLogger(__name__)
 
 async def _list_pages_logic(
     client: PingeraClient,
@@ -207,20 +211,116 @@ async def _patch_page_logic(
         support_url=support_url,
     )
 
-async def _delete_page_logic(client: PingeraClient, page_id: str) -> str:
-    """
-    Permanently delete a status page and all its associated data.
+async def _delete_page_logic(client, page_id: str) -> str:
+    """Permanently delete a status page and all associated data."""
+    try:
+        logger.info(f"Deleting page: {page_id}")
 
-    WARNING: This action cannot be undone. All components, incidents,
-    and historical data associated with this page will be deleted.
+        with client._get_api_client() as api_client:
+            from pingera.api import StatusPagesApi
+            pages_api = StatusPagesApi(api_client)
 
-    Args:
-        page_id: The unique identifier of the page to delete
+            pages_api.v1_pages_page_id_delete(page_id=page_id)
 
-    Returns:
-        JSON confirming successful deletion.
-    """
-    if not client:
-        raise RuntimeError("Pingera client could not be initialized for this operation.")
-    pages_tools = PagesTools(client)
-    return await pages_tools.delete_page(page_id)
+            return json.dumps({
+                "success": True,
+                "deleted": True,
+                "page_id": page_id,
+                "message": f"Page {page_id} deleted successfully"
+            })
+
+    except Exception as e:
+        logger.error(f"Error deleting page {page_id}: {e}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        })
+
+async def _update_page_logic(
+    client,
+    page_id: str,
+    name: Optional[str] = None,
+    subdomain: Optional[str] = None,
+    domain: Optional[str] = None,
+    url: Optional[str] = None,
+    language: Optional[str] = None,
+    headline: Optional[str] = None,
+    page_description: Optional[str] = None,
+    time_zone: Optional[str] = None,
+    country: Optional[str] = None,
+    city: Optional[str] = None,
+    state: Optional[str] = None,
+    viewers_must_be_team_members: Optional[bool] = None,
+    hidden_from_search: Optional[bool] = None,
+    allow_page_subscribers: Optional[bool] = None,
+    allow_incident_subscribers: Optional[bool] = None,
+    allow_email_subscribers: Optional[bool] = None,
+    allow_sms_subscribers: Optional[bool] = None,
+    allow_webhook_subscribers: Optional[bool] = None,
+    allow_rss_atom_feeds: Optional[bool] = None,
+    support_url: Optional[str] = None,
+) -> str:
+    """Update an existing status page (full update)."""
+    try:
+        page_data = {
+            "name": name,
+            "subdomain": subdomain,
+            "domain": domain,
+            "url": url,
+            "language": language,
+            "headline": headline,
+            "page_description": page_description,
+            "time_zone": time_zone,
+            "country": country,
+            "city": city,
+            "state": state,
+            "viewers_must_be_team_members": viewers_must_be_team_members,
+            "hidden_from_search": hidden_from_search,
+            "allow_page_subscribers": allow_page_subscribers,
+            "allow_incident_subscribers": allow_incident_subscribers,
+            "allow_email_subscribers": allow_email_subscribers,
+            "allow_sms_subscribers": allow_sms_subscribers,
+            "allow_webhook_subscribers": allow_webhook_subscribers,
+            "allow_rss_atom_feeds": allow_rss_atom_feeds,
+            "support_url": support_url,
+        }
+
+        # Filter out None values
+        filtered_data = {k: v for k, v in page_data.items() if v is not None}
+
+        if not filtered_data:
+            return json.dumps({
+                "success": False,
+                "error": "No update data provided"
+            })
+
+        logger.info(f"Updating page {page_id} with data: {filtered_data}")
+
+        with client._get_api_client() as api_client:
+            from pingera.api import StatusPagesApi
+            from pingera.models import Page
+            pages_api = StatusPagesApi(api_client)
+
+            page_model = Page(**filtered_data)
+            result = pages_api.v1_pages_page_id_put(page_id=page_id, page=page_model)
+
+            result_data = {}
+            if hasattr(result, '__dict__'):
+                result_data = result.__dict__
+            elif hasattr(result, 'to_dict'):
+                result_data = result.to_dict()
+            else:
+                result_data = {"raw_response": str(result)}
+
+            return json.dumps({
+                "success": True,
+                "page_id": page_id,
+                "page": result_data
+            })
+
+    except Exception as e:
+        logger.error(f"Error updating page {page_id}: {e}")
+        return json.dumps({
+            "success": False,
+            "error": str(e)
+        })

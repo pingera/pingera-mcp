@@ -31,6 +31,29 @@ from .mcp_components import (
     _patch_component_logic,
     _delete_component_logic,
 )
+from .mcp_checks import (
+    _list_checks_logic,
+    _get_check_details_logic,
+    _get_check_results_logic,
+    _execute_custom_check_logic,
+    _create_check_logic,
+    _delete_check_logic,
+)
+from .mcp_check_groups import (
+    _list_check_groups_logic,
+    _get_check_group_details_logic,
+    _get_checks_in_group_logic,
+)
+from .mcp_incidents import (
+    _list_incidents_logic,
+    _create_incident_logic,
+    _patch_incident_logic,
+    _delete_incident_logic,
+)
+from .mcp_playwright import (
+    _generate_synthetic_check_script_logic,
+    _generate_api_check_script_logic,
+)
 
 # Define the registry for read-only tools
 READ_ONLY_TOOLS = [
@@ -40,6 +63,16 @@ READ_ONLY_TOOLS = [
     ("list_component_groups", _list_component_groups_logic),
     ("list_components", _list_components_logic),
     ("get_component_details", _get_component_details_logic),
+    ("list_checks", _list_checks_logic),
+    ("get_check_details", _get_check_details_logic),
+    ("get_check_results", _get_check_results_logic),
+    ("execute_custom_check", _execute_custom_check_logic),
+    ("list_check_groups", _list_check_groups_logic),
+    ("get_check_group_details", _get_check_group_details_logic),
+    ("get_checks_in_group", _get_checks_in_group_logic),
+    ("list_incidents", _list_incidents_logic),
+    ("generate_synthetic_check_script", _generate_synthetic_check_script_logic),
+    ("generate_api_check_script", _generate_api_check_script_logic),
 ]
 
 # Define the registry for write tools
@@ -50,6 +83,11 @@ WRITE_TOOLS = [
     ("create_component", _create_component_logic),
     ("patch_component", _patch_component_logic),
     ("delete_component", _delete_component_logic),
+    ("create_check", _create_check_logic),
+    ("delete_check", _delete_check_logic),
+    ("create_incident", _create_incident_logic),
+    ("patch_incident", _patch_incident_logic),
+    ("delete_incident", _delete_incident_logic),
 ]
 
 # Combined registry for convenience

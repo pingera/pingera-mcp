@@ -69,6 +69,9 @@ from .mcp_heartbeats import (
 )
 from .mcp_incidents import (
     _list_incidents_logic,
+    _get_incident_details_logic,
+    _get_incident_updates_logic,
+    _get_incident_update_details_logic,
     _create_incident_logic,
     _patch_incident_logic,
     _delete_incident_logic,
@@ -111,6 +114,9 @@ READ_ONLY_TOOLS = [
     ("send_heartbeat_ping", _send_heartbeat_ping_logic),
     ("get_heartbeat_logs", _get_heartbeat_logs_logic),
     ("list_incidents", _list_incidents_logic),
+    ("get_incident_details", _get_incident_details_logic),
+    ("get_incident_updates", _get_incident_updates_logic),
+    ("get_incident_update_details", _get_incident_update_details_logic),
     ("generate_synthetic_check_script", _generate_synthetic_check_script_logic),
     ("generate_api_check_script", _generate_api_check_script_logic),
 ]

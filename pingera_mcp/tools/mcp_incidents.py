@@ -131,6 +131,62 @@ async def _patch_incident_logic(
 
 
 async def _delete_incident_logic(client: PingeraClient, page_id: str, incident_id: str) -> str:
+
+
+async def _get_incident_details_logic(client: PingeraClient, page_id: str, incident_id: str) -> str:
+    """
+    Get detailed information about a specific incident.
+
+    Shows complete incident details including description, affected components,
+    impact level, timeline, and all status updates posted during the incident.
+
+    Args:
+        page_id: The ID of the status page
+        incident_id: The unique identifier of the incident
+
+    Returns:
+        JSON with incident details including description, components, updates, and resolution timeline.
+    """
+    tools = IncidentsTools(client)
+    return await tools.get_incident_details(page_id, incident_id)
+
+
+async def _get_incident_updates_logic(client: PingeraClient, page_id: str, incident_id: str) -> str:
+    """
+    Get all status updates posted during an incident.
+
+    Shows chronological list of updates that were posted to keep users
+    informed about the incident progress, investigation, and resolution.
+
+    Args:
+        page_id: The ID of the status page
+        incident_id: The unique identifier of the incident
+
+    Returns:
+        JSON with list of incident updates including timestamps, status changes, and messages.
+    """
+    tools = IncidentsTools(client)
+    return await tools.get_incident_updates(page_id, incident_id)
+
+
+async def _get_incident_update_details_logic(client: PingeraClient, page_id: str, incident_id: str, update_id: str) -> str:
+    """
+    Get detailed information about a specific incident update.
+
+    Shows the complete content of a specific status update that was posted
+    during an incident, including the message, timestamp, and status change.
+
+    Args:
+        page_id: The ID of the status page
+        incident_id: The unique identifier of the incident
+        update_id: The unique identifier of the specific update
+
+    Returns:
+        JSON with update details including message content, timestamp, and status information.
+    """
+    tools = IncidentsTools(client)
+    return await tools.get_incident_update_details(page_id, incident_id, update_id)
+
     """
     Delete an incident from a status page permanently.
 

@@ -128,7 +128,6 @@ For SSE (Server-Sent Events) mode, configure the server to run in HTTP mode and 
         "pingera_mcp"
       ],
       "env": {
-        "PINGERA_API_KEY": "your_api_key_here",
         "MCP_MODE": "http",
         "PINGERA_ACCESS_LEVEL": "read-write",
         "PINGERA_BASE_URL": "https://api.pingera.ru/v1",

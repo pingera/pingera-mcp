@@ -2,12 +2,13 @@
 MCP Server implementation for Pingera monitoring service.
 """
 import logging
-import json
-from typing import Optional, Dict, Any, List
+import os
+from typing import Optional, Annotated
 
 from mcp.server.fastmcp import FastMCP
+from fastapi import Depends, HTTPException, status, Header
 
-from .config import Config
+# Your existing imports
 from pingera_mcp import PingeraClient
 from pingera_mcp.tools import (
         StatusTools,
@@ -18,70 +19,71 @@ from pingera_mcp.tools import (
         HeartbeatsTools,
         IncidentsTools,
         PlaywrightGeneratorTools,
-        CheckGroupsTools, # Import CheckGroupsTools
+        CheckGroupsTools, 
     )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("pingera-mcp-server")
+# --- CONFIGURATION ---
+class Config:
+    def __init__(self):
+        self.api_key = os.getenv("PINGERA_API_KEY")
+        self.base_url = os.getenv("PINGERA_BASE_URL", "https://api.pingera.io/v1")
+        self.timeout = int(os.getenv("PINGERA_TIMEOUT", 30))
+        self.max_retries = int(os.getenv("PINGERA_MAX_RETRIES", 3))
+        self.server_name = os.getenv("PINGERA_SERVER_NAME", "Pingera MCP Server")
+        # The crucial switch: defaults to 'stdio' for backward compatibility
+        self.mode = os.getenv("MCP_MODE", "stdio").lower()
 
-def create_mcp_server(config: Config) -> FastMCP:
-    """Create and configure MCP server with the given configuration."""
-    # Validate API key
-    if not config.api_key:
-        logger.error("PINGERA_API_KEY environment variable is required")
-        raise ValueError("PINGERA_API_KEY is required")
-
-    logger.info(f"Starting Pingera MCP Server in {config.mode} mode")
-
-    # Create MCP server
-    mcp_server = FastMCP(config.server_name)
-
-    # Initialize Pingera client - moved here so tests can mock it
-    pingera_client = PingeraClient(
-        api_key=config.api_key,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        max_retries=config.max_retries
-    )
-
-    return mcp_server
-
-# Load configuration
 config = Config()
 
-# Create MCP server
-mcp = create_mcp_server(config)
+# --- LOGGING ---
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("pingera-mcp-server")
 
-# Initialize Pingera client (for module-level usage)
-pingera_client = PingeraClient(
-    api_key=config.api_key,
-    base_url=config.base_url,
-    timeout=config.timeout,
-    max_retries=config.max_retries
-)
-logger.info("Using Pingera SDK client")
+# --- SERVER AND CLIENT SETUP ---
+mcp = FastMCP(config.server_name)
+stdio_pingera_client = None
+
+if config.mode == 'stdio':
+    logger.info("Server configured for STDIO mode.")
+    if not config.api_key:
+        raise ValueError("PINGERA_API_KEY is required for STDIO mode.")
+    stdio_pingera_client = PingeraClient(api_key=config.api_key, base_url=config.base_url)
+else:
+    logger.info("Server configured for HTTP mode.")
+
+# --- DEPENDENCY FOR HTTP MODE ---
+async def get_pingera_client(auth: Annotated[str | None, Header(alias="Authorization")] = None) -> PingeraClient:
+    if not auth:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header is missing")
+    try:
+        scheme, token = auth.split()
+        if scheme.lower() != "bearer":
+            raise ValueError
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization scheme. Use 'Bearer <key>'")
+
+    return PingeraClient(api_key=token, base_url=config.base_url)
+
+ClientDep = Annotated[PingeraClient, Depends(get_pingera_client)]
 
 # Initialize tool instances
-status_tools = StatusTools(pingera_client)
-pages_tools = PagesTools(pingera_client)
-component_tools = ComponentTools(pingera_client)
-checks_tools = ChecksTools(pingera_client)
-alerts_tools = AlertsTools(pingera_client)
-heartbeats_tools = HeartbeatsTools(pingera_client)
-incidents_tools = IncidentsTools(pingera_client)
-playwright_tools = PlaywrightGeneratorTools(pingera_client)
-check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
+#status_tools = StatusTools(pingera_client)
+#pages_tools = PagesTools(pingera_client)
+#component_tools = ComponentTools(pingera_client)
+#checks_tools = ChecksTools(pingera_client)
+#alerts_tools = AlertsTools(pingera_client)
+#heartbeats_tools = HeartbeatsTools(pingera_client)
+#incidents_tools = IncidentsTools(pingera_client)
+#playwright_tools = PlaywrightGeneratorTools(pingera_client)
+#check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
 
 # Register read-only tools
 @mcp.tool()
 async def list_pages(
     page: Optional[int] = None,
     per_page: Optional[int] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
+    client: ClientDep = None
 ) -> str:
     """
     List all status pages in your Pingera account.
@@ -96,6 +98,11 @@ async def list_pages(
     Returns:
         JSON with list of status pages including their names, IDs, domains, and configuration details.
     """
+    active_client = client or stdio_pingera_client
+    if not active_client: 
+        raise RuntimeError("Pingera client is not available.")
+
+    pages_tools = PagesTools(active_client)
     return await pages_tools.list_pages(page, per_page, status)
 
 @mcp.tool()

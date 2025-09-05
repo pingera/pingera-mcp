@@ -131,6 +131,21 @@ async def _patch_incident_logic(
 
 
 async def _delete_incident_logic(client: PingeraClient, page_id: str, incident_id: str) -> str:
+    """
+    Delete an incident from a status page permanently.
+
+    This removes the incident and all its updates from the status page.
+    Use with caution as this action cannot be undone.
+
+    Args:
+        page_id: The ID of the status page
+        incident_id: The unique identifier of the incident to delete
+
+    Returns:
+        JSON confirming successful deletion.
+    """
+    tools = IncidentsTools(client)
+    return await tools.delete_incident(page_id, incident_id)
 
 
 async def _get_incident_details_logic(client: PingeraClient, page_id: str, incident_id: str) -> str:
@@ -187,18 +202,63 @@ async def _get_incident_update_details_logic(client: PingeraClient, page_id: str
     tools = IncidentsTools(client)
     return await tools.get_incident_update_details(page_id, incident_id, update_id)
 
-    """
-    Delete an incident from a status page permanently.
 
-    This removes the incident and all its updates from the status page.
-    Use with caution as this action cannot be undone.
+async def _add_incident_update_logic(client: PingeraClient, page_id: str, incident_id: str, update_data: dict) -> str:
+    """
+    Add a new status update to an existing incident.
+
+    Post updates to keep users informed about incident progress,
+    investigation findings, or resolution steps.
 
     Args:
         page_id: The ID of the status page
-        incident_id: The unique identifier of the incident to delete
+        incident_id: The unique identifier of the incident
+        update_data: Dictionary with update details including:
+            - body: The update message text
+            - status: New incident status if changed
+            - deliver_notifications: Whether to notify subscribers
+
+    Returns:
+        JSON with created update details including timestamp and content.
+    """
+    tools = IncidentsTools(client)
+    return await tools.add_incident_update(page_id, incident_id, update_data)
+
+
+async def _update_incident_update_logic(client: PingeraClient, page_id: str, incident_id: str, update_id: str, update_data: dict) -> str:
+    """
+    Edit an existing incident status update.
+
+    Modify the content or status of a previously posted incident update.
+    Useful for correcting typos or adding additional information.
+
+    Args:
+        page_id: The ID of the status page
+        incident_id: The unique identifier of the incident
+        update_id: The unique identifier of the update to modify
+        update_data: Dictionary with updated content and settings
+
+    Returns:
+        JSON with updated incident update details.
+    """
+    tools = IncidentsTools(client)
+    return await tools.update_incident_update(page_id, incident_id, update_id, update_data)
+
+
+async def _delete_incident_update_logic(client: PingeraClient, page_id: str, incident_id: str, update_id: str) -> str:
+    """
+    Delete a specific incident status update.
+
+    Remove an incident update from the timeline. This action cannot
+    be undone and may confuse users if the update was already public.
+
+    Args:
+        page_id: The ID of the status page
+        incident_id: The unique identifier of the incident
+        update_id: The unique identifier of the update to delete
 
     Returns:
         JSON confirming successful deletion.
     """
     tools = IncidentsTools(client)
-    return await tools.delete_incident(page_id, incident_id)
+    return await tools.delete_incident_update(page_id, incident_id, update_id)

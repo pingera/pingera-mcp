@@ -78,6 +78,9 @@ from .mcp_incidents import (
     _create_incident_logic,
     _patch_incident_logic,
     _delete_incident_logic,
+    _add_incident_update_logic,
+    _update_incident_update_logic,
+    _delete_incident_update_logic,
 )
 from .mcp_playwright import (
     _generate_synthetic_check_script_logic,
@@ -143,6 +146,9 @@ WRITE_TOOLS = [
     ("create_incident", _create_incident_logic),
     ("patch_incident", _patch_incident_logic),
     ("delete_incident", _delete_incident_logic),
+    ("add_incident_update", _add_incident_update_logic),
+    ("update_incident_update", _update_incident_update_logic),
+    ("delete_incident_update", _delete_incident_update_logic),
 ]
 
 # Combined registry for convenience

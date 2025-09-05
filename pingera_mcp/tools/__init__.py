@@ -1,4 +1,3 @@
-
 """
 MCP tools for Pingera monitoring service.
 This module serves as the central registry for all MCP tools.

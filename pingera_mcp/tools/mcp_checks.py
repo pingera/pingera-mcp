@@ -1,4 +1,3 @@
-
 """
 MCP logic functions for check management.
 """
@@ -154,8 +153,8 @@ async def _delete_check_logic(client: PingeraClient, check_id: str) -> str:
     """
     Delete a monitoring check permanently.
 
-    This stops all monitoring for the specified check and removes
-    all historical data and results.
+    This removes the check and all its historical data.
+    Use with caution as this action cannot be undone.
 
     Args:
         check_id: The unique identifier of the check to delete
@@ -165,3 +164,137 @@ async def _delete_check_logic(client: PingeraClient, check_id: str) -> str:
     """
     tools = ChecksTools(client)
     return await tools.delete_check(check_id)
+
+
+async def _get_check_statistics_logic(client: PingeraClient, check_id: str) -> str:
+    """
+    Get statistical summary and performance metrics for a monitoring check.
+
+    Provides uptime percentage, average response time, total executions,
+    and other key performance indicators for the check.
+
+    Args:
+        check_id: The unique identifier of the monitoring check
+
+    Returns:
+        JSON with statistics including uptime %, avg response time, success rate, and error counts.
+    """
+    tools = ChecksTools(client)
+    return await tools.get_check_statistics(check_id)
+
+
+async def _list_check_jobs_logic(client: PingeraClient) -> str:
+    """
+    List all currently running or queued check execution jobs.
+
+    Shows the status of scheduled and on-demand check executions,
+    useful for monitoring the execution queue and identifying any stuck jobs.
+
+    Returns:
+        JSON with list of active jobs including job IDs, check IDs, status, and execution times.
+    """
+    tools = ChecksTools(client)
+    return await tools.list_check_jobs()
+
+
+async def _get_check_job_details_logic(client: PingeraClient, job_id: str) -> str:
+    """
+    Get detailed information about a specific check execution job.
+
+    Args:
+        job_id: The unique identifier of the check job
+
+    Returns:
+        JSON with job details including execution status, start/end times, results, and any errors.
+    """
+    tools = ChecksTools(client)
+    return await tools.get_check_job_details(job_id)
+
+
+async def _get_unified_results_logic(
+    client: PingeraClient,
+    check_ids: Optional[List[str]] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None,
+    status: Optional[str] = None,
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
+) -> str:
+    """
+    Get combined results from multiple checks in a unified format.
+
+    Useful for analyzing performance across multiple services or getting
+    an overview of all your monitoring data in a single request.
+
+    Args:
+        check_ids: List of check IDs to include (if None, includes all checks)
+        from_date: Start date in ISO format
+        to_date: End date in ISO format
+        status: Filter by result status ('success', 'failure', 'timeout')
+        page: Page number for pagination
+        page_size: Number of results per page
+
+    Returns:
+        JSON with unified results from multiple checks including timestamps and performance data.
+    """
+    tools = ChecksTools(client)
+    return await tools.get_unified_results(check_ids, from_date, to_date, status, page, page_size)
+
+
+async def _get_unified_statistics_logic(
+    client: PingeraClient,
+    check_ids: Optional[List[str]] = None,
+    from_date: Optional[str] = None,
+    to_date: Optional[str] = None
+) -> str:
+    """
+    Get combined statistical summary across multiple monitoring checks.
+
+    Provides aggregated uptime, performance metrics, and trends across
+    your entire monitoring infrastructure or a subset of checks.
+
+    Args:
+        check_ids: List of check IDs to analyze (if None, includes all checks)
+        from_date: Start date for statistics calculation
+        to_date: End date for statistics calculation
+
+    Returns:
+        JSON with aggregated statistics including overall uptime, avg response times, and trends.
+    """
+    tools = ChecksTools(client)
+    return await tools.get_unified_statistics(check_ids, from_date, to_date)
+
+
+async def _execute_existing_check_logic(client: PingeraClient, check_id: str) -> str:
+    """
+    Manually trigger an existing monitoring check to run immediately.
+
+    Forces an immediate execution of a configured check, bypassing the normal
+    scheduled interval. Useful for testing after configuration changes or
+    getting fresh data on demand.
+
+    Args:
+        check_id: The unique identifier of the check to execute
+
+    Returns:
+        JSON with execution job details and immediate results if available.
+    """
+    tools = ChecksTools(client)
+    return await tools.execute_existing_check(check_id)
+
+
+async def _get_on_demand_job_status_logic(client: PingeraClient, job_id: str) -> str:
+    """
+    Check the status and results of an on-demand check execution job.
+
+    After triggering a manual check execution, use this to monitor the job
+    progress and retrieve results once the execution completes.
+
+    Args:
+        job_id: The job ID returned from execute_existing_check or execute_custom_check
+
+    Returns:
+        JSON with job status, execution progress, and results if completed.
+    """
+    tools = ChecksTools(client)
+    return await tools.get_on_demand_job_status(job_id)

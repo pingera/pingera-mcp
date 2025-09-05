@@ -98,13 +98,11 @@ READ_ONLY_TOOLS = [
     ("list_checks", _list_checks_logic),
     ("get_check_details", _get_check_details_logic),
     ("get_check_results", _get_check_results_logic),
-    ("execute_custom_check", _execute_custom_check_logic),
     ("get_check_statistics", _get_check_statistics_logic),
     ("list_check_jobs", _list_check_jobs_logic),
     ("get_check_job_details", _get_check_job_details_logic),
     ("get_unified_results", _get_unified_results_logic),
     ("get_unified_statistics", _get_unified_statistics_logic),
-    ("execute_existing_check", _execute_existing_check_logic),
     ("get_on_demand_job_status", _get_on_demand_job_status_logic),
     ("list_on_demand_checks", _list_on_demand_checks_logic),
     ("list_alerts", _list_alerts_logic),
@@ -149,6 +147,8 @@ WRITE_TOOLS = [
     ("add_incident_update", _add_incident_update_logic),
     ("update_incident_update", _update_incident_update_logic),
     ("delete_incident_update", _delete_incident_update_logic),
+    ("execute_existing_check", _execute_existing_check_logic),
+    ("execute_custom_check", _execute_custom_check_logic),
 ]
 
 # Combined registry for convenience

@@ -48,6 +48,8 @@ uv tool install pingera-mcp-server
 
 ### Configuration
 
+#### STDIO Mode (Default)
+
 Open the Claude Desktop configuration file:
 
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
@@ -86,16 +88,65 @@ Add the following configuration:
 
 ### Required Environment Variables
 
-- **`PINGERA_API_KEY`** - Your Pingera API key (required)
+- **`PINGERA_API_KEY`** - Your Pingera API key (required for STDIO mode)
 
 ### Optional Environment Variables
 
-- **`PINGERA_MODE`** - Operation mode: `read_only` (default) or `read_write`
+- **`PINGERA_ACCESS_LEVEL`** - Operation mode: `read-only` (default) or `read-write`
+- **`MCP_MODE`** - Server transport mode: `stdio` (default) or `http`
 - **`PINGERA_BASE_URL`** - API endpoint (default: `https://api.pingera.ru/v1`)
 - **`PINGERA_TIMEOUT`** - Request timeout in seconds (default: `30`)
 - **`PINGERA_MAX_RETRIES`** - Maximum retry attempts (default: `3`)
 - **`PINGERA_DEBUG`** - Enable debug logging (default: `false`)
 - **`PINGERA_SERVER_NAME`** - Server display name (default: `Pingera MCP Server`)
+
+### HTTP/SSE Mode Notes
+
+When running in HTTP mode (`MCP_MODE=http`):
+- The server runs on `http://0.0.0.0:8000`
+- API keys are passed via Authorization header (`Bearer <your_api_key>`)
+- Multiple clients can connect with different API keys
+- No `PINGERA_API_KEY` environment variable is required (keys come from client requests)
+
+#### SSE/HTTP Mode
+
+For SSE (Server-Sent Events) mode, configure the server to run in HTTP mode and connect via SSE transport:
+
+```json
+{
+  "mcpServers": {
+    "pingera": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "pingera-mcp-server",
+        "--python",
+        "3.10",
+        "python",
+        "-m",
+        "pingera_mcp"
+      ],
+      "env": {
+        "PINGERA_API_KEY": "your_api_key_here",
+        "MCP_MODE": "http",
+        "PINGERA_ACCESS_LEVEL": "read-write",
+        "PINGERA_BASE_URL": "https://api.pingera.ru/v1",
+        "PINGERA_TIMEOUT": "30",
+        "PINGERA_MAX_RETRIES": "3",
+        "PINGERA_DEBUG": "false",
+        "PINGERA_SERVER_NAME": "Pingera MCP Server"
+      },
+      "transport": {
+        "type": "sse",
+        "url": "http://localhost:8000/sse"
+      }
+    }
+  }
+}
+```
+
+When running in HTTP mode, the server will start on `http://0.0.0.0:8000` and provide multi-tenant support with API key authentication via Bearer tokens.
 
 ### Restart Claude Desktop
 
@@ -111,6 +162,7 @@ Once configured, you can ask Claude to:
 
 ## Configuration
 
+### STDIO Mode (Default)
 Configure the server using environment variables:
 
 ```bash
@@ -118,13 +170,37 @@ Configure the server using environment variables:
 PINGERA_API_KEY=your_api_key_here
 
 # Optional
-PINGERA_MODE=read_only                    # read_only or read_write
+PINGERA_ACCESS_LEVEL=read-only           # read-only or read-write
+MCP_MODE=stdio                           # stdio or http
 PINGERA_BASE_URL=https://api.pingera.ru/v1
 PINGERA_TIMEOUT=30
 PINGERA_MAX_RETRIES=3
 PINGERA_DEBUG=false
 PINGERA_SERVER_NAME=Pingera MCP Server
 ```
+
+### HTTP/SSE Mode
+For HTTP mode with SSE transport:
+
+```bash
+# Server Configuration
+MCP_MODE=http                            # Required for HTTP mode
+PINGERA_ACCESS_LEVEL=read-write          # read-only or read-write
+
+# Optional
+PINGERA_BASE_URL=https://api.pingera.ru/v1
+PINGERA_TIMEOUT=30
+PINGERA_MAX_RETRIES=3
+PINGERA_DEBUG=false
+PINGERA_SERVER_NAME=Pingera MCP Server
+```
+
+Run the server:
+```bash
+python -m pingera_mcp
+```
+
+The server will start on `http://0.0.0.0:8000` and clients authenticate using Bearer tokens in the Authorization header.
 
 ## MCP Tools
 

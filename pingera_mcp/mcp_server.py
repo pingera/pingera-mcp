@@ -1,16 +1,18 @@
 """
 MCP Server implementation for Pingera monitoring service.
-Supports dual-mode operation (stdio, http).
+This file handles server configuration and tool registration.
+All tool logic is defined in the 'tools' package.
 """
 import logging
 import os
+import inspect
 from typing import Optional, Annotated
 
 from mcp.server.fastmcp import FastMCP
 from fastapi import Depends, HTTPException, status, Header
 
 from pingera_mcp import PingeraClient
-from pingera_mcp.tools import PagesTools
+from pingera_mcp.tools import READ_ONLY_TOOLS, WRITE_TOOLS
 
 # --- CONFIGURATION ---
 class Config:
@@ -21,6 +23,11 @@ class Config:
         self.max_retries = int(os.getenv("PINGERA_MAX_RETRIES", 3))
         self.server_name = os.getenv("PINGERA_SERVER_NAME", "Pingera MCP Server")
         self.mode = os.getenv("MCP_MODE", "stdio").lower()
+        self.access_level = os.getenv("PINGERA_ACCESS_LEVEL", "read-only").lower()
+
+    def is_read_write(self) -> bool:
+        """Check if server is configured for read-write operations."""
+        return self.access_level == "read-write"
 
 config = Config()
 
@@ -54,63 +61,42 @@ async def get_pingera_client_for_http(auth: Annotated[str | None, Header(alias="
 
 ClientDep = Annotated[PingeraClient, Depends(get_pingera_client_for_http)]
 
-# --- 1. CORE TOOL LOGIC (SINGLE SOURCE OF TRUTH) ---
-async def _list_pages_logic(
-    client: PingeraClient,
-    page: Optional[int] = None,
-    per_page: Optional[int] = None,
-    status: Optional[str] = None
-) -> str:
-    """
-    List all status pages in your Pingera account.
+# --- PROGRAMMATIC REGISTRATION ---
+def register_tools(tool_list):
+    """Register a list of tools with the MCP server."""
+    for tool_name, logic_func in tool_list:
+        if config.mode == 'stdio':
+            # Create STDIO wrapper
+            async def stdio_wrapper(*args, **kwargs):
+                return await logic_func(stdio_pingera_client, *args, **kwargs)
+            tool_to_register = stdio_wrapper
+        else:
+            # Create HTTP wrapper  
+            async def http_wrapper(client: ClientDep = None, *args, **kwargs):
+                return await logic_func(client, *args, **kwargs)
+            tool_to_register = http_wrapper
 
-    This is typically the first tool you should use to discover available pages and their IDs.
-    Each page has a unique ID that you'll need for other operations like listing incidents or components.
+        # Copy docstring and signature from logic function
+        tool_to_register.__doc__ = logic_func.__doc__
 
-    Args:
-        page: Page number for pagination (default: 1)
-        per_page: Number of items per page (default: 20, max: 100)
-        status: Filter pages by status ('active', 'inactive').
+        # Copy signature, skipping the first 'client' parameter
+        sig = inspect.signature(logic_func)
+        params = list(sig.parameters.values())[1:]  # Skip 'client'
+        tool_to_register.__signature__ = sig.replace(parameters=params)
 
-    Returns:
-        JSON with list of status pages including their names, IDs, domains, and configuration details.
-    """
-    if not client:
-        raise RuntimeError("Pingera client could not be initialized for this operation.")
-    pages_tools = PagesTools(client)
-    return await pages_tools.list_pages(page, per_page, status)
+        # Register the tool
+        mcp.add_tool(fn=tool_to_register, name=tool_name)
 
-# --- 2. PROGRAMMATIC REGISTRATION ---
-TOOL_REGISTRY = [
-    ("list_pages", _list_pages_logic),
-]
+# Register read-only tools
+register_tools(READ_ONLY_TOOLS)
+logger.info(f"Registered {len(READ_ONLY_TOOLS)} read-only tools in '{config.mode}' mode.")
 
-for tool_name, logic_func in TOOL_REGISTRY:
-    tool_to_register = None
+# Register write tools if access level permits
+if config.is_read_write():
+    register_tools(WRITE_TOOLS)
+    logger.info(f"Read-write access enabled: Registered {len(WRITE_TOOLS)} write tools.")
+else:
+    logger.info("Read-only access level: Write tools not registered.")
 
-    if config.mode == 'stdio':
-        async def stdio_wrapper(
-            page: Optional[int] = None,
-            per_page: Optional[int] = None,
-            status: Optional[str] = None
-        ):
-            return await logic_func(stdio_pingera_client, page=page, per_page=per_page, status=status)
-        tool_to_register = stdio_wrapper
-    else:  # http mode
-        async def http_wrapper(
-            page: Optional[int] = None,
-            per_page: Optional[int] = None,
-            status: Optional[str] = None,
-            client: ClientDep = None
-        ):
-            return await logic_func(client, page=page, per_page=per_page, status=status)
-        tool_to_register = http_wrapper
-
-    # THE FIX: Manually assign the docstring to the wrapper function itself
-    # before registration. This ensures the framework reads it correctly.
-    tool_to_register.__doc__ = logic_func.__doc__
-
-    # Now, register the fully prepared wrapper function.
-    mcp.add_tool(fn=tool_to_register, name=tool_name)
-
-logger.info(f"Registered {len(TOOL_REGISTRY)} tools in '{config.mode}' mode.")
+total_tools = len(READ_ONLY_TOOLS) + (len(WRITE_TOOLS) if config.is_read_write() else 0)
+logger.info(f"Total registered tools: {total_tools}")

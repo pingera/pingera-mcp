@@ -104,7 +104,7 @@ Add the following configuration:
 
 When running in HTTP mode (`MCP_MODE=http`):
 - The server runs on `http://0.0.0.0:8000`
-- API keys are passed via Authorization header (`Bearer <your_api_key>`)
+- API keys are passed via Authorization header (`<your_api_key>`)
 - Multiple clients can connect with different API keys
 - No `PINGERA_API_KEY` environment variable is required (keys come from client requests)
 
@@ -146,7 +146,7 @@ For SSE (Server-Sent Events) mode, configure the server to run in HTTP mode and 
 }
 ```
 
-When running in HTTP mode, the server will start on `http://0.0.0.0:8000` and provide multi-tenant support with API key authentication via Bearer tokens.
+When running in HTTP mode, the server will start on `http://0.0.0.0:8000` and provide multi-tenant support with API key authentication via API tokens.
 
 ### Restart Claude Desktop
 

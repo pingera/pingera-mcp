@@ -64,9 +64,6 @@ async def get_pingera_client(auth: Annotated[str | None, Header(alias="Authoriza
 
     return PingeraClient(api_key=token, base_url=config.base_url)
 
-# Use Optional for the client parameter to avoid Pydantic schema issues
-ClientDep = Optional[PingeraClient]
-
 # Tool instances are initialized dynamically for each request
 
 # Register read-only tools
@@ -74,8 +71,7 @@ ClientDep = Optional[PingeraClient]
 async def list_pages(
     page: Optional[int] = None,
     per_page: Optional[int] = None,
-    status: Optional[str] = None,
-    client: ClientDep = None
+    status: Optional[str] = None
 ) -> str:
     """
     List all status pages in your Pingera account.
@@ -90,7 +86,7 @@ async def list_pages(
     Returns:
         JSON with list of status pages including their names, IDs, domains, and configuration details.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -98,7 +94,7 @@ async def list_pages(
     return await pages_tools.list_pages(page, per_page, status)
 
 @mcp.tool()
-async def get_page_details(page_id: int, client: ClientDep = None) -> str:
+async def get_page_details(page_id: str) -> str:
     """
     Get detailed information about a specific status page.
 
@@ -108,7 +104,7 @@ async def get_page_details(page_id: int, client: ClientDep = None) -> str:
     Returns:
         JSON with complete page details including settings, components, branding, and configuration.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -116,7 +112,7 @@ async def get_page_details(page_id: int, client: ClientDep = None) -> str:
     return await pages_tools.get_page_details(page_id)
 
 @mcp.tool()
-async def test_pingera_connection(client: ClientDep = None) -> str:
+async def test_pingera_connection() -> str:
     """
     Test the connection to Pingera API and verify authentication.
 
@@ -126,7 +122,7 @@ async def test_pingera_connection(client: ClientDep = None) -> str:
     Returns:
         JSON with connection status, API information, and authentication details.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -136,8 +132,7 @@ async def test_pingera_connection(client: ClientDep = None) -> str:
 @mcp.tool()
 async def list_component_groups(
     page_id: str,
-    show_deleted: Optional[bool] = False,
-    client: ClientDep = None
+    show_deleted: Optional[bool] = False
 ) -> str:
     """
     Get only component groups (not individual components) for a status page.
@@ -153,7 +148,7 @@ async def list_component_groups(
     Returns:
         JSON with list of component groups only, including their names, IDs, positions, and component counts.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -164,8 +159,7 @@ async def list_component_groups(
 async def list_components(
     page_id: str,
     page: Optional[int] = None,
-    page_size: Optional[int] = None,
-    client: ClientDep = None
+    page_size: Optional[int] = None
 ) -> str:
     """
     Get all components (individual services and groups) for a status page with their IDs.
@@ -182,7 +176,7 @@ async def list_components(
     Returns:
         JSON with complete list of components including names, IDs, status, type (group/individual), and configuration.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -190,7 +184,7 @@ async def list_components(
     return await component_tools.list_components(page_id, page, page_size)
 
 @mcp.tool()
-async def get_component_details(page_id: str, component_id: str, client: ClientDep = None) -> str:
+async def get_component_details(page_id: str, component_id: str) -> str:
     """
     Get detailed information about a specific component.
 
@@ -204,7 +198,7 @@ async def get_component_details(page_id: str, component_id: str, client: ClientD
     Returns:
         JSON with component details including name, description, status, position, and linked checks.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -218,8 +212,7 @@ async def list_checks(
     type: Optional[str] = None,
     status: Optional[str] = None,
     group_id: Optional[str] = None,
-    name: Optional[str] = None,
-    client: ClientDep = None
+    name: Optional[str] = None
 ) -> str:
     """
     List all monitoring checks in your account.
@@ -238,7 +231,7 @@ async def list_checks(
     Returns:
         JSON with list of checks including names, URLs, types, intervals, and current status.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -246,7 +239,7 @@ async def list_checks(
     return await checks_tools.list_checks(page, page_size, type, status, group_id, name)
 
 @mcp.tool()
-async def get_check_details(check_id: str, client: ClientDep = None) -> str:
+async def get_check_details(check_id: str) -> str:
     """
     Get detailed configuration and settings for a specific monitoring check.
 
@@ -257,7 +250,7 @@ async def get_check_details(check_id: str, client: ClientDep = None) -> str:
         JSON with complete check configuration including URL, intervals, timeouts,
         expected responses, notification settings, and linked components.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -270,8 +263,7 @@ async def get_check_results(
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
     page: Optional[int] = None,
-    page_size: Optional[int] = None,
-    client: ClientDep = None
+    page_size: Optional[int] = None
 ) -> str:
     """
     Get historical results and performance data for a monitoring check.
@@ -289,7 +281,7 @@ async def get_check_results(
     Returns:
         JSON with check results including timestamps, response times, status codes, and error details.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -297,7 +289,7 @@ async def get_check_results(
     return await checks_tools.get_check_results(check_id, from_date, to_date, page, page_size)
 
 @mcp.tool()
-async def get_check_statistics(check_id: str, client: ClientDep = None) -> str:
+async def get_check_statistics(check_id: str) -> str:
     """
     Get statistical summary and performance metrics for a monitoring check.
 
@@ -310,7 +302,7 @@ async def get_check_statistics(check_id: str, client: ClientDep = None) -> str:
     Returns:
         JSON with statistics including uptime %, avg response time, success rate, and error counts.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -318,7 +310,7 @@ async def get_check_statistics(check_id: str, client: ClientDep = None) -> str:
     return await checks_tools.get_check_statistics(check_id)
 
 @mcp.tool()
-async def list_check_jobs(client: ClientDep = None) -> str:
+async def list_check_jobs() -> str:
     """
     List all currently running or queued check execution jobs.
 
@@ -328,7 +320,7 @@ async def list_check_jobs(client: ClientDep = None) -> str:
     Returns:
         JSON with list of active jobs including job IDs, check IDs, status, and execution times.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -336,7 +328,7 @@ async def list_check_jobs(client: ClientDep = None) -> str:
     return await checks_tools.list_check_jobs()
 
 @mcp.tool()
-async def get_check_job_details(job_id: str, client: ClientDep = None) -> str:
+async def get_check_job_details(job_id: str) -> str:
     """
     Get detailed information about a specific check execution job.
 
@@ -346,7 +338,7 @@ async def get_check_job_details(job_id: str, client: ClientDep = None) -> str:
     Returns:
         JSON with job details including execution status, start/end times, results, and any errors.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -360,8 +352,7 @@ async def get_unified_results(
     to_date: Optional[str] = None,
     status: Optional[str] = None,
     page: Optional[int] = None,
-    page_size: Optional[int] = None,
-    client: ClientDep = None
+    page_size: Optional[int] = None
 ) -> str:
     """
     Get combined results from multiple checks in a unified format.
@@ -380,7 +371,7 @@ async def get_unified_results(
     Returns:
         JSON with unified results from multiple checks including timestamps and performance data.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -391,8 +382,7 @@ async def get_unified_results(
 async def get_unified_statistics(
     check_ids: Optional[List[str]] = None,
     from_date: Optional[str] = None,
-    to_date: Optional[str] = None,
-    client: ClientDep = None
+    to_date: Optional[str] = None
 ) -> str:
     """
     Get combined statistical summary across multiple monitoring checks.
@@ -408,7 +398,7 @@ async def get_unified_statistics(
     Returns:
         JSON with aggregated statistics including overall uptime, avg response times, and trends.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -423,8 +413,7 @@ async def execute_custom_check(
     host: Optional[str] = None,
     port: Optional[int] = None,
     timeout: Optional[int] = 30,
-    parameters: Optional[dict] = None,
-    client: ClientDep = None
+    parameters: Optional[dict] = None
 ) -> str:
     """
     Execute a one-time custom monitoring check on any URL or service.
@@ -465,7 +454,7 @@ async def execute_custom_check(
     Returns:
         JSON with the job id that is executed asynchronously.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -473,7 +462,7 @@ async def execute_custom_check(
     return await checks_tools.execute_custom_check(type, name, url, host, port, timeout, parameters)
 
 @mcp.tool()
-async def execute_existing_check(check_id: str, client: ClientDep = None) -> str:
+async def execute_existing_check(check_id: str) -> str:
     """
     Manually trigger an existing monitoring check to run immediately.
 
@@ -487,7 +476,7 @@ async def execute_existing_check(check_id: str, client: ClientDep = None) -> str
     Returns:
         JSON with execution job details and immediate results if available.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -495,7 +484,7 @@ async def execute_existing_check(check_id: str, client: ClientDep = None) -> str
     return await checks_tools.execute_existing_check(check_id)
 
 @mcp.tool()
-async def get_on_demand_job_status(job_id: str, client: ClientDep = None) -> str:
+async def get_on_demand_job_status(job_id: str) -> str:
     """
     Check the status and results of an on-demand check execution job.
 
@@ -508,7 +497,7 @@ async def get_on_demand_job_status(job_id: str, client: ClientDep = None) -> str
     Returns:
         JSON with job status, execution progress, and results if completed.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -518,8 +507,7 @@ async def get_on_demand_job_status(job_id: str, client: ClientDep = None) -> str
 @mcp.tool()
 async def list_on_demand_checks(
     page: Optional[int] = None,
-    page_size: Optional[int] = None,
-    client: ClientDep = None
+    page_size: Optional[int] = None
 ) -> str:
     """
     List on-demand checks.
@@ -531,7 +519,7 @@ async def list_on_demand_checks(
     Returns:
         JSON string containing on-demand checks data
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -542,8 +530,7 @@ async def list_on_demand_checks(
 @mcp.tool()
 async def list_check_groups(
     page: Optional[int] = None,
-    page_size: Optional[int] = None,
-    client: ClientDep = None
+    page_size: Optional[int] = None
 ) -> str:
     """
     List all check groups in your account.
@@ -558,7 +545,7 @@ async def list_check_groups(
     Returns:
         JSON with list of check groups including their names, IDs, and check counts.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -566,7 +553,7 @@ async def list_check_groups(
     return await check_groups_tools.list_check_groups(page, page_size)
 
 @mcp.tool()
-async def get_check_group_details(group_id: str, client: ClientDep = None) -> str:
+async def get_check_group_details(group_id: str) -> str:
     """
     Get detailed information about a specific check group.
 
@@ -576,7 +563,7 @@ async def get_check_group_details(group_id: str, client: ClientDep = None) -> st
     Returns:
         JSON with check group details including name, description, and configuration.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -587,8 +574,7 @@ async def get_check_group_details(group_id: str, client: ClientDep = None) -> st
 async def get_checks_in_group(
     group_id: str,
     page: Optional[int] = None,
-    page_size: Optional[int] = None,
-    client: ClientDep = None
+    page_size: Optional[int] = None
 ) -> str:
     """
     Get all monitoring checks that belong to a specific check group.
@@ -604,7 +590,7 @@ async def get_checks_in_group(
     Returns:
         JSON with list of checks in the group including their names, URLs, types, and status.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -616,8 +602,7 @@ async def get_checks_in_group(
 async def list_alerts(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
-    status: Optional[str] = None,
-    client: ClientDep = None
+    status: Optional[str] = None
 ) -> str:
     """
     List all alert configurations in your account.
@@ -634,7 +619,7 @@ async def list_alerts(
     Returns:
         JSON with list of alerts including names, conditions, notification channels, and status.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -642,7 +627,7 @@ async def list_alerts(
     return await alerts_tools.list_alerts(page, page_size, status)
 
 @mcp.tool()
-async def get_alert_details(alert_id: str, client: ClientDep = None) -> str:
+async def get_alert_details(alert_id: str) -> str:
     """
     Get detailed configuration for a specific alert rule.
 
@@ -655,7 +640,7 @@ async def get_alert_details(alert_id: str, client: ClientDep = None) -> str:
     Returns:
         JSON with alert details including conditions, channels, thresholds, and escalation settings.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -663,7 +648,7 @@ async def get_alert_details(alert_id: str, client: ClientDep = None) -> str:
     return await alerts_tools.get_alert_details(alert_id)
 
 @mcp.tool()
-async def get_alert_statistics(client: ClientDep = None) -> str:
+async def get_alert_statistics() -> str:
     """
     Get statistical overview of all alert activity.
 
@@ -673,7 +658,7 @@ async def get_alert_statistics(client: ClientDep = None) -> str:
     Returns:
         JSON with alert statistics including trigger counts, avg resolution time, and trends.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -681,7 +666,7 @@ async def get_alert_statistics(client: ClientDep = None) -> str:
     return await alerts_tools.get_alert_statistics()
 
 @mcp.tool()
-async def list_alert_channels(client: ClientDep = None) -> str:
+async def list_alert_channels() -> str:
     """
     List all configured notification channels for alerts.
 
@@ -692,7 +677,7 @@ async def list_alert_channels(client: ClientDep = None) -> str:
     Returns:
         JSON with list of notification channels including types, names, and status.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -700,7 +685,7 @@ async def list_alert_channels(client: ClientDep = None) -> str:
     return await alerts_tools.list_alert_channels()
 
 @mcp.tool()
-async def list_alert_rules(client: ClientDep = None) -> str:
+async def list_alert_rules() -> str:
     """
     List all alert rules and their trigger conditions.
 
@@ -710,7 +695,7 @@ async def list_alert_rules(client: ClientDep = None) -> str:
     Returns:
         JSON with list of alert rules including conditions, thresholds, and linked checks.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -722,8 +707,7 @@ async def list_alert_rules(client: ClientDep = None) -> str:
 async def list_heartbeats(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
-    status: Optional[str] = None,
-    client: ClientDep = None
+    status: Optional[str] = None
 ) -> str:
     """
     List all heartbeat monitors in your account.
@@ -740,7 +724,7 @@ async def list_heartbeats(
     Returns:
         JSON with list of heartbeats including names, URLs, intervals, and last ping times.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -748,7 +732,7 @@ async def list_heartbeats(
     return await heartbeats_tools.list_heartbeats(page, page_size, status)
 
 @mcp.tool()
-async def get_heartbeat_details(heartbeat_id: str, client: ClientDep = None) -> str:
+async def get_heartbeat_details(heartbeat_id: str) -> str:
     """
     Get detailed information about a specific heartbeat monitor.
 
@@ -761,7 +745,7 @@ async def get_heartbeat_details(heartbeat_id: str, client: ClientDep = None) -> 
     Returns:
         JSON with heartbeat details including schedule, grace period, last ping, and history.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -769,7 +753,7 @@ async def get_heartbeat_details(heartbeat_id: str, client: ClientDep = None) -> 
     return await heartbeats_tools.get_heartbeat_details(heartbeat_id)
 
 @mcp.tool()
-async def create_heartbeat(heartbeat_data: dict, client: ClientDep = None) -> str:
+async def create_heartbeat(heartbeat_data: dict) -> str:
     """
     Create a new heartbeat monitor for cron jobs or scheduled tasks.
 
@@ -782,7 +766,7 @@ async def create_heartbeat(heartbeat_data: dict, client: ClientDep = None) -> st
     Returns:
         JSON with created heartbeat details including the unique ping URL to use in your scripts.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -790,7 +774,7 @@ async def create_heartbeat(heartbeat_data: dict, client: ClientDep = None) -> st
     return await heartbeats_tools.create_heartbeat(heartbeat_data)
 
 @mcp.tool()
-async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict, client: ClientDep = None) -> str:
+async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict) -> str:
     """
     Update configuration for an existing heartbeat monitor.
 
@@ -804,7 +788,7 @@ async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict, client: Clie
     Returns:
         JSON with updated heartbeat details and configuration.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -812,7 +796,7 @@ async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict, client: Clie
     return await heartbeats_tools.update_heartbeat(heartbeat_id, heartbeat_data)
 
 @mcp.tool()
-async def delete_heartbeat(heartbeat_id: str, client: ClientDep = None) -> str:
+async def delete_heartbeat(heartbeat_id: str) -> str:
     """
     Delete a heartbeat monitor permanently.
 
@@ -825,7 +809,7 @@ async def delete_heartbeat(heartbeat_id: str, client: ClientDep = None) -> str:
     Returns:
         JSON confirming successful deletion.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -833,7 +817,7 @@ async def delete_heartbeat(heartbeat_id: str, client: ClientDep = None) -> str:
     return await heartbeats_tools.delete_heartbeat(heartbeat_id)
 
 @mcp.tool()
-async def send_heartbeat_ping(heartbeat_id: str, client: ClientDep = None) -> str:
+async def send_heartbeat_ping(heartbeat_id: str) -> str:
     """
     Manually send a ping signal to a heartbeat monitor.
 
@@ -846,7 +830,7 @@ async def send_heartbeat_ping(heartbeat_id: str, client: ClientDep = None) -> st
     Returns:
         JSON confirming the ping was received and recorded.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -859,8 +843,7 @@ async def get_heartbeat_logs(
     from_date: Optional[str] = None,
     to_date: Optional[str] = None,
     page: Optional[int] = None,
-    page_size: Optional[int] = None,
-    client: ClientDep = None
+    page_size: Optional[int] = None
 ) -> str:
     """
     Get historical ping logs and activity for a heartbeat monitor.
@@ -878,7 +861,7 @@ async def get_heartbeat_logs(
     Returns:
         JSON with ping history including timestamps, status, and any alert triggers.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -890,8 +873,7 @@ async def list_incidents(
     page_id: str,
     page: Optional[int] = None,
     page_size: Optional[int] = None,
-    status: Optional[str] = None,
-    client: ClientDep = None
+    status: Optional[str] = None
 ) -> str:
     """
     List all incidents for a specific status page.
@@ -909,7 +891,7 @@ async def list_incidents(
     Returns:
         JSON with list of incidents including titles, status, impact level, and timestamps.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -917,7 +899,7 @@ async def list_incidents(
     return await incidents_tools.list_incidents(page_id, page, page_size, status)
 
 @mcp.tool()
-async def get_incident_details(page_id: str, incident_id: str, client: ClientDep = None) -> str:
+async def get_incident_details(page_id: str, incident_id: str) -> str:
     """
     Get detailed information about a specific incident.
 
@@ -931,7 +913,7 @@ async def get_incident_details(page_id: str, incident_id: str, client: ClientDep
     Returns:
         JSON with incident details including description, components, updates, and resolution timeline.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -939,7 +921,7 @@ async def get_incident_details(page_id: str, incident_id: str, client: ClientDep
     return await incidents_tools.get_incident_details(page_id, incident_id)
 
 @mcp.tool()
-async def get_incident_updates(page_id: str, incident_id: str, client: ClientDep = None) -> str:
+async def get_incident_updates(page_id: str, incident_id: str) -> str:
     """
     Get all status updates posted during an incident.
 
@@ -953,7 +935,7 @@ async def get_incident_updates(page_id: str, incident_id: str, client: ClientDep
     Returns:
         JSON with list of incident updates including timestamps, status changes, and messages.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -961,7 +943,7 @@ async def get_incident_updates(page_id: str, incident_id: str, client: ClientDep
     return await incidents_tools.get_incident_updates(page_id, incident_id)
 
 @mcp.tool()
-async def get_incident_update_details(page_id: str, incident_id: str, update_id: str, client: ClientDep = None) -> str:
+async def get_incident_update_details(page_id: str, incident_id: str, update_id: str) -> str:
     """
     Get detailed information about a specific incident update.
 
@@ -976,7 +958,7 @@ async def get_incident_update_details(page_id: str, incident_id: str, update_id:
     Returns:
         JSON with update details including message content, timestamp, and status information.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -1009,8 +991,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         allow_sms_subscribers: Optional[bool] = None,
         allow_webhook_subscribers: Optional[bool] = None,
         allow_rss_atom_feeds: Optional[bool] = None,
-        support_url: Optional[str] = None,
-        client: ClientDep = None
+        support_url: Optional[str] = None
     ) -> str:
         """
         Create a new status page.
@@ -1040,7 +1021,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON string containing the created page details
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1090,12 +1071,11 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         allow_sms_subscribers: Optional[bool] = None,
         allow_webhook_subscribers: Optional[bool] = None,
         allow_rss_atom_feeds: Optional[bool] = None,
-        support_url: Optional[str] = None,
-        client: ClientDep = None
+        support_url: Optional[str] = None
     ) -> str:
         """
         FULL UPDATE: Replace all page configuration (PUT method). Requires many fields to be specified.
-        
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name, 
         use patch_page instead which is designed for partial updates.
 
@@ -1125,7 +1105,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with updated page details and configuration.
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1176,12 +1156,11 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         allow_sms_subscribers: Optional[bool] = None,
         allow_webhook_subscribers: Optional[bool] = None,
         allow_rss_atom_feeds: Optional[bool] = None,
-        support_url: Optional[str] = None,
-        client: ClientDep = None
+        support_url: Optional[str] = None
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a status page (PATCH method).
-        
+
         Use this for simple updates like changing the name, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most page updates.
@@ -1212,7 +1191,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with updated page configuration.
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1242,7 +1221,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         )
 
     @mcp.tool()
-    async def delete_page(page_id: str, client: ClientDep = None) -> str:
+    async def delete_page(page_id: str) -> str:
         """
         Permanently delete a status page and all its associated data.
 
@@ -1255,7 +1234,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON confirming successful deletion.
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1272,8 +1251,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         only_show_if_degraded: Optional[bool] = None,
         position: Optional[int] = None,
         showcase: Optional[bool] = None,
-        status: Optional[str] = None,
-        client: ClientDep = None
+        status: Optional[str] = None
     ) -> str:
         """
         Create a new component or component group on a status page.
@@ -1295,7 +1273,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with created component details including ID and configuration.
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1323,12 +1301,11 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         only_show_if_degraded: Optional[bool] = None,
         position: Optional[int] = None,
         showcase: Optional[bool] = None,
-        status: Optional[str] = None,
-        client: ClientDep = None
+        status: Optional[str] = None
     ) -> str:
         """
         FULL UPDATE: Replace all component configuration (PUT method). Requires many fields to be specified.
-        
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name or status, 
         use patch_component instead which is designed for partial updates.
 
@@ -1347,7 +1324,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with updated component details and configuration.
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1369,12 +1346,11 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         position: Optional[int] = None,
         showcase: Optional[bool] = None,
         status: Optional[str] = None,
-        start_date: Optional[str] = None,
-        client: ClientDep = None
+        start_date: Optional[str] = None
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a component (PATCH method).
-        
+
         Use this for simple updates like changing the name, status, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most component updates.
@@ -1395,7 +1371,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with updated component configuration.
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1406,7 +1382,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         )
 
     @mcp.tool()
-    async def delete_component(page_id: str, component_id: str, client: ClientDep = None) -> str:
+    async def delete_component(page_id: str, component_id: str) -> str:
         """
         Delete a component from a status page permanently.
 
@@ -1420,7 +1396,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON confirming successful deletion.
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1437,8 +1413,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         interval: int = 300,
         timeout: int = 10,
         active: bool = True,
-        parameters: Optional[Dict[str, Any]] = None,
-        client: ClientDep = None
+        parameters: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Create a new monitoring check to watch a website, API, or service.
@@ -1461,7 +1436,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             A JSON object with the created check's details.
         """
-        active_client = client or stdio_pingera_client
+        active_client = stdio_pingera_client
         if not active_client: 
             raise RuntimeError("Pingera client is not available.")
 
@@ -1489,7 +1464,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         interval: Optional[int] = None,
         timeout: Optional[int] = None,
         active: Optional[bool] = None,
-        parameters: Optional[Dict[str, Any]] = None,
+        parameters: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Update configuration for an existing monitoring check.
@@ -1511,6 +1486,11 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             A JSON object with the updated check details.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        checks_tools = ChecksTools(active_client)
         return await checks_tools.update_check(
             check_id=check_id,
             name=name,
@@ -1537,6 +1517,11 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON confirming successful deletion.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        checks_tools = ChecksTools(active_client)
         return await checks_tools.delete_check(check_id)
 
     @mcp.tool()
@@ -1553,6 +1538,11 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON confirming the check has been paused.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        checks_tools = ChecksTools(active_client)
         return await checks_tools.pause_check(check_id)
 
     @mcp.tool()
@@ -1569,6 +1559,11 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON confirming the check has been resumed.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        checks_tools = ChecksTools(active_client)
         return await checks_tools.resume_check(check_id)
 
     @mcp.tool()
@@ -1590,6 +1585,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with created alert rule details and configuration.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await alerts_tools.create_alert(alert_data)
 
     @mcp.tool()
@@ -1607,6 +1606,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with updated alert rule details and configuration.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await alerts_tools.update_alert(alert_id, alert_data)
 
     @mcp.tool()
@@ -1623,6 +1626,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON confirming successful deletion.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await alerts_tools.delete_alert(alert_id)
 
     @mcp.tool()
@@ -1653,6 +1660,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with created incident details including ID and public URL.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await incidents_tools.create_incident(
             page_id=page_id,
             name=name,
@@ -1687,7 +1698,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
     ) -> str:
         """
         FULL UPDATE: Replace all incident configuration (PUT method). Requires many fields to be specified.
-        
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name or status, 
         use patch_incident instead which is designed for partial updates.
 
@@ -1715,6 +1726,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with updated incident details.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await incidents_tools.update_incident(
             page_id=page_id,
             incident_id=incident_id,
@@ -1761,7 +1776,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of an incident (PATCH method).
-        
+
         Use this for simple updates like changing the name, status, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most incident updates.
@@ -1790,6 +1805,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with updated incident configuration.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await incidents_tools.patch_incident(
             page_id=page_id,
             incident_id=incident_id,
@@ -1827,6 +1846,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON confirming successful deletion.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await incidents_tools.delete_incident(page_id, incident_id)
 
     @mcp.tool()
@@ -1848,6 +1871,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with created update details including timestamp and content.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await incidents_tools.add_incident_update(page_id, incident_id, update_data)
 
     @mcp.tool()
@@ -1867,6 +1894,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON with updated incident update details.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await incidents_tools.update_incident_update(page_id, incident_id, update_id, update_data)
 
     @mcp.tool()
@@ -1885,6 +1916,10 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
         Returns:
             JSON confirming successful deletion.
         """
+        active_client = stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
         return await incidents_tools.delete_incident_update(page_id, incident_id, update_id)
 
 # Register Playwright script generation tools (always available)
@@ -1892,8 +1927,7 @@ if hasattr(config, 'mode') and config.mode == 'read-write':
 async def generate_synthetic_check_script(
     description: str,
     target_url: str,
-    script_name: Optional[str] = None,
-    client: ClientDep = None
+    script_name: Optional[str] = None
 ) -> str:
     """
     Generate a Playwright script for synthetic browser monitoring.
@@ -1910,7 +1944,7 @@ async def generate_synthetic_check_script(
     Returns:
         JSON with the generated Playwright script and usage instructions
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 
@@ -1930,8 +1964,7 @@ async def generate_api_check_script(
     payload: Optional[dict] = None,
     expected_status: Optional[int] = None,
     contains_string: Optional[str] = None,
-    custom_code: Optional[str] = None,
-    client: ClientDep = None
+    custom_code: Optional[str] = None
 ) -> str:
     """
     Generates a Playwright script for an API check.
@@ -1953,7 +1986,7 @@ async def generate_api_check_script(
     Returns:
         A string containing the generated Playwright script in TypeScript.
     """
-    active_client = client or stdio_pingera_client
+    active_client = stdio_pingera_client
     if not active_client: 
         raise RuntimeError("Pingera client is not available.")
 

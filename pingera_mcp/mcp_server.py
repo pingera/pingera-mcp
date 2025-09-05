@@ -65,16 +65,21 @@ ClientDep = Annotated[PingeraClient, Depends(get_pingera_client_for_http)]
 def register_tools(tool_list):
     """Register a list of tools with the MCP server."""
     for tool_name, logic_func in tool_list:
-        if config.mode == 'stdio':
-            # Create STDIO wrapper
+        # Create proper closures to avoid late binding issues
+        def create_stdio_wrapper(func):
             async def stdio_wrapper(*args, **kwargs):
-                return await logic_func(stdio_pingera_client, *args, **kwargs)
-            tool_to_register = stdio_wrapper
-        else:
-            # Create HTTP wrapper  
+                return await func(stdio_pingera_client, *args, **kwargs)
+            return stdio_wrapper
+
+        def create_http_wrapper(func):
             async def http_wrapper(client: ClientDep = None, *args, **kwargs):
-                return await logic_func(client, *args, **kwargs)
-            tool_to_register = http_wrapper
+                return await func(client, *args, **kwargs)
+            return http_wrapper
+
+        if config.mode == 'stdio':
+            tool_to_register = create_stdio_wrapper(logic_func)
+        else:
+            tool_to_register = create_http_wrapper(logic_func)
 
         # Copy docstring and signature from logic function
         tool_to_register.__doc__ = logic_func.__doc__

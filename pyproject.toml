@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pingera-mcp-server"
-version = "0.1.7"
+version = "0.1.6"
 description = "Model Context Protocol (MCP) server for Pingera monitoring service integration"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -42,7 +42,6 @@ dependencies = [
     "pingera-sdk>=1.0.5",
     "google-generativeai>=0.8.5",
     "sift-stack-py>=0.8.3",
-    "fastapi>=0.116.1"
 ]
 requires-python = ">=3.10"
 

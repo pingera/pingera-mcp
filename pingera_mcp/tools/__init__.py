@@ -66,7 +66,6 @@ READ_ONLY_TOOLS = [
     ("list_checks", _list_checks_logic),
     ("get_check_details", _get_check_details_logic),
     ("get_check_results", _get_check_results_logic),
-    ("execute_custom_check", _execute_custom_check_logic),
     ("list_check_groups", _list_check_groups_logic),
     ("get_check_group_details", _get_check_group_details_logic),
     ("get_checks_in_group", _get_checks_in_group_logic),
@@ -88,6 +87,7 @@ WRITE_TOOLS = [
     ("create_incident", _create_incident_logic),
     ("patch_incident", _patch_incident_logic),
     ("delete_incident", _delete_incident_logic),
+    ("execute_custom_check", _execute_custom_check_logic),
 ]
 
 # Combined registry for convenience

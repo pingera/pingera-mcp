@@ -58,6 +58,15 @@ from .mcp_check_groups import (
     _get_check_group_details_logic,
     _get_checks_in_group_logic,
 )
+from .mcp_heartbeats import (
+    _list_heartbeats_logic,
+    _get_heartbeat_details_logic,
+    _create_heartbeat_logic,
+    _update_heartbeat_logic,
+    _delete_heartbeat_logic,
+    _send_heartbeat_ping_logic,
+    _get_heartbeat_logs_logic,
+)
 from .mcp_incidents import (
     _list_incidents_logic,
     _create_incident_logic,
@@ -97,6 +106,10 @@ READ_ONLY_TOOLS = [
     ("list_check_groups", _list_check_groups_logic),
     ("get_check_group_details", _get_check_group_details_logic),
     ("get_checks_in_group", _get_checks_in_group_logic),
+    ("list_heartbeats", _list_heartbeats_logic),
+    ("get_heartbeat_details", _get_heartbeat_details_logic),
+    ("send_heartbeat_ping", _send_heartbeat_ping_logic),
+    ("get_heartbeat_logs", _get_heartbeat_logs_logic),
     ("list_incidents", _list_incidents_logic),
     ("generate_synthetic_check_script", _generate_synthetic_check_script_logic),
     ("generate_api_check_script", _generate_api_check_script_logic),
@@ -112,6 +125,9 @@ WRITE_TOOLS = [
     ("delete_component", _delete_component_logic),
     ("create_check", _create_check_logic),
     ("delete_check", _delete_check_logic),
+    ("create_heartbeat", _create_heartbeat_logic),
+    ("update_heartbeat", _update_heartbeat_logic),
+    ("delete_heartbeat", _delete_heartbeat_logic),
     ("create_incident", _create_incident_logic),
     ("patch_incident", _patch_incident_logic),
     ("delete_incident", _delete_incident_logic),

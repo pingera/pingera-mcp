@@ -146,7 +146,7 @@ For SSE (Server-Sent Events) mode, configure the server to run in HTTP mode and 
 }
 ```
 
-When running in HTTP mode, the server will start on `http://0.0.0.0:8000` and provide multi-tenant support with API key authentication via API tokens.
+When running in HTTP mode, the server will start on `http://0.0.0.0:8000` and provide multi-tenant support with API key authentication via the Authorization header.
 
 ### Restart Claude Desktop
 
@@ -200,7 +200,7 @@ Run the server:
 python -m pingera_mcp
 ```
 
-The server will start on `http://0.0.0.0:8000` and clients authenticate using Bearer tokens in the Authorization header.
+The server will start on `http://0.0.0.0:8000` and clients authenticate using the Authorization header.
 
 ## MCP Tools
 

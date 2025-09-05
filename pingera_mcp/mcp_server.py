@@ -52,12 +52,8 @@ async def get_pingera_client_for_http(auth: Annotated[str | None, Header(alias="
     """Dependency for HTTP mode: creates a PingeraClient from the Authorization header."""
     if not auth:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header is missing")
-    try:
-        scheme, token = auth.split()
-        if scheme.lower() != "bearer": raise ValueError
-    except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authorization scheme. Use 'Bearer <key>'")
-    return PingeraClient(api_key=token, base_url=config.base_url)
+    # Use the authorization header value directly as the API key
+    return PingeraClient(api_key=auth, base_url=config.base_url)
 
 ClientDep = Annotated[PingeraClient, Depends(get_pingera_client_for_http)]
 

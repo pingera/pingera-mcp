@@ -52,6 +52,9 @@ from .mcp_alerts import (
     _get_alert_statistics_logic,
     _list_alert_channels_logic,
     _list_alert_rules_logic,
+    _create_alert_logic,
+    _update_alert_logic,
+    _delete_alert_logic,
 )
 from .mcp_check_groups import (
     _list_check_groups_logic,
@@ -131,6 +134,9 @@ WRITE_TOOLS = [
     ("delete_component", _delete_component_logic),
     ("create_check", _create_check_logic),
     ("delete_check", _delete_check_logic),
+    ("create_alert", _create_alert_logic),
+    ("update_alert", _update_alert_logic),
+    ("delete_alert", _delete_alert_logic),
     ("create_heartbeat", _create_heartbeat_logic),
     ("update_heartbeat", _update_heartbeat_logic),
     ("delete_heartbeat", _delete_heartbeat_logic),

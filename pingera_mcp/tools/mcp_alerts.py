@@ -90,3 +90,60 @@ async def _list_alert_rules_logic(client: PingeraClient) -> str:
     """
     tools = AlertsTools(client)
     return await tools.list_alert_rules()
+
+
+async def _create_alert_logic(client: PingeraClient, alert_data: dict) -> str:
+    """
+    Create a new alert rule to get notified when issues are detected.
+
+    Set up notifications that will be sent when monitoring checks fail
+    or meet specific conditions like response time thresholds.
+
+    Args:
+        alert_data: Dictionary with alert configuration including:
+            - name: Alert rule name
+            - check_ids: List of checks this alert applies to
+            - conditions: Trigger conditions (failures, response time, etc.)
+            - channels: Notification channels (email, SMS, webhook, etc.)
+            - escalation: Escalation rules and delays
+
+    Returns:
+        JSON with created alert rule details and configuration.
+    """
+    tools = AlertsTools(client)
+    return await tools.create_alert(alert_data)
+
+
+async def _update_alert_logic(client: PingeraClient, alert_id: str, alert_data: dict) -> str:
+    """
+    Update configuration for an existing alert rule.
+
+    Modify alert conditions, notification channels, escalation rules,
+    or which checks the alert applies to.
+
+    Args:
+        alert_id: The unique identifier of the alert rule to update
+        alert_data: Dictionary with updated alert configuration
+
+    Returns:
+        JSON with updated alert rule details and configuration.
+    """
+    tools = AlertsTools(client)
+    return await tools.update_alert(alert_id, alert_data)
+
+
+async def _delete_alert_logic(client: PingeraClient, alert_id: str) -> str:
+    """
+    Delete an alert rule permanently.
+
+    This stops all notifications from this alert rule and removes
+    the configuration. Historical alert activity may be preserved.
+
+    Args:
+        alert_id: The unique identifier of the alert rule to delete
+
+    Returns:
+        JSON confirming successful deletion.
+    """
+    tools = AlertsTools(client)
+    return await tools.delete_alert(alert_id)

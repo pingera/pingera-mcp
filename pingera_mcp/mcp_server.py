@@ -48,22 +48,12 @@ else:
     logger.info("Server configured for HTTP multi-tenant mode.")
 
 # --- HTTP DEPENDENCY ---
-async def get_pingera_client_for_http(authorization: Annotated[str | None, Header()] = None) -> PingeraClient:
+async def get_pingera_client_for_http(auth: Annotated[str | None, Header(alias="Authorization")] = None) -> PingeraClient:
     """Dependency for HTTP mode: creates a PingeraClient from the Authorization header."""
-    if not authorization:
+    if not auth:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header is missing")
-    
-    # Log the received header for debugging
-    logger.info(f"Received Authorization header: {authorization[:20]}...")
-    
     # Use the authorization header value directly as the API key
-    try:
-        client = PingeraClient(api_key=authorization, base_url=config.base_url)
-        logger.info("PingeraClient created successfully for HTTP request")
-        return client
-    except Exception as e:
-        logger.error(f"Failed to create PingeraClient: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to initialize Pingera client")
+    return PingeraClient(api_key=auth, base_url=config.base_url)
 
 ClientDep = Annotated[PingeraClient, Depends(get_pingera_client_for_http)]
 
@@ -78,8 +68,7 @@ def register_tools(tool_list):
             return stdio_wrapper
 
         def create_http_wrapper(func):
-            async def http_wrapper(*args, client: ClientDep, **kwargs):
-                logger.info(f"HTTP wrapper called for {tool_name} with client: {type(client)}")
+            async def http_wrapper(client: ClientDep = None, *args, **kwargs):
                 return await func(client, *args, **kwargs)
             return http_wrapper
 
@@ -91,17 +80,10 @@ def register_tools(tool_list):
         # Copy docstring and signature from logic function
         tool_to_register.__doc__ = logic_func.__doc__
 
-        # Copy signature, handling client parameter properly for each mode
+        # Copy signature, skipping the first 'client' parameter
         sig = inspect.signature(logic_func)
-        if config.mode == 'stdio':
-            # Skip the first 'client' parameter for STDIO mode
-            params = list(sig.parameters.values())[1:]
-            tool_to_register.__signature__ = sig.replace(parameters=params)
-        else:
-            # For HTTP mode, keep the client parameter but move it to the end
-            params = list(sig.parameters.values())[1:]  # Skip original client param
-            # The dependency injection will handle the client parameter automatically
-            tool_to_register.__signature__ = sig.replace(parameters=params)
+        params = list(sig.parameters.values())[1:]  # Skip 'client'
+        tool_to_register.__signature__ = sig.replace(parameters=params)
 
         # Register the tool
         mcp.add_tool(fn=tool_to_register, name=tool_name)

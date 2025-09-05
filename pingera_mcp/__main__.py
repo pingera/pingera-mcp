@@ -10,11 +10,9 @@ def main():
     Runs the MCP server in the mode specified by the configuration.
     """
     if config.mode == 'http':
-        logger.info(f"Starting MCP HTTP server on http://0.0.0.0:8000")
-        
-        # Use the correct FastMCP HTTP transport
-        import uvicorn
-        uvicorn.run(mcp, host="0.0.0.0", port=8000)
+        logger.info(f"Starting MCP HTTP server on http://127.0.0.1:8000")
+
+        mcp.run(transport="streamable-http")
 
     elif config.mode == 'stdio':
         logger.info("Starting MCP server in STDIO mode.")

@@ -64,7 +64,8 @@ async def get_pingera_client(auth: Annotated[str | None, Header(alias="Authoriza
 
     return PingeraClient(api_key=token, base_url=config.base_url)
 
-ClientDep = Annotated[PingeraClient, Depends(get_pingera_client)]
+# Use Optional for the client parameter to avoid Pydantic schema issues
+ClientDep = Optional[PingeraClient]
 
 # Tool instances are initialized dynamically for each request
 
@@ -984,7 +985,7 @@ async def get_incident_update_details(page_id: str, incident_id: str, update_id:
 
 
 # Register write tools only if in read-write mode
-if config.is_read_write():
+if hasattr(config, 'mode') and config.mode == 'read-write':
     logger.info("Read-write mode enabled - adding write operations")
 
     @mcp.tool()
@@ -1176,6 +1177,7 @@ if config.is_read_write():
         allow_webhook_subscribers: Optional[bool] = None,
         allow_rss_atom_feeds: Optional[bool] = None,
         support_url: Optional[str] = None,
+        client: ClientDep = None
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a status page (PATCH method).
@@ -1210,6 +1212,11 @@ if config.is_read_write():
         Returns:
             JSON with updated page configuration.
         """
+        active_client = client or stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        pages_tools = PagesTools(active_client)
         return await pages_tools.patch_page(
             page_id=page_id,
             name=name,
@@ -1235,7 +1242,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    async def delete_page(page_id: str) -> str:
+    async def delete_page(page_id: str, client: ClientDep = None) -> str:
         """
         Permanently delete a status page and all its associated data.
 
@@ -1248,6 +1255,11 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        active_client = client or stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        pages_tools = PagesTools(active_client)
         return await pages_tools.delete_page(page_id)
 
     @mcp.tool()
@@ -1260,7 +1272,8 @@ if config.is_read_write():
         only_show_if_degraded: Optional[bool] = None,
         position: Optional[int] = None,
         showcase: Optional[bool] = None,
-        status: Optional[str] = None
+        status: Optional[str] = None,
+        client: ClientDep = None
     ) -> str:
         """
         Create a new component or component group on a status page.
@@ -1278,11 +1291,15 @@ if config.is_read_write():
             position: Display order position on the status page
             showcase: Whether to highlight this component prominently
             status: Initial status ('operational', 'degraded_performance', 'partial_outage', 'major_outage')
-            **kwargs: Additional component configuration
 
         Returns:
             JSON with created component details including ID and configuration.
         """
+        active_client = client or stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        component_tools = ComponentTools(active_client)
         return await component_tools.create_component(
             page_id=page_id,
             name=name,
@@ -1307,7 +1324,7 @@ if config.is_read_write():
         position: Optional[int] = None,
         showcase: Optional[bool] = None,
         status: Optional[str] = None,
-        **kwargs
+        client: ClientDep = None
     ) -> str:
         """
         FULL UPDATE: Replace all component configuration (PUT method). Requires many fields to be specified.
@@ -1326,14 +1343,18 @@ if config.is_read_write():
             position: New display position
             showcase: Whether to highlight prominently
             status: New status setting
-            **kwargs: Additional configuration updates
 
         Returns:
             JSON with updated component details and configuration.
         """
+        active_client = client or stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        component_tools = ComponentTools(active_client)
         return await component_tools.update_component(
             page_id, component_id, name, description, group, group_id,
-            only_show_if_degraded, position, showcase, status, **kwargs
+            only_show_if_degraded, position, showcase, status
         )
 
     @mcp.tool()
@@ -1348,7 +1369,8 @@ if config.is_read_write():
         position: Optional[int] = None,
         showcase: Optional[bool] = None,
         status: Optional[str] = None,
-        start_date: Optional[str] = None
+        start_date: Optional[str] = None,
+        client: ClientDep = None
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a component (PATCH method).
@@ -1373,13 +1395,18 @@ if config.is_read_write():
         Returns:
             JSON with updated component configuration.
         """
+        active_client = client or stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        component_tools = ComponentTools(active_client)
         return await component_tools.patch_component(
             page_id, component_id, name, description, group, group_id,
             only_show_if_degraded, position, showcase, status, start_date
         )
 
     @mcp.tool()
-    async def delete_component(page_id: str, component_id: str) -> str:
+    async def delete_component(page_id: str, component_id: str, client: ClientDep = None) -> str:
         """
         Delete a component from a status page permanently.
 
@@ -1393,6 +1420,11 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        active_client = client or stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
+
+        component_tools = ComponentTools(active_client)
         return await component_tools.delete_component(page_id, component_id)
 
     @mcp.tool()
@@ -1406,6 +1438,7 @@ if config.is_read_write():
         timeout: int = 10,
         active: bool = True,
         parameters: Optional[Dict[str, Any]] = None,
+        client: ClientDep = None
     ) -> str:
         """
         Create a new monitoring check to watch a website, API, or service.
@@ -1428,7 +1461,11 @@ if config.is_read_write():
         Returns:
             A JSON object with the created check's details.
         """
+        active_client = client or stdio_pingera_client
+        if not active_client: 
+            raise RuntimeError("Pingera client is not available.")
 
+        checks_tools = ChecksTools(active_client)
         return await checks_tools.create_check(
             name=name,
             type=type,
@@ -1855,7 +1892,8 @@ if config.is_read_write():
 async def generate_synthetic_check_script(
     description: str,
     target_url: str,
-    script_name: Optional[str] = None
+    script_name: Optional[str] = None,
+    client: ClientDep = None
 ) -> str:
     """
     Generate a Playwright script for synthetic browser monitoring.
@@ -1872,6 +1910,11 @@ async def generate_synthetic_check_script(
     Returns:
         JSON with the generated Playwright script and usage instructions
     """
+    active_client = client or stdio_pingera_client
+    if not active_client: 
+        raise RuntimeError("Pingera client is not available.")
+
+    playwright_tools = PlaywrightGeneratorTools(active_client)
     return await playwright_tools.generate_synthetic_check_script(
         description=description,
         target_url=target_url,
@@ -1887,7 +1930,8 @@ async def generate_api_check_script(
     payload: Optional[dict] = None,
     expected_status: Optional[int] = None,
     contains_string: Optional[str] = None,
-    custom_code: Optional[str] = None
+    custom_code: Optional[str] = None,
+    client: ClientDep = None
 ) -> str:
     """
     Generates a Playwright script for an API check.
@@ -1909,6 +1953,11 @@ async def generate_api_check_script(
     Returns:
         A string containing the generated Playwright script in TypeScript.
     """
+    active_client = client or stdio_pingera_client
+    if not active_client: 
+        raise RuntimeError("Pingera client is not available.")
+
+    playwright_tools = PlaywrightGeneratorTools(active_client)
     return await playwright_tools.generate_api_check_script(
         url=url,
         description=description,

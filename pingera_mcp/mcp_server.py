@@ -68,7 +68,15 @@ def register_tools(tool_list):
             return stdio_wrapper
 
         def create_http_wrapper(func):
-            async def http_wrapper(client: ClientDep, **kwargs):
+            from fastapi import Request
+            async def http_wrapper(request: Request = None, **kwargs):
+                # Extract Authorization header manually
+                auth_header = None
+                if request and hasattr(request, 'headers'):
+                    auth_header = request.headers.get('Authorization')
+                
+                # Create client
+                client = await get_pingera_client_for_http(auth_header)
                 return await func(client, **kwargs)
             return http_wrapper
 

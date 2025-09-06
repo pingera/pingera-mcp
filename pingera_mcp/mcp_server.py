@@ -68,7 +68,16 @@ def register_tools(tool_list):
             return stdio_wrapper
 
         def create_http_wrapper(func):
-            async def http_wrapper(client: ClientDep, **kwargs):
+            from fastapi import Request
+            
+            async def http_wrapper(request: Request, **kwargs):
+                # Extract Authorization header from request
+                auth_header = request.headers.get('Authorization')
+                if not auth_header:
+                    raise HTTPException(status_code=401, detail="Authorization header is missing")
+                
+                # Create client from authorization header
+                client = PingeraClient(api_key=auth_header, base_url=config.base_url)
                 return await func(client, **kwargs)
             return http_wrapper
 

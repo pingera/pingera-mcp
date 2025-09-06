@@ -68,10 +68,9 @@ def register_tools(tool_list):
             return stdio_wrapper
 
         def create_http_wrapper(func):
-            # Import here to avoid circular imports
-            from fastapi import Depends
-            
-            async def http_wrapper(client: PingeraClient = Depends(get_pingera_client_for_http), **kwargs):
+            async def http_wrapper(authorization: Annotated[str, Header(alias="Authorization")], **kwargs):
+                # Create client from authorization header
+                client = PingeraClient(api_key=authorization, base_url=config.base_url)
                 return await func(client, **kwargs)
             return http_wrapper
 

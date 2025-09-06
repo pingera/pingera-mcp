@@ -68,7 +68,7 @@ def register_tools(tool_list):
             return stdio_wrapper
 
         def create_http_wrapper(func):
-            async def http_wrapper(client: ClientDep = None, *args, **kwargs):
+            async def http_wrapper(*args, client: ClientDep, **kwargs):
                 return await func(client, *args, **kwargs)
             return http_wrapper
 

@@ -18,7 +18,7 @@ from pingera_mcp.tools import READ_ONLY_TOOLS, WRITE_TOOLS
 class Config:
     def __init__(self):
         self.api_key = os.getenv("PINGERA_API_KEY")
-        self.base_url = os.getenv("PINGERA_BASE_URL", "https://api.pingera.io/v1")
+        self.base_url = os.getenv("PINGERA_BASE_URL", "https://api.pingera.ru/v1")
         self.timeout = int(os.getenv("PINGERA_TIMEOUT", 30))
         self.max_retries = int(os.getenv("PINGERA_MAX_RETRIES", 3))
         self.server_name = os.getenv("PINGERA_SERVER_NAME", "Pingera MCP Server")

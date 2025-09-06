@@ -68,9 +68,7 @@ def register_tools(tool_list):
             return stdio_wrapper
 
         def create_http_wrapper(func):
-            async def http_wrapper(authorization: Annotated[str, Header(alias="Authorization")], **kwargs):
-                # Create client from authorization header
-                client = PingeraClient(api_key=authorization, base_url=config.base_url)
+            async def http_wrapper(client: ClientDep, **kwargs):
                 return await func(client, **kwargs)
             return http_wrapper
 

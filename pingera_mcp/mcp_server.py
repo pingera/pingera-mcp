@@ -68,25 +68,13 @@ def register_tools(tool_list):
             return stdio_wrapper
 
         def create_http_wrapper(func):
-            async def http_wrapper(client: ClientDep, **kwargs):
+            async def http_wrapper(authorization: str = Header(None), **kwargs):
+                if not authorization:
+                    raise HTTPException(status_code=401, detail="Authorization header is missing")
+                
+                # Create client with the API key from Authorization header
+                client = PingeraClient(api_key=authorization, base_url=config.base_url)
                 return await func(client, **kwargs)
-            
-            # Set the proper signature for FastAPI
-            import inspect
-            sig = inspect.signature(func)
-            params = list(sig.parameters.values())[1:]  # Skip 'client' parameter
-            
-            # Add the client dependency parameter
-            from fastapi import Depends
-            client_param = inspect.Parameter(
-                'client', 
-                inspect.Parameter.POSITIONAL_OR_KEYWORD,
-                annotation=ClientDep
-            )
-            
-            # Create new signature with client dependency and original parameters
-            new_params = [client_param] + params
-            http_wrapper.__signature__ = sig.replace(parameters=new_params)
             
             return http_wrapper
 

@@ -19,6 +19,7 @@ from pingera_mcp.tools import (
         IncidentsTools,
         PlaywrightGeneratorTools,
         CheckGroupsTools, # Import CheckGroupsTools
+        SecretsTools, # Import SecretsTools
     )
 
 # Configure logging
@@ -36,7 +37,7 @@ def create_mcp_server(config: Config) -> FastMCP:
         raise ValueError("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN is required")
 
     logger.info(f"Starting Pingera MCP Server in {config.mode} mode")
-    
+
     # Log authentication method
     auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
     logger.info(f"Using {auth_method} for authentication")
@@ -82,6 +83,7 @@ heartbeats_tools = HeartbeatsTools(pingera_client)
 incidents_tools = IncidentsTools(pingera_client)
 playwright_tools = PlaywrightGeneratorTools(pingera_client)
 check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
+secrets_tools = SecretsTools(pingera_client) # Initialize SecretsTools
 
 # Register read-only tools
 @mcp.tool()
@@ -902,7 +904,7 @@ if config.is_read_write():
     ) -> str:
         """
         FULL UPDATE: Replace all page configuration (PUT method). Requires many fields to be specified.
-        
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name, 
         use patch_page instead which is designed for partial updates.
 
@@ -982,7 +984,7 @@ if config.is_read_write():
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a status page (PATCH method).
-        
+
         Use this for simple updates like changing the name, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most page updates.
@@ -1114,7 +1116,7 @@ if config.is_read_write():
     ) -> str:
         """
         FULL UPDATE: Replace all component configuration (PUT method). Requires many fields to be specified.
-        
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name or status, 
         use patch_component instead which is designed for partial updates.
 
@@ -1155,7 +1157,7 @@ if config.is_read_write():
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a component (PATCH method).
-        
+
         Use this for simple updates like changing the name, status, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most component updates.
@@ -1394,6 +1396,113 @@ if config.is_read_write():
         """
         return await alerts_tools.delete_alert(alert_id)
 
+    # --- Secrets Write Tools ---
+    @mcp.tool()
+    async def create_secret(name: str, value: str) -> str:
+        """
+        Create a new organization secret.
+
+        Secrets are encrypted values that can be used in monitoring checks
+        for sensitive data like API keys, passwords, or tokens.
+
+        Args:
+            name: Name of the secret (used for identification)
+            value: Secret value (will be encrypted in storage)
+
+        Returns:
+            JSON with created secret details.
+        """
+        return await secrets_tools.create_secret(name, value)
+
+    @mcp.tool()
+    async def update_secret(secret_id: str, value: str) -> str:
+        """
+        Update a secret's value.
+
+        Args:
+            secret_id: The unique identifier of the secret to update
+            value: New secret value (will be encrypted)
+
+        Returns:
+            JSON with updated secret details.
+        """
+        return await secrets_tools.update_secret(secret_id, value)
+
+    @mcp.tool()
+    async def delete_secret(secret_id: str) -> str:
+        """
+        Delete a secret permanently.
+
+        WARNING: This will remove the secret from all checks that use it.
+        Checks using this secret may fail if they depend on it.
+
+        Args:
+            secret_id: The unique identifier of the secret to delete
+
+        Returns:
+            JSON confirming successful deletion.
+        """
+        return await secrets_tools.delete_secret(secret_id)
+
+    @mcp.tool()
+    async def add_secret_to_check(
+        check_id: str,
+        secret_id: str,
+        env_var_name: str
+    ) -> str:
+        """
+        Associate a secret with a monitoring check.
+
+        The secret will be available to the check as an environment variable
+        during execution.
+
+        Args:
+            check_id: The unique identifier of the check
+            secret_id: The unique identifier of the secret
+            env_var_name: Environment variable name to use (e.g., 'API_KEY')
+
+        Returns:
+            JSON with the association details.
+        """
+        return await secrets_tools.add_secret_to_check(check_id, secret_id, env_var_name)
+
+    @mcp.tool()
+    async def update_check_secrets(
+        check_id: str,
+        secrets: List[dict]
+    ) -> str:
+        """
+        Replace all secret associations for a check.
+
+        This removes all existing secret associations and adds the new ones.
+
+        Args:
+            check_id: The unique identifier of the check
+            secrets: List of dicts with 'secret_id' and 'env_var_name' keys
+
+        Returns:
+            JSON with updated associations.
+        """
+        return await secrets_tools.update_check_secrets(check_id, secrets)
+
+    @mcp.tool()
+    async def remove_secret_from_check(check_id: str, secret_id: str) -> str:
+        """
+        Remove a secret association from a check.
+
+        The secret will no longer be available to the check.
+
+        Args:
+            check_id: The unique identifier of the check
+            secret_id: The unique identifier of the secret to remove
+
+        Returns:
+            JSON confirming removal.
+        """
+        return await secrets_tools.remove_secret_from_check(check_id, secret_id)
+    # --- End Secrets Write Tools ---
+
+
     @mcp.tool()
     async def create_incident(
         page_id: str,
@@ -1456,7 +1565,7 @@ if config.is_read_write():
     ) -> str:
         """
         FULL UPDATE: Replace all incident configuration (PUT method). Requires many fields to be specified.
-        
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name or status, 
         use patch_incident instead which is designed for partial updates.
 
@@ -1530,7 +1639,7 @@ if config.is_read_write():
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of an incident (PATCH method).
-        
+
         Use this for simple updates like changing the name, status, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most incident updates.

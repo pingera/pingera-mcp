@@ -455,6 +455,57 @@ async def list_on_demand_checks(
     """
     return await checks_tools.list_on_demand_checks(page, page_size)
 
+# --- Secrets Read-Only Tools ---
+@mcp.tool()
+async def list_secrets(
+    page: Optional[int] = None,
+    page_size: Optional[int] = None
+) -> str:
+    """
+    List all organization secrets.
+
+    Secrets are encrypted values that can be used in monitoring checks
+    for sensitive data like API keys, passwords, or tokens.
+
+    Args:
+        page: Page number for pagination (default: 1)
+        page_size: Number of items per page (default: 20, max: 100)
+
+    Returns:
+        JSON with list of secrets (values are excluded for security).
+    """
+    return await secrets_tools.list_secrets(page, page_size)
+
+@mcp.tool()
+async def get_secret_details(secret_id: str) -> str:
+    """
+    Get detailed information about a specific secret.
+
+    Args:
+        secret_id: The unique identifier of the secret
+
+    Returns:
+        JSON with secret details including the decrypted value.
+    """
+    return await secrets_tools.get_secret_details(secret_id)
+
+@mcp.tool()
+async def get_check_secrets(check_id: str) -> str:
+    """
+    Get all secrets associated with a monitoring check.
+
+    Shows which secrets are available to a check as environment variables
+    during execution.
+
+    Args:
+        check_id: The unique identifier of the check
+
+    Returns:
+        JSON with list of secrets associated with this check.
+    """
+    return await secrets_tools.get_check_secrets(check_id)
+# --- End Secrets Read-Only Tools ---
+
 # --- New Check Groups Tools ---
 @mcp.tool()
 async def list_check_groups(

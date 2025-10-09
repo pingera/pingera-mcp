@@ -1,5 +1,4 @@
 modules = ["nodejs-20", "python-3.11"]
-
 [agent]
 expertMode = true
 
@@ -8,33 +7,57 @@ channel = "stable-25_05"
 packages = ["libxcrypt"]
 
 [workflows]
-runButton = "MCP Server (STDIO)"
+runButton = "MCP Server"
 
 [[workflows.workflow]]
-name = "MCP Server (STDIO)"
+name = "Project"
+mode = "parallel"
 author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Pingera MCP Server"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "pingera_mcp_server"
+
+[[workflows.workflow]]
+name = "Pingera MCP Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pip install -e . && python -m pingera_mcp"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "pingera_mcp_server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PYTHONPATH=. python main.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "MCP Server"
+author = 39311518
 mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python -m pingera_mcp"
 
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow]]
-name = "MCP Server (HTTP)"
-author = "agent"
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "MCP_MODE=http python -m pingera_mcp"
-
-[workflows.workflow.metadata]
-outputType = "console"
+[[ports]]
+localPort = 6274
+externalPort = 80
 
 [[ports]]
-localPort = 8000
-externalPort = 8000
+localPort = 6277
+externalPort = 6277
 exposeLocalhost = true

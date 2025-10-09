@@ -30,19 +30,24 @@ logger = logging.getLogger("pingera-mcp-server")
 
 def create_mcp_server(config: Config) -> FastMCP:
     """Create and configure MCP server with the given configuration."""
-    # Validate API key
-    if not config.api_key:
-        logger.error("PINGERA_API_KEY environment variable is required")
-        raise ValueError("PINGERA_API_KEY is required")
+    # Validate authentication credentials
+    if not config.api_key and not config.jwt_token:
+        logger.error("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN environment variable is required")
+        raise ValueError("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN is required")
 
     logger.info(f"Starting Pingera MCP Server in {config.mode} mode")
+    
+    # Log authentication method
+    auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
+    logger.info(f"Using {auth_method} for authentication")
 
     # Create MCP server
     mcp_server = FastMCP(config.server_name)
 
     # Initialize Pingera client - moved here so tests can mock it
     pingera_client = PingeraClient(
-        api_key=config.api_key,
+        api_key=config.api_key if config.api_key else None,
+        jwt_token=config.jwt_token if config.jwt_token else None,
         base_url=config.base_url,
         timeout=config.timeout,
         max_retries=config.max_retries
@@ -58,12 +63,14 @@ mcp = create_mcp_server(config)
 
 # Initialize Pingera client (for module-level usage)
 pingera_client = PingeraClient(
-    api_key=config.api_key,
+    api_key=config.api_key if config.api_key else None,
+    jwt_token=config.jwt_token if config.jwt_token else None,
     base_url=config.base_url,
     timeout=config.timeout,
     max_retries=config.max_retries
 )
-logger.info("Using Pingera SDK client")
+auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
+logger.info(f"Using Pingera SDK client with {auth_method} authentication")
 
 # Initialize tool instances
 status_tools = StatusTools(pingera_client)

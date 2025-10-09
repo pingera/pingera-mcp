@@ -36,7 +36,8 @@ class PingeraSDKClient:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: Optional[str] = None,
+        jwt_token: Optional[str] = None,
         base_url: str = "https://api.pingera.ru",
         timeout: int = 30,
         max_retries: int = 3
@@ -45,12 +46,20 @@ class PingeraSDKClient:
         Initialize Pingera SDK client.
 
         Args:
-            api_key: API key for authentication
+            api_key: API key for authentication (uses "Authorization: API_KEY" header)
+            jwt_token: JWT token for Bearer authentication (uses "Authorization: Bearer JWT_TOKEN" header)
             base_url: Base URL for Pingera API
             timeout: Request timeout in seconds
             max_retries: Maximum number of retries for failed requests
+        
+        Note:
+            Either api_key or jwt_token must be provided. If both are provided, jwt_token takes precedence.
         """
+        if not api_key and not jwt_token:
+            raise ValueError("Either api_key or jwt_token must be provided")
+        
         self.api_key = api_key
+        self.jwt_token = jwt_token
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.logger = logging.getLogger(__name__)
@@ -60,7 +69,17 @@ class PingeraSDKClient:
         # Remove /v1 suffix since the SDK adds it automatically
         host_without_version = self.base_url.replace('/v1', '').rstrip('/')
         self.configuration.host = host_without_version
-        self.configuration.api_key['apiKeyAuth'] = self.api_key
+        
+        # Configure authentication based on what's provided
+        if self.jwt_token:
+            # Use Bearer token authentication
+            self.configuration.access_token = self.jwt_token
+            self.auth_type = "bearer"
+        else:
+            # Use API key authentication
+            self.configuration.api_key['apiKeyAuth'] = self.api_key
+            self.auth_type = "api_key"
+        
         self.configuration.timeout = timeout
 
         # Store configuration, API client will be created in context manager
@@ -147,11 +166,13 @@ class PingeraSDKClient:
             # Test connection by making a simple API call
             is_connected = self.test_connection()
 
+            auth_method = "Bearer Token" if self.auth_type == "bearer" else "API Key"
+
             return {
                 "connected": is_connected,
                 "base_url": self.base_url,
                 "message": "Pingera.ru API (SDK)",
-                "authentication": "Bearer Token",
+                "authentication": auth_method,
                 "documentation": "https://docs.pingera.ru/api/overview",
                 "api_version": "v1",
                 "sdk_version": "official"

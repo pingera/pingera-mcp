@@ -24,6 +24,7 @@ class Config:
         """Initialize configuration from environment variables."""
         # API Configuration
         self.api_key: str = os.getenv("PINGERA_API_KEY", "")
+        self.jwt_token: str = os.getenv("PINGERA_JWT_TOKEN", "")
         self.base_url: str = os.getenv("PINGERA_BASE_URL", "https://api.pingera.ru/v1")
         
         # Server Configuration

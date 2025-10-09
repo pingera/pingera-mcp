@@ -16,7 +16,7 @@ echo "Building version: $TAG"
 rm -rf dist/*
 
 # Build uv package (the --version flag is not needed since we updated the source)
-uv build
+uv build --version "${TAG}"
 
 # Publish to pypi
 uv publish --token `echo $PYPI_TOKEN`

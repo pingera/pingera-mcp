@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pingera-mcp-server"
-version = ["version"]
+dynamic = ["version"]
 description = "Model Context Protocol (MCP) server for Pingera monitoring service integration"
 readme = "README.md"
 license = {file = "LICENSE"}

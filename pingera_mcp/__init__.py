@@ -2,6 +2,8 @@
 Pingera MCP client library for monitoring service integration.
 """
 
+__version__ = "0.1.7"
+
 from .sdk_client import PingeraSDKClient as PingeraClient
 
 from .exceptions import (

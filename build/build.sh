@@ -15,8 +15,11 @@ echo "Building version: $TAG"
 # Clean previous builds from dist folder
 rm -rf dist/*
 
-# Build uv package (the --version flag is not needed since we updated the source)
-uv build --version "${TAG}"
+# Update version in source code
+sed -i "s/__version__ = \".*\"/__version__ = \"${TAG}\"/" pingera_mcp/__init__.py
+
+# Build uv package
+uv build
 
 # Publish to pypi
 uv publish --token `echo $PYPI_TOKEN`

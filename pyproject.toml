@@ -84,33 +84,20 @@ Repository = "https://github.com/pingera/pingera-mcp"
 Issues = "https://github.com/pingera/pingera-mcp/issues"
 Changelog = "https://github.com/pingera/pingera-mcp/blob/main/CHANGELOG.md"
 
+[tool.hatch.version]
+path = "pingera_mcp/__init__.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["pingera_mcp"]
-include = [
-    "pingera_mcp/**/*.py",
-    "README.md",
-    "LICENSE",
-    "CHANGELOG.md",
-]
-exclude = [
-    "tests/",
-    ".replit",
-    "replit.md",
-    "attached_assets/",
-    "test_mcp_server.py",
-]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "pingera_mcp/",
-    "tests/",
+    "pingera_mcp/**/*.py",
+    "tests/**/*.py",
     "README.md",
     "LICENSE", 
     "CHANGELOG.md",
     ".env.example",
-    "main.py",
-    "config.py",
-    "mcp_server.py",
 ]
 exclude = [
     ".replit",
@@ -118,4 +105,6 @@ exclude = [
     "attached_assets/",
     "test_mcp_server.py",
     "uv.lock",
+    "**/__pycache__",
+    "**/*.pyc",
 ]

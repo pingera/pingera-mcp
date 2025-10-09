@@ -1249,6 +1249,7 @@ if config.is_read_write():
         timeout: Optional[int] = None,
         active: Optional[bool] = None,
         parameters: Optional[Dict[str, Any]] = None,
+        secrets: Optional[List[dict]] = None,
     ) -> str:
         """
         Update configuration for an existing monitoring check.
@@ -1266,6 +1267,7 @@ if config.is_read_write():
             timeout: The new request timeout in seconds.
             active: A new flag to set the check as active (true) or paused (false).
             parameters: New additional parameters. For synthetic or multistep checks, the 'parameters' dictionary must contain a 'pw_script' key. The value of this key should be the full Playwright script in Javascript or Typescript content as a string.
+            secrets: List of secrets to associate with this check (replaces all existing associations). Each dict must have 'secret_id' and 'env_variable' keys.
 
         Returns:
             A JSON object with the updated check details.
@@ -1280,6 +1282,7 @@ if config.is_read_write():
             timeout=timeout,
             active=active,
             parameters=parameters,
+            secrets=secrets,
         )
 
     @mcp.tool()

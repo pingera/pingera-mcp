@@ -147,9 +147,26 @@ class ChecksTools(BaseTools):
         timeout: Optional[int] = None,
         active: Optional[bool] = None,
         parameters: Optional[Dict[str, Any]] = None,
+        secrets: Optional[List[dict]] = None,
     ) -> str:
         """
-        (Your docstring here)
+        Update configuration for an existing monitoring check.
+
+        Args:
+            check_id: ID of the check to update
+            name: New name for the check
+            url: New URL to monitor
+            host: New hostname or IP address
+            port: New port number
+            interval: New check interval in seconds
+            timeout: New timeout in seconds
+            active: Whether check is active
+            parameters: New additional parameters
+            secrets: List of secrets to associate (replaces all existing associations).
+                    Each dict should have 'secret_id' and 'env_variable' keys.
+
+        Returns:
+            JSON string containing updated check details
         """
         try:
             update_data = {
@@ -159,6 +176,14 @@ class ChecksTools(BaseTools):
             }
 
             payload = {k: v for k, v in update_data.items() if v is not None}
+            
+            # Handle secrets if provided
+            if secrets is not None:
+                from pingera.models import CheckSecretInput
+                payload['secrets'] = [
+                    CheckSecretInput(secret_id=s['secret_id'], env_variable=s['env_variable'])
+                    for s in secrets
+                ]
 
             if not payload:
                 return self._error_response("No update data provided. Please specify at least one field to update.")

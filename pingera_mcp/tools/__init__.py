@@ -11,6 +11,7 @@ from .alerts import AlertsTools
 from .heartbeats import HeartbeatsTools
 from .incidents import IncidentsTools
 from .playwright_generator import PlaywrightGeneratorTools
+from .secrets import SecretsTools
 
 __all__ = [
     "StatusTools",
@@ -22,4 +23,5 @@ __all__ = [
     "HeartbeatsTools",
     "IncidentsTools",
     "PlaywrightGeneratorTools",
+    "SecretsTools",
 ]

@@ -17,7 +17,9 @@ from pingera.api import (
     AlertsApi,
     HeartbeatsApi,
     OnDemandChecksApi,
-    ChecksUnifiedResultsApi
+    ChecksUnifiedResultsApi,
+    SecretsApi,
+    CheckSecretsApi
 )
 from pingera.exceptions import ApiException
 

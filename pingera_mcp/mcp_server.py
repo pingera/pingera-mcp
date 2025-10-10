@@ -38,7 +38,7 @@ def create_mcp_server(config: Config) -> FastMCP:
         if not config.api_key and not config.jwt_token:
             logger.error("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN environment variable is required for stdio mode")
             raise ValueError("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN is required for stdio mode")
-        
+
         auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
         logger.info(f"Starting Pingera MCP Server in {config.mode} mode (stdio transport)")
         logger.info(f"Using {auth_method} for authentication")
@@ -91,6 +91,29 @@ else:
     )
     logger.info(f"SSE mode: Client will be created per-request from Authorization headers")
 
+# Helper function to update the client for tools
+def _update_tools_client():
+    """
+    Updates the PingeraClient for each tool instance.
+    In SSE mode, this ensures the client is updated with the latest request context.
+    """
+    global status_tools, pages_tools, component_tools, checks_tools, alerts_tools, heartbeats_tools, incidents_tools, playwright_tools, check_groups_tools, secrets_tools
+    
+    # In SSE mode, get the client from the request context
+    if config.transport_mode != "stdio":
+        request_client = get_request_client()
+        if request_client:
+            status_tools.client = request_client
+            pages_tools.client = request_client
+            component_tools.client = request_client
+            checks_tools.client = request_client
+            alerts_tools.client = request_client
+            heartbeats_tools.client = request_client
+            incidents_tools.client = request_client
+            playwright_tools.client = request_client
+            check_groups_tools.client = request_client
+            secrets_tools.client = request_client
+
 # Initialize tool instances
 status_tools = StatusTools(pingera_client)
 pages_tools = PagesTools(pingera_client)
@@ -123,6 +146,7 @@ async def list_pages(
     Returns:
         JSON with list of status pages including their names, IDs, domains, and configuration details.
     """
+    _update_tools_client()
     return await pages_tools.list_pages(page, per_page, status)
 
 @mcp.tool()
@@ -136,6 +160,7 @@ async def get_page_details(page_id: int) -> str:
     Returns:
         JSON with complete page details including settings, components, branding, and configuration.
     """
+    _update_tools_client()
     return await pages_tools.get_page_details(page_id)
 
 @mcp.tool()
@@ -149,6 +174,7 @@ async def test_pingera_connection() -> str:
     Returns:
         JSON with connection status, API information, and authentication details.
     """
+    _update_tools_client()
     return await status_tools.test_pingera_connection()
 
 @mcp.tool()
@@ -170,6 +196,7 @@ async def list_component_groups(
     Returns:
         JSON with list of component groups only, including their names, IDs, positions, and component counts.
     """
+    _update_tools_client()
     return await component_tools.list_component_groups(page_id, show_deleted)
 
 @mcp.tool()
@@ -193,6 +220,7 @@ async def list_components(
     Returns:
         JSON with complete list of components including names, IDs, status, type (group/individual), and configuration.
     """
+    _update_tools_client()
     return await component_tools.list_components(page_id, page, page_size)
 
 @mcp.tool()
@@ -210,6 +238,7 @@ async def get_component_details(page_id: str, component_id: str) -> str:
     Returns:
         JSON with component details including name, description, status, position, and linked checks.
     """
+    _update_tools_client()
     return await component_tools.get_component_details(page_id, component_id)
 
 @mcp.tool()
@@ -238,6 +267,7 @@ async def list_checks(
     Returns:
         JSON with list of checks including names, URLs, types, intervals, and current status.
     """
+    _update_tools_client()
     return await checks_tools.list_checks(page, page_size, type, status, group_id, name)
 
 @mcp.tool()
@@ -252,6 +282,7 @@ async def get_check_details(check_id: str) -> str:
         JSON with complete check configuration including URL, intervals, timeouts,
         expected responses, notification settings, and linked components.
     """
+    _update_tools_client()
     return await checks_tools.get_check_details(check_id)
 
 @mcp.tool()
@@ -278,6 +309,7 @@ async def get_check_results(
     Returns:
         JSON with check results including timestamps, response times, status codes, and error details.
     """
+    _update_tools_client()
     return await checks_tools.get_check_results(check_id, from_date, to_date, page, page_size)
 
 @mcp.tool()
@@ -294,6 +326,7 @@ async def get_check_statistics(check_id: str) -> str:
     Returns:
         JSON with statistics including uptime %, avg response time, success rate, and error counts.
     """
+    _update_tools_client()
     return await checks_tools.get_check_statistics(check_id)
 
 @mcp.tool()
@@ -307,6 +340,7 @@ async def list_check_jobs() -> str:
     Returns:
         JSON with list of active jobs including job IDs, check IDs, status, and execution times.
     """
+    _update_tools_client()
     return await checks_tools.list_check_jobs()
 
 @mcp.tool()
@@ -320,6 +354,7 @@ async def get_check_job_details(job_id: str) -> str:
     Returns:
         JSON with job details including execution status, start/end times, results, and any errors.
     """
+    _update_tools_client()
     return await checks_tools.get_check_job_details(job_id)
 
 @mcp.tool()
@@ -348,6 +383,7 @@ async def get_unified_results(
     Returns:
         JSON with unified results from multiple checks including timestamps and performance data.
     """
+    _update_tools_client()
     return await checks_tools.get_unified_results(check_ids, from_date, to_date, status, page, page_size)
 
 @mcp.tool()
@@ -370,6 +406,7 @@ async def get_unified_statistics(
     Returns:
         JSON with aggregated statistics including overall uptime, avg response times, and trends.
     """
+    _update_tools_client()
     return await checks_tools.get_unified_statistics(check_ids, from_date, to_date)
 
 @mcp.tool()
@@ -421,6 +458,7 @@ async def execute_custom_check(
     Returns:
         JSON with the job id that is executed asynchronously.
     """
+    _update_tools_client()
     return await checks_tools.execute_custom_check(type, name, url, host, port, timeout, parameters)
 
 @mcp.tool()
@@ -438,6 +476,7 @@ async def execute_existing_check(check_id: str) -> str:
     Returns:
         JSON with execution job details and immediate results if available.
     """
+    _update_tools_client()
     return await checks_tools.execute_existing_check(check_id)
 
 @mcp.tool()
@@ -454,6 +493,7 @@ async def get_on_demand_job_status(job_id: str) -> str:
     Returns:
         JSON with job status, execution progress, and results if completed.
     """
+    _update_tools_client()
     return await checks_tools.get_on_demand_job_status(job_id)
 
 @mcp.tool()
@@ -471,6 +511,7 @@ async def list_on_demand_checks(
     Returns:
         JSON string containing on-demand checks data
     """
+    _update_tools_client()
     return await checks_tools.list_on_demand_checks(page, page_size)
 
 # --- Secrets Read-Only Tools ---
@@ -492,6 +533,7 @@ async def list_secrets(
     Returns:
         JSON with list of secrets (values are excluded for security).
     """
+    _update_tools_client()
     return await secrets_tools.list_secrets(page, page_size)
 
 @mcp.tool()
@@ -505,6 +547,7 @@ async def get_secret_details(secret_id: str) -> str:
     Returns:
         JSON with secret details including the decrypted value.
     """
+    _update_tools_client()
     return await secrets_tools.get_secret_details(secret_id)
 
 @mcp.tool()
@@ -521,6 +564,7 @@ async def get_check_secrets(check_id: str) -> str:
     Returns:
         JSON with list of secrets associated with this check.
     """
+    _update_tools_client()
     return await secrets_tools.get_check_secrets(check_id)
 # --- End Secrets Read-Only Tools ---
 
@@ -543,6 +587,7 @@ async def list_check_groups(
     Returns:
         JSON with list of check groups including their names, IDs, and check counts.
     """
+    _update_tools_client()
     return await check_groups_tools.list_check_groups(page, page_size)
 
 @mcp.tool()
@@ -556,6 +601,7 @@ async def get_check_group_details(group_id: str) -> str:
     Returns:
         JSON with check group details including name, description, and configuration.
     """
+    _update_tools_client()
     return await check_groups_tools.get_check_group_details(group_id)
 
 @mcp.tool()
@@ -578,6 +624,7 @@ async def get_checks_in_group(
     Returns:
         JSON with list of checks in the group including their names, URLs, types, and status.
     """
+    _update_tools_client()
     return await check_groups_tools.get_checks_in_group(group_id, page, page_size)
 # --- End New Check Groups Tools ---
 
@@ -602,6 +649,7 @@ async def list_alerts(
     Returns:
         JSON with list of alerts including names, conditions, notification channels, and status.
     """
+    _update_tools_client()
     return await alerts_tools.list_alerts(page, page_size, status)
 
 @mcp.tool()
@@ -618,6 +666,7 @@ async def get_alert_details(alert_id: str) -> str:
     Returns:
         JSON with alert details including conditions, channels, thresholds, and escalation settings.
     """
+    _update_tools_client()
     return await alerts_tools.get_alert_details(alert_id)
 
 @mcp.tool()
@@ -631,6 +680,7 @@ async def get_alert_statistics() -> str:
     Returns:
         JSON with alert statistics including trigger counts, avg resolution time, and trends.
     """
+    _update_tools_client()
     return await alerts_tools.get_alert_statistics()
 
 @mcp.tool()
@@ -645,6 +695,7 @@ async def list_alert_channels() -> str:
     Returns:
         JSON with list of notification channels including types, names, and status.
     """
+    _update_tools_client()
     return await alerts_tools.list_alert_channels()
 
 @mcp.tool()
@@ -658,6 +709,7 @@ async def list_alert_rules() -> str:
     Returns:
         JSON with list of alert rules including conditions, thresholds, and linked checks.
     """
+    _update_tools_client()
     return await alerts_tools.list_alert_rules()
 
 # Register heartbeat tools
@@ -682,6 +734,7 @@ async def list_heartbeats(
     Returns:
         JSON with list of heartbeats including names, URLs, intervals, and last ping times.
     """
+    _update_tools_client()
     return await heartbeats_tools.list_heartbeats(page, page_size, status)
 
 @mcp.tool()
@@ -698,6 +751,7 @@ async def get_heartbeat_details(heartbeat_id: str) -> str:
     Returns:
         JSON with heartbeat details including schedule, grace period, last ping, and history.
     """
+    _update_tools_client()
     return await heartbeats_tools.get_heartbeat_details(heartbeat_id)
 
 @mcp.tool()
@@ -714,6 +768,7 @@ async def create_heartbeat(heartbeat_data: dict) -> str:
     Returns:
         JSON with created heartbeat details including the unique ping URL to use in your scripts.
     """
+    _update_tools_client()
     return await heartbeats_tools.create_heartbeat(heartbeat_data)
 
 @mcp.tool()
@@ -731,6 +786,7 @@ async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict) -> str:
     Returns:
         JSON with updated heartbeat details and configuration.
     """
+    _update_tools_client()
     return await heartbeats_tools.update_heartbeat(heartbeat_id, heartbeat_data)
 
 @mcp.tool()
@@ -747,6 +803,7 @@ async def delete_heartbeat(heartbeat_id: str) -> str:
     Returns:
         JSON confirming successful deletion.
     """
+    _update_tools_client()
     return await heartbeats_tools.delete_heartbeat(heartbeat_id)
 
 @mcp.tool()
@@ -763,6 +820,7 @@ async def send_heartbeat_ping(heartbeat_id: str) -> str:
     Returns:
         JSON confirming the ping was received and recorded.
     """
+    _update_tools_client()
     return await heartbeats_tools.send_heartbeat_ping(heartbeat_id)
 
 @mcp.tool()
@@ -789,6 +847,7 @@ async def get_heartbeat_logs(
     Returns:
         JSON with ping history including timestamps, status, and any alert triggers.
     """
+    _update_tools_client()
     return await heartbeats_tools.get_heartbeat_logs(heartbeat_id, from_date, to_date, page, page_size)
 
 @mcp.tool()
@@ -814,6 +873,7 @@ async def list_incidents(
     Returns:
         JSON with list of incidents including titles, status, impact level, and timestamps.
     """
+    _update_tools_client()
     return await incidents_tools.list_incidents(page_id, page, page_size, status)
 
 @mcp.tool()
@@ -831,6 +891,7 @@ async def get_incident_details(page_id: str, incident_id: str) -> str:
     Returns:
         JSON with incident details including description, components, updates, and resolution timeline.
     """
+    _update_tools_client()
     return await incidents_tools.get_incident_details(page_id, incident_id)
 
 @mcp.tool()
@@ -848,6 +909,7 @@ async def get_incident_updates(page_id: str, incident_id: str) -> str:
     Returns:
         JSON with list of incident updates including timestamps, status changes, and messages.
     """
+    _update_tools_client()
     return await incidents_tools.get_incident_updates(page_id, incident_id)
 
 @mcp.tool()
@@ -866,6 +928,7 @@ async def get_incident_update_details(page_id: str, incident_id: str, update_id:
     Returns:
         JSON with update details including message content, timestamp, and status information.
     """
+    _update_tools_client()
     return await incidents_tools.get_incident_update_details(page_id, incident_id, update_id)
 
 
@@ -924,6 +987,7 @@ if config.is_read_write():
         Returns:
             JSON string containing the created page details
         """
+        _update_tools_client()
         return await pages_tools.create_page(
             name=name,
             subdomain=subdomain,
@@ -1003,6 +1067,7 @@ if config.is_read_write():
         Returns:
             JSON with updated page details and configuration.
         """
+        _update_tools_client()
         return await pages_tools.update_page(
             page_id=page_id,
             name=name,
@@ -1084,6 +1149,7 @@ if config.is_read_write():
         Returns:
             JSON with updated page configuration.
         """
+        _update_tools_client()
         return await pages_tools.patch_page(
             page_id=page_id,
             name=name,
@@ -1122,6 +1188,7 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        _update_tools_client()
         return await pages_tools.delete_page(page_id)
 
     @mcp.tool()
@@ -1157,6 +1224,7 @@ if config.is_read_write():
         Returns:
             JSON with created component details including ID and configuration.
         """
+        _update_tools_client()
         return await component_tools.create_component(
             page_id=page_id,
             name=name,
@@ -1205,6 +1273,7 @@ if config.is_read_write():
         Returns:
             JSON with updated component details and configuration.
         """
+        _update_tools_client()
         return await component_tools.update_component(
             page_id, component_id, name, description, group, group_id,
             only_show_if_degraded, position, showcase, status, **kwargs
@@ -1247,6 +1316,7 @@ if config.is_read_write():
         Returns:
             JSON with updated component configuration.
         """
+        _update_tools_client()
         return await component_tools.patch_component(
             page_id, component_id, name, description, group, group_id,
             only_show_if_degraded, position, showcase, status, start_date
@@ -1267,6 +1337,7 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        _update_tools_client()
         return await component_tools.delete_component(page_id, component_id)
 
     @mcp.tool()
@@ -1302,7 +1373,7 @@ if config.is_read_write():
         Returns:
             A JSON object with the created check's details.
         """
-
+        _update_tools_client()
         return await checks_tools.create_check(
             name=name,
             type=type,
@@ -1350,6 +1421,7 @@ if config.is_read_write():
         Returns:
             A JSON object with the updated check details.
         """
+        _update_tools_client()
         return await checks_tools.update_check(
             check_id=check_id,
             name=name,
@@ -1377,6 +1449,7 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        _update_tools_client()
         return await checks_tools.delete_check(check_id)
 
     @mcp.tool()
@@ -1393,6 +1466,7 @@ if config.is_read_write():
         Returns:
             JSON confirming the check has been paused.
         """
+        _update_tools_client()
         return await checks_tools.pause_check(check_id)
 
     @mcp.tool()
@@ -1409,6 +1483,7 @@ if config.is_read_write():
         Returns:
             JSON confirming the check has been resumed.
         """
+        _update_tools_client()
         return await checks_tools.resume_check(check_id)
 
     @mcp.tool()
@@ -1430,6 +1505,7 @@ if config.is_read_write():
         Returns:
             JSON with created alert rule details and configuration.
         """
+        _update_tools_client()
         return await alerts_tools.create_alert(alert_data)
 
     @mcp.tool()
@@ -1447,6 +1523,7 @@ if config.is_read_write():
         Returns:
             JSON with updated alert rule details and configuration.
         """
+        _update_tools_client()
         return await alerts_tools.update_alert(alert_id, alert_data)
 
     @mcp.tool()
@@ -1463,6 +1540,7 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        _update_tools_client()
         return await alerts_tools.delete_alert(alert_id)
 
     # --- Secrets Write Tools ---
@@ -1481,6 +1559,7 @@ if config.is_read_write():
         Returns:
             JSON with created secret details.
         """
+        _update_tools_client()
         return await secrets_tools.create_secret(name, value)
 
     @mcp.tool()
@@ -1495,6 +1574,7 @@ if config.is_read_write():
         Returns:
             JSON with updated secret details.
         """
+        _update_tools_client()
         return await secrets_tools.update_secret(secret_id, value)
 
     @mcp.tool()
@@ -1511,6 +1591,7 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        _update_tools_client()
         return await secrets_tools.delete_secret(secret_id)
 
     @mcp.tool()
@@ -1533,6 +1614,7 @@ if config.is_read_write():
         Returns:
             JSON with the association details.
         """
+        _update_tools_client()
         return await secrets_tools.add_secret_to_check(check_id, secret_id, env_var_name)
 
     @mcp.tool()
@@ -1552,6 +1634,7 @@ if config.is_read_write():
         Returns:
             JSON with updated associations.
         """
+        _update_tools_client()
         return await secrets_tools.update_check_secrets(check_id, secrets)
 
     @mcp.tool()
@@ -1568,6 +1651,7 @@ if config.is_read_write():
         Returns:
             JSON confirming removal.
         """
+        _update_tools_client()
         return await secrets_tools.remove_secret_from_check(check_id, secret_id)
     # --- End Secrets Write Tools ---
 
@@ -1600,6 +1684,7 @@ if config.is_read_write():
         Returns:
             JSON with created incident details including ID and public URL.
         """
+        _update_tools_client()
         return await incidents_tools.create_incident(
             page_id=page_id,
             name=name,
@@ -1662,6 +1747,7 @@ if config.is_read_write():
         Returns:
             JSON with updated incident details.
         """
+        _update_tools_client()
         return await incidents_tools.update_incident(
             page_id=page_id,
             incident_id=incident_id,
@@ -1737,6 +1823,7 @@ if config.is_read_write():
         Returns:
             JSON with updated incident configuration.
         """
+        _update_tools_client()
         return await incidents_tools.patch_incident(
             page_id=page_id,
             incident_id=incident_id,
@@ -1774,6 +1861,7 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        _update_tools_client()
         return await incidents_tools.delete_incident(page_id, incident_id)
 
     @mcp.tool()
@@ -1795,6 +1883,7 @@ if config.is_read_write():
         Returns:
             JSON with created update details including timestamp and content.
         """
+        _update_tools_client()
         return await incidents_tools.add_incident_update(page_id, incident_id, update_data)
 
     @mcp.tool()
@@ -1814,6 +1903,7 @@ if config.is_read_write():
         Returns:
             JSON with updated incident update details.
         """
+        _update_tools_client()
         return await incidents_tools.update_incident_update(page_id, incident_id, update_id, update_data)
 
     @mcp.tool()
@@ -1832,6 +1922,7 @@ if config.is_read_write():
         Returns:
             JSON confirming successful deletion.
         """
+        _update_tools_client()
         return await incidents_tools.delete_incident_update(page_id, incident_id, update_id)
 
 # Register Playwright script generation tools (always available)
@@ -1856,6 +1947,7 @@ async def generate_synthetic_check_script(
     Returns:
         JSON with the generated Playwright script and usage instructions
     """
+    _update_tools_client()
     return await playwright_tools.generate_synthetic_check_script(
         description=description,
         target_url=target_url,
@@ -1893,6 +1985,7 @@ async def generate_api_check_script(
     Returns:
         A string containing the generated Playwright script in TypeScript.
     """
+    _update_tools_client()
     return await playwright_tools.generate_api_check_script(
         url=url,
         description=description,

@@ -3,7 +3,7 @@ Base class for MCP tools.
 """
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from ..sdk_client import PingeraSDKClient
 from ..exceptions import PingeraError
@@ -15,6 +15,18 @@ class BaseTools:
     def __init__(self, client: PingeraSDKClient):
         self.client = client
         self.logger = logging.getLogger(self.__class__.__name__)
+
+    def get_client(self, client_override: Optional[PingeraSDKClient] = None) -> PingeraSDKClient:
+        """
+        Get the client to use for API calls.
+        
+        Args:
+            client_override: Optional client instance to use instead of default
+            
+        Returns:
+            The client to use (override if provided, else default)
+        """
+        return client_override if client_override is not None else self.client
 
     def _success_response(self, data: Any) -> str:
         """Create a successful JSON response."""

@@ -9,6 +9,7 @@ from mcp.server.fastmcp import FastMCP
 
 from .config import Config
 from pingera_mcp import PingeraClient
+from pingera_mcp.auth import get_request_client
 from pingera_mcp.tools import (
         StatusTools,
         PagesTools,

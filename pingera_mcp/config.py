@@ -34,6 +34,12 @@ class Config:
         except ValueError:
             self.mode = OperationMode.READ_ONLY
         
+        # Transport Configuration (for future dual-mode support)
+        self.transport_mode: str = os.getenv("TRANSPORT_MODE", "stdio").lower()
+        self.http_host: str = os.getenv("HTTP_HOST", "0.0.0.0")
+        self.http_port: int = int(os.getenv("HTTP_PORT", "5000"))
+        self.require_auth_header: bool = os.getenv("REQUIRE_AUTH_HEADER", "false").lower() == "true"
+        
         # Request Configuration
         self.timeout: int = int(os.getenv("PINGERA_TIMEOUT", "30"))
         self.max_retries: int = int(os.getenv("PINGERA_MAX_RETRIES", "3"))

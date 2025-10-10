@@ -32,28 +32,34 @@ logger = logging.getLogger("pingera-mcp-server")
 
 def create_mcp_server(config: Config) -> FastMCP:
     """Create and configure MCP server with the given configuration."""
-    # Validate authentication credentials
-    if not config.api_key and not config.jwt_token:
-        logger.error("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN environment variable is required")
-        raise ValueError("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN is required")
-
-    logger.info(f"Starting Pingera MCP Server in {config.mode} mode")
-
-    # Log authentication method
-    auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
-    logger.info(f"Using {auth_method} for authentication")
+    # In stdio mode, require credentials from environment
+    # In SSE mode, credentials will come from request headers
+    if config.transport_mode == "stdio":
+        if not config.api_key and not config.jwt_token:
+            logger.error("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN environment variable is required for stdio mode")
+            raise ValueError("Either PINGERA_API_KEY or PINGERA_JWT_TOKEN is required for stdio mode")
+        
+        auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
+        logger.info(f"Starting Pingera MCP Server in {config.mode} mode (stdio transport)")
+        logger.info(f"Using {auth_method} for authentication")
+    else:
+        logger.info(f"Starting Pingera MCP Server in {config.mode} mode (SSE transport)")
+        if config.require_auth_header:
+            logger.info("Server configured to require Authorization header from clients")
+        else:
+            logger.info("Server will accept requests without Authorization header (using env credentials)")
 
     # Create MCP server
     mcp_server = FastMCP(config.server_name)
 
-    # Initialize Pingera client - moved here so tests can mock it
+    # Initialize Pingera client for stdio mode (will be overridden per-request in SSE mode)
     pingera_client = PingeraClient(
         api_key=config.api_key if config.api_key else None,
         jwt_token=config.jwt_token if config.jwt_token else None,
         base_url=config.base_url,
         timeout=config.timeout,
         max_retries=config.max_retries
-    )
+    ) if config.transport_mode == "stdio" else None
 
     return mcp_server
 
@@ -63,16 +69,27 @@ config = Config()
 # Create MCP server
 mcp = create_mcp_server(config)
 
-# Initialize Pingera client (for module-level usage)
-pingera_client = PingeraClient(
-    api_key=config.api_key if config.api_key else None,
-    jwt_token=config.jwt_token if config.jwt_token else None,
-    base_url=config.base_url,
-    timeout=config.timeout,
-    max_retries=config.max_retries
-)
-auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
-logger.info(f"Using Pingera SDK client with {auth_method} authentication")
+# Initialize Pingera client (for module-level usage in stdio mode)
+if config.transport_mode == "stdio":
+    pingera_client = PingeraClient(
+        api_key=config.api_key if config.api_key else None,
+        jwt_token=config.jwt_token if config.jwt_token else None,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        max_retries=config.max_retries
+    )
+    auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
+    logger.info(f"Using Pingera SDK client with {auth_method} authentication")
+else:
+    # In SSE mode, client will be created per-request from auth headers
+    pingera_client = PingeraClient(
+        api_key=config.api_key if config.api_key else "placeholder",
+        jwt_token=config.jwt_token if config.jwt_token else None,
+        base_url=config.base_url,
+        timeout=config.timeout,
+        max_retries=config.max_retries
+    )
+    logger.info(f"SSE mode: Client will be created per-request from Authorization headers")
 
 # Initialize tool instances
 status_tools = StatusTools(pingera_client)

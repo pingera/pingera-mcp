@@ -115,15 +115,18 @@ def get_request_client(
     Returns:
         Client instance to use for this request
     """
-    # For now, always return default client since we haven't implemented
-    # HTTP mode transport yet (that's Phase 3-4)
-    # This function is ready for when we add SSE transport
+    # In SSE/HTTP mode, try to get auth from request headers
+    if config.transport_mode == "sse":
+        auth = extract_auth_from_request()
+        if auth:
+            api_key, jwt_token = auth
+            logger.info(f"Creating client from request auth header ({'JWT' if jwt_token else 'API Key'})")
+            return create_client_from_auth(api_key, jwt_token, config)
+        elif config.require_auth_header:
+            logger.warning("No Authorization header found but REQUIRE_AUTH_HEADER=true")
+            # Could raise an exception here, but for now fall back to default
+        else:
+            logger.debug("No auth header found, using default client credentials")
     
-    # Future implementation (Phase 3+):
-    # if config.transport_mode == "sse":
-    #     auth = extract_auth_from_request()
-    #     if auth:
-    #         api_key, jwt_token = auth
-    #         return create_client_from_auth(api_key, jwt_token, config)
-    
+    # For stdio mode or when no auth header in SSE mode, use default client
     return default_client

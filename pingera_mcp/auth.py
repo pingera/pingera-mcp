@@ -51,6 +51,10 @@ def get_auth_type(auth_header: str) -> Tuple[str, str]:
     """
     Determine authentication type from Authorization header.
     
+    Supports two formats:
+    1. "Bearer JWT_TOKEN" - JWT token authentication
+    2. "API_KEY" - Raw API key authentication (no prefix)
+    
     Args:
         auth_header: The Authorization header value
         
@@ -61,9 +65,10 @@ def get_auth_type(auth_header: str) -> Tuple[str, str]:
     parts = auth_header.strip().split(maxsplit=1)
     
     if len(parts) == 2 and parts[0].lower() == 'bearer':
+        # Format: "Bearer JWT_TOKEN"
         return ("bearer", parts[1])
     else:
-        # Assume it's an API key (no Bearer prefix)
+        # Format: "API_KEY" (raw API key, no prefix)
         return ("api_key", auth_header.strip())
 
 

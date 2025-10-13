@@ -73,8 +73,14 @@ async def main():
     agent_executor = create_react_agent(llm, tools)
     print("✅ LangGraph agent created successfully.")
 
-    # 6. Invoke the Agent with a prompt
-    prompt = "Show me the status?"
+    # 6. Get user input
+    print("\n" + "="*50)
+    prompt = input("Enter your request (or press Enter for default): ").strip()
+    
+    if not prompt:
+        prompt = "Show me the status?"
+        print(f"Using default prompt: '{prompt}'")
+    
     print(f"\nInvoking agent with prompt: '{prompt}'")
     print("--- [START] Agent Execution Stream ---")
 

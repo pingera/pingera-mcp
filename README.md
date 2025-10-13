@@ -34,6 +34,84 @@ python -m pingera_mcp
 
 The server will start in read-only mode by default and connect to the Pingera API.
 
+## Operation Modes
+
+The Pingera MCP Server supports two transport modes:
+
+### 1. Stdio Mode (Default)
+Used for local integration with Claude Desktop and other stdio-based MCP clients. Authentication is configured via environment variables.
+
+```bash
+# Run in stdio mode (default)
+python -m pingera_mcp
+```
+
+### 2. HTTP/SSE Mode
+Enables web-based access through HTTP with Server-Sent Events. Perfect for remote clients, web applications, and programmatic access.
+
+```bash
+# Configure SSE mode
+export PINGERA_TRANSPORT_MODE=sse
+export PINGERA_HTTP_HOST=0.0.0.0
+export PINGERA_HTTP_PORT=5000
+
+# Run in SSE mode
+python -m pingera_mcp
+```
+
+The server will be accessible at `http://0.0.0.0:5000/mcp/`
+
+#### Authentication in SSE Mode
+
+SSE mode supports two authentication methods via the `Authorization` header:
+
+1. **API Key Authentication** (recommended for testing):
+   ```
+   Authorization: YOUR_API_KEY
+   ```
+
+2. **JWT Bearer Token Authentication**:
+   ```
+   Authorization: Bearer YOUR_JWT_TOKEN
+   ```
+
+#### Example: Python Client for SSE Mode
+
+```python
+import asyncio
+from langchain_mcp_adapters.client import MultiServerMCPClient
+
+async def main():
+    client = MultiServerMCPClient({
+        "pingera": {
+            "url": "http://0.0.0.0:5000/mcp/",
+            "transport": "streamable_http",
+            "headers": {
+                "Authorization": "YOUR_API_KEY",  # or "Bearer YOUR_JWT_TOKEN"
+            }
+        }
+    })
+    
+    # Get available tools
+    tools = await client.get_tools()
+    print(f"Available tools: {len(tools)}")
+
+asyncio.run(main())
+```
+
+#### SSE Mode Configuration Options
+
+- **`PINGERA_TRANSPORT_MODE`** - Set to `sse` to enable HTTP/SSE mode (default: `stdio`)
+- **`PINGERA_HTTP_HOST`** - Host to bind to (default: `0.0.0.0`)
+- **`PINGERA_HTTP_PORT`** - Port to listen on (default: `5000`)
+- **`PINGERA_REQUIRE_AUTH_HEADER`** - Require Authorization header (default: `false`)
+
+**Note**: In SSE mode, you can either:
+- Provide credentials via environment variables (PINGERA_API_KEY or PINGERA_JWT_TOKEN) as fallback
+- Send credentials in the Authorization header with each request (recommended)
+
+When `REQUIRE_AUTH_HEADER=true`, the server will only accept requests with valid Authorization headers.
+
 ## Claude Desktop Integration
 
 To use this MCP server with Claude Desktop, you need to configure it in your Claude Desktop settings.
@@ -114,8 +192,18 @@ Once configured, you can ask Claude to:
 Configure the server using environment variables:
 
 ```bash
-# Required
+# Required (for stdio mode or as fallback in SSE mode)
 PINGERA_API_KEY=your_api_key_here
+# OR
+PINGERA_JWT_TOKEN=your_jwt_token_here
+
+# Transport Mode
+PINGERA_TRANSPORT_MODE=stdio              # stdio (default) or sse
+
+# SSE Mode Configuration (only used when TRANSPORT_MODE=sse)
+PINGERA_HTTP_HOST=0.0.0.0                 # Host to bind to
+PINGERA_HTTP_PORT=5000                     # Port to listen on
+PINGERA_REQUIRE_AUTH_HEADER=false         # Require Authorization header
 
 # Optional
 PINGERA_MODE=read_only                    # read_only or read_write
@@ -228,7 +316,9 @@ Available only in read-write mode (`PINGERA_MODE=read_write`):
 - **`delete_incident_update`** - Delete specific incident update
   - Parameters: `page_id` (required), `incident_id` (required), `update_id` (required)
 
-## Operation Modes
+## Access Control Modes
+
+The server supports two levels of access control:
 
 ### Read-Only Mode (Default)
 - Access monitoring data
@@ -243,6 +333,8 @@ Available only in read-write mode (`PINGERA_MODE=read_write`):
 - Manage incidents and notifications
 
 Set `PINGERA_MODE=read_write` to enable write operations.
+
+**Note**: Access control mode is independent of transport mode. You can run the server in read-write mode with either stdio or SSE transport.
 
 ## Architecture
 

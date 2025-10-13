@@ -104,7 +104,7 @@ def _update_tools_client():
     
     # In SSE mode, get the client from the request context
     if config.transport_mode != "stdio":
-        request_client = get_request_client()
+        request_client = get_request_client(config, pingera_client)
         if request_client:
             status_tools.client = request_client
             pages_tools.client = request_client

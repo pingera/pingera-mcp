@@ -49,8 +49,11 @@ def create_mcp_server(config: Config) -> FastMCP:
         else:
             logger.info("Server will accept requests without Authorization header (using env credentials)")
 
-    # Create MCP server
-    mcp_server = FastMCP(config.server_name)
+    # Create MCP server with host/port for SSE mode
+    if config.transport_mode == "sse":
+        mcp_server = FastMCP(config.server_name, host=config.http_host, port=config.http_port)
+    else:
+        mcp_server = FastMCP(config.server_name)
 
     # Initialize Pingera client for stdio mode (will be overridden per-request in SSE mode)
     pingera_client = PingeraClient(

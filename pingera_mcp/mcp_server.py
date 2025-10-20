@@ -413,6 +413,202 @@ async def get_unified_statistics(
     return await checks_tools.get_unified_statistics(check_ids, from_date, to_date)
 
 @mcp.tool()
+async def create_icmp_check(
+    name: str,
+    host: str,
+    interval: int = 300,
+    timeout: int = 30,
+    active: bool = True,
+    probe_count: Optional[int] = 4,
+    ip_version: Optional[str] = "auto",
+    probe_interval: Optional[float] = 1.0,
+    probe_timeout: Optional[float] = 1.0,
+    max_packet_loss: Optional[float] = None
+) -> str:
+    """
+    Create a permanent ICMP (ping) monitoring check.
+
+    ICMP checks monitor network connectivity and latency to hosts using ICMP echo requests (ping).
+    They are useful for monitoring server availability, network latency, and packet loss.
+
+    Args:
+        name: A descriptive name for this ICMP check (required)
+        host: Hostname or IP address to ping (required, max 255 characters)
+        interval: How often to run the check in seconds (default: 300, range: 30-86400)
+        timeout: Overall check timeout in seconds (default: 30, range: 1-30)
+        active: Whether the check is active (default: True)
+        probe_count: Number of ping probes to send (default: 4, range: 1-100)
+        ip_version: IP version preference - 'v4', 'v6', or 'auto' (default: 'auto', prefers IPv6)
+        probe_interval: Interval between individual probes in seconds (default: 1.0, range: 0.001-10)
+        probe_timeout: Timeout for each individual probe in seconds (default: 1.0, range: 0.1-30)
+        max_packet_loss: Maximum acceptable packet loss percentage (range: 0-100, optional)
+
+    Returns:
+        JSON with created ICMP check details including check ID and configuration.
+    """
+    _update_tools_client()
+    return await checks_tools.create_icmp_check(
+        name, host, interval, timeout, active,
+        probe_count, ip_version, probe_interval, probe_timeout, max_packet_loss
+    )
+
+@mcp.tool()
+async def create_dns_check(
+    name: str,
+    host: str,
+    interval: int = 300,
+    timeout: int = 10,
+    active: bool = True,
+    record_type: Optional[str] = "A",
+    dns_servers: Optional[List[str]] = None,
+    expected_answers: Optional[List[str]] = None,
+    validation_mode: Optional[str] = "contains_all"
+) -> str:
+    """
+    Create a permanent DNS monitoring check.
+
+    DNS checks monitor DNS resolution and validate DNS records. They can verify that
+    your domain resolves correctly and returns expected IP addresses or other DNS records.
+
+    Args:
+        name: A descriptive name for this DNS check (required)
+        host: Domain name to query (required, e.g., 'example.com')
+        interval: How often to run the check in seconds (default: 300, range: 30-86400)
+        timeout: Check timeout in seconds (default: 10, range: 1-30)
+        active: Whether the check is active (default: True)
+        record_type: DNS record type to query (default: 'A')
+                    Supported types: A, AAAA, MX, TXT, CNAME, NS, SOA, PTR, SRV, CAA, etc.
+        dns_servers: List of custom DNS server IP addresses to use (optional)
+                    If not specified, uses system default DNS servers
+        expected_answers: List of expected DNS answers for validation (optional)
+                         The check will fail if actual answers don't match expectations
+        validation_mode: How to validate answers (default: 'contains_all')
+                        - 'contains_all': Actual answers must include all expected answers
+                        - 'exact': Actual answers must exactly match expected answers
+
+    Returns:
+        JSON with created DNS check details including check ID and configuration.
+    """
+    _update_tools_client()
+    return await checks_tools.create_dns_check(
+        name, host, interval, timeout, active,
+        record_type, dns_servers, expected_answers, validation_mode
+    )
+
+@mcp.tool()
+async def create_synthetic_check(
+    name: str,
+    url: str,
+    pw_script: str,
+    interval: int = 300,
+    timeout: int = 60,
+    active: bool = True
+) -> str:
+    """
+    Create a permanent synthetic browser monitoring check using Playwright.
+
+    Synthetic checks simulate real user interactions with your website using a headless
+    browser. They can navigate pages, fill forms, click buttons, and verify page content.
+    The check uses Playwright scripts written in JavaScript or TypeScript.
+
+    IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
+    The script should use the Playwright test framework and include proper assertions.
+
+    Args:
+        name: A descriptive name for this synthetic check (required, max 100 characters)
+        url: The starting URL for the browser test (required)
+        pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
+                  The script must be a valid Playwright test that includes:
+                  - Import statements for Playwright test framework
+                  - Test function with browser automation steps
+                  - Assertions using expect() to verify expected behavior
+                  Example structure:
+                  ```javascript
+                  const { test, expect } = require('@playwright/test');
+                  test('my test', async ({ page }) => {
+                    await page.goto('https://example.com');
+                    await expect(page.locator('h1')).toContainText('Example');
+                  });
+                  ```
+        interval: How often to run the check in seconds (default: 300, range: 30-86400)
+        timeout: Overall check timeout in seconds (default: 60, range: 1-300)
+        active: Whether the check is active (default: True)
+
+    Returns:
+        JSON with created synthetic check details including check ID and configuration.
+    """
+    _update_tools_client()
+    parameters = {"pw_script": pw_script}
+    return await checks_tools.create_check(
+        name=name,
+        type="synthetic",
+        url=url,
+        interval=interval,
+        timeout=timeout,
+        active=active,
+        parameters=parameters
+    )
+
+@mcp.tool()
+async def create_multistep_check(
+    name: str,
+    url: str,
+    pw_script: str,
+    interval: int = 300,
+    timeout: int = 60,
+    active: bool = True
+) -> str:
+    """
+    Create a permanent multi-step monitoring check using Playwright.
+
+    Multi-step checks are similar to synthetic checks but are specifically designed for
+    complex, multi-page workflows like checkout processes, login flows, or API sequences.
+    They use Playwright scripts to automate and verify multi-step user journeys.
+
+    IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
+    The script should include all steps of your workflow with proper error handling.
+
+    Args:
+        name: A descriptive name for this multi-step check (required, max 100 characters)
+        url: The starting URL for the workflow (required)
+        pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
+                  The script must be a valid Playwright test that includes:
+                  - Import statements for Playwright test framework
+                  - Test function with all workflow steps
+                  - Assertions at each critical step to verify progress
+                  - Proper error handling for failed steps
+                  Example for a login flow:
+                  ```javascript
+                  const { test, expect } = require('@playwright/test');
+                  test('login workflow', async ({ page }) => {
+                    await page.goto('https://example.com/login');
+                    await page.fill('#username', 'testuser');
+                    await page.fill('#password', 'testpass');
+                    await page.click('button[type="submit"]');
+                    await expect(page).toHaveURL(/.*dashboard/);
+                    await expect(page.locator('.welcome')).toBeVisible();
+                  });
+                  ```
+        interval: How often to run the check in seconds (default: 300, range: 30-86400)
+        timeout: Overall check timeout in seconds (default: 60, range: 1-300)
+        active: Whether the check is active (default: True)
+
+    Returns:
+        JSON with created multi-step check details including check ID and configuration.
+    """
+    _update_tools_client()
+    parameters = {"pw_script": pw_script}
+    return await checks_tools.create_check(
+        name=name,
+        type="multistep",
+        url=url,
+        interval=interval,
+        timeout=timeout,
+        active=active,
+        parameters=parameters
+    )
+
+@mcp.tool()
 async def execute_custom_check(
     type: str,
     name: str,
@@ -480,6 +676,229 @@ async def execute_custom_check(
     """
     _update_tools_client()
     return await checks_tools.execute_custom_check(type, name, url, host, port, timeout, parameters)
+
+@mcp.tool()
+async def execute_icmp_check(
+    name: str,
+    host: str,
+    timeout: int = 30,
+    probe_count: Optional[int] = 4,
+    ip_version: Optional[str] = "auto",
+    probe_interval: Optional[float] = 1.0,
+    probe_timeout: Optional[float] = 1.0,
+    max_packet_loss: Optional[float] = None
+) -> str:
+    """
+    Execute a one-time ICMP (ping) check without creating a permanent monitor.
+
+    This performs an immediate ICMP ping test to check network connectivity and latency
+    to a host. Useful for quick diagnostics or testing before setting up permanent monitoring.
+
+    Args:
+        name: A descriptive name for this test (required, max 100 characters)
+        host: Hostname or IP address to ping (required, max 255 characters)
+        timeout: Overall check timeout in seconds (default: 30, range: 1-30)
+        probe_count: Number of ping probes to send (default: 4, range: 1-100)
+        ip_version: IP version preference - 'v4', 'v6', or 'auto' (default: 'auto', prefers IPv6)
+        probe_interval: Interval between individual probes in seconds (default: 1.0, range: 0.001-10)
+        probe_timeout: Timeout for each individual probe in seconds (default: 1.0, range: 0.1-30)
+        max_packet_loss: Maximum acceptable packet loss percentage (range: 0-100, optional)
+                        If specified and exceeded, the check will fail
+
+    Returns:
+        JSON with job ID for tracking the asynchronous execution.
+        Use get_on_demand_job_status() to check results.
+    """
+    _update_tools_client()
+    parameters = {}
+    if probe_count is not None:
+        parameters["probe_count"] = probe_count
+    if ip_version is not None:
+        parameters["ip_version"] = ip_version
+    if probe_interval is not None:
+        parameters["probe_interval"] = probe_interval
+    if probe_timeout is not None:
+        parameters["probe_timeout"] = probe_timeout
+    if max_packet_loss is not None:
+        parameters["assertions"] = {"max_packet_loss": max_packet_loss}
+    
+    return await checks_tools.execute_custom_check(
+        type="icmp",
+        name=name,
+        host=host,
+        timeout=timeout,
+        parameters=parameters if parameters else None
+    )
+
+@mcp.tool()
+async def execute_dns_check(
+    name: str,
+    host: str,
+    timeout: int = 10,
+    record_type: Optional[str] = "A",
+    dns_servers: Optional[List[str]] = None,
+    expected_answers: Optional[List[str]] = None,
+    validation_mode: Optional[str] = "contains_all"
+) -> str:
+    """
+    Execute a one-time DNS resolution check without creating a permanent monitor.
+
+    This performs an immediate DNS query to verify domain resolution and optionally
+    validate that DNS records match expected values. Useful for troubleshooting DNS
+    issues or testing DNS changes before they propagate.
+
+    Args:
+        name: A descriptive name for this test (required, max 100 characters)
+        host: Domain name to query (required, e.g., 'example.com')
+        timeout: Check timeout in seconds (default: 10, range: 1-30)
+        record_type: DNS record type to query (default: 'A')
+                    Supported types: A, AAAA, MX, TXT, CNAME, NS, SOA, PTR, SRV, CAA, etc.
+        dns_servers: List of custom DNS server IP addresses to use (optional)
+                    If not specified, uses system default DNS servers
+                    Example: ["8.8.8.8", "1.1.1.1"]
+        expected_answers: List of expected DNS answers for validation (optional)
+                         The check will fail if actual answers don't match expectations
+                         Example for A record: ["93.184.216.34"]
+        validation_mode: How to validate answers (default: 'contains_all')
+                        - 'contains_all': Actual answers must include all expected answers
+                        - 'exact': Actual answers must exactly match expected answers (order matters)
+
+    Returns:
+        JSON with job ID for tracking the asynchronous execution.
+        Use get_on_demand_job_status() to check results.
+    """
+    _update_tools_client()
+    parameters = {}
+    if record_type is not None:
+        parameters["record_type"] = record_type
+    if dns_servers is not None:
+        parameters["dns_servers"] = dns_servers
+    if expected_answers is not None:
+        parameters["expected_answers"] = expected_answers
+    if validation_mode is not None:
+        parameters["validation_mode"] = validation_mode
+    
+    return await checks_tools.execute_custom_check(
+        type="dns",
+        name=name,
+        host=host,
+        timeout=timeout,
+        parameters=parameters if parameters else None
+    )
+
+@mcp.tool()
+async def execute_synthetic_check(
+    name: str,
+    url: str,
+    pw_script: str,
+    timeout: int = 60
+) -> str:
+    """
+    Execute a one-time synthetic browser check without creating a permanent monitor.
+
+    This performs an immediate browser automation test using Playwright to simulate
+    real user interactions. Useful for testing UI workflows, verifying page functionality,
+    or troubleshooting before setting up permanent monitoring.
+
+    IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
+
+    Args:
+        name: A descriptive name for this test (required, max 100 characters)
+        url: The starting URL for the browser test (required)
+        pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
+                  The script must be a valid Playwright test that includes:
+                  - Import statements: const { test, expect } = require('@playwright/test');
+                  - Test function with browser automation steps
+                  - Assertions using expect() to verify expected behavior
+                  
+                  Example script:
+                  ```javascript
+                  const { test, expect } = require('@playwright/test');
+                  test('homepage test', async ({ page }) => {
+                    await page.goto('https://example.com');
+                    await expect(page.locator('h1')).toContainText('Example Domain');
+                    await expect(page.locator('p')).toBeVisible();
+                  });
+                  ```
+        timeout: Overall check timeout in seconds (default: 60, range: 1-300)
+
+    Returns:
+        JSON with job ID for tracking the asynchronous execution.
+        Use get_on_demand_job_status() to check results.
+    """
+    _update_tools_client()
+    parameters = {"pw_script": pw_script}
+    return await checks_tools.execute_custom_check(
+        type="synthetic",
+        name=name,
+        url=url,
+        timeout=timeout,
+        parameters=parameters
+    )
+
+@mcp.tool()
+async def execute_multistep_check(
+    name: str,
+    url: str,
+    pw_script: str,
+    timeout: int = 60
+) -> str:
+    """
+    Execute a one-time multi-step workflow check without creating a permanent monitor.
+
+    This performs an immediate browser automation test for complex, multi-page workflows
+    using Playwright. Ideal for testing login flows, checkout processes, or multi-step
+    forms before setting up permanent monitoring.
+
+    IMPORTANT: You must provide a complete Playwright script in the pw_script parameter
+    that covers all steps in your workflow.
+
+    Args:
+        name: A descriptive name for this test (required, max 100 characters)
+        url: The starting URL for the workflow (required)
+        pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
+                  The script must be a valid Playwright test that includes:
+                  - Import statements: const { test, expect } = require('@playwright/test');
+                  - Test function with all workflow steps
+                  - Assertions at each critical step to verify progress
+                  - Proper error handling for failed steps
+                  
+                  Example script for a login workflow:
+                  ```javascript
+                  const { test, expect } = require('@playwright/test');
+                  test('login workflow', async ({ page }) => {
+                    // Step 1: Navigate to login page
+                    await page.goto('https://example.com/login');
+                    await expect(page.locator('form#login')).toBeVisible();
+                    
+                    // Step 2: Fill credentials
+                    await page.fill('#username', 'testuser');
+                    await page.fill('#password', 'testpass');
+                    
+                    // Step 3: Submit form
+                    await page.click('button[type="submit"]');
+                    
+                    // Step 4: Verify successful login
+                    await expect(page).toHaveURL(/.*dashboard/);
+                    await expect(page.locator('.welcome-message')).toBeVisible();
+                  });
+                  ```
+        timeout: Overall check timeout in seconds (default: 60, range: 1-300)
+                Should be long enough to complete all workflow steps
+
+    Returns:
+        JSON with job ID for tracking the asynchronous execution.
+        Use get_on_demand_job_status() to check results.
+    """
+    _update_tools_client()
+    parameters = {"pw_script": pw_script}
+    return await checks_tools.execute_custom_check(
+        type="multistep",
+        name=name,
+        url=url,
+        timeout=timeout,
+        parameters=parameters
+    )
 
 @mcp.tool()
 async def execute_existing_check(check_id: str) -> str:

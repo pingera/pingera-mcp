@@ -136,6 +136,121 @@ class ChecksTools(BaseTools):
             self.logger.error(f"Error creating check: {e}")
             return self._error_response(str(e))
 
+    async def create_icmp_check(
+        self,
+        name: str,
+        host: str,
+        interval: int = 300,
+        timeout: int = 30,
+        active: bool = True,
+        probe_count: Optional[int] = 4,
+        ip_version: Optional[str] = "auto",
+        probe_interval: Optional[float] = 1.0,
+        probe_timeout: Optional[float] = 1.0,
+        max_packet_loss: Optional[float] = None
+    ) -> str:
+        """
+        Create an ICMP (ping) monitoring check.
+
+        Args:
+            name: Name for the check
+            host: Hostname or IP address to ping
+            interval: Check interval in seconds (default: 300)
+            timeout: Overall check timeout in seconds (default: 30)
+            active: Whether check is active (default: True)
+            probe_count: Number of ping probes (1-100, default: 4)
+            ip_version: IP version to use - 'v4', 'v6', or 'auto' (default: 'auto', prefers v6)
+            probe_interval: Interval between probes in seconds (0.001-10, default: 1.0)
+            probe_timeout: Timeout for individual probes in seconds (0.1-30, default: 1.0)
+            max_packet_loss: Maximum acceptable packet loss percentage (0-100, optional)
+
+        Returns:
+            JSON string containing created check details
+        """
+        try:
+            parameters = {}
+            
+            if probe_count is not None:
+                parameters["probe_count"] = probe_count
+            if ip_version is not None:
+                parameters["ip_version"] = ip_version
+            if probe_interval is not None:
+                parameters["probe_interval"] = probe_interval
+            if probe_timeout is not None:
+                parameters["probe_timeout"] = probe_timeout
+            
+            if max_packet_loss is not None:
+                parameters["assertions"] = {"max_packet_loss": max_packet_loss}
+
+            return await self.create_check(
+                name=name,
+                type="icmp",
+                host=host,
+                interval=interval,
+                timeout=timeout,
+                active=active,
+                parameters=parameters if parameters else None
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error creating ICMP check: {e}")
+            return self._error_response(str(e))
+
+    async def create_dns_check(
+        self,
+        name: str,
+        host: str,
+        interval: int = 300,
+        timeout: int = 10,
+        active: bool = True,
+        record_type: Optional[str] = "A",
+        dns_servers: Optional[List[str]] = None,
+        expected_answers: Optional[List[str]] = None,
+        validation_mode: Optional[str] = "contains_all"
+    ) -> str:
+        """
+        Create a DNS monitoring check.
+
+        Args:
+            name: Name for the check
+            host: Domain name to query
+            interval: Check interval in seconds (default: 300)
+            timeout: Check timeout in seconds (default: 10)
+            active: Whether check is active (default: True)
+            record_type: DNS record type - A, AAAA, MX, TXT, CNAME, NS, SOA, etc. (default: 'A')
+            dns_servers: List of custom DNS server IP addresses to use (optional)
+            expected_answers: List of expected DNS answers for validation (optional)
+            validation_mode: Validation mode - 'contains_all' or 'exact' (default: 'contains_all')
+
+        Returns:
+            JSON string containing created check details
+        """
+        try:
+            parameters = {}
+            
+            if record_type is not None:
+                parameters["record_type"] = record_type
+            if dns_servers is not None:
+                parameters["dns_servers"] = dns_servers
+            if expected_answers is not None:
+                parameters["expected_answers"] = expected_answers
+            if validation_mode is not None:
+                parameters["validation_mode"] = validation_mode
+
+            return await self.create_check(
+                name=name,
+                type="dns",
+                host=host,
+                interval=interval,
+                timeout=timeout,
+                active=active,
+                parameters=parameters if parameters else None
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error creating DNS check: {e}")
+            return self._error_response(str(e))
+
     async def update_check(
         self,
         check_id: str,

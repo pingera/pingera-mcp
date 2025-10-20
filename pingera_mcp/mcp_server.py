@@ -101,7 +101,7 @@ def _update_tools_client():
     In SSE mode, this ensures the client is updated with the latest request context.
     """
     global status_tools, pages_tools, component_tools, checks_tools, alerts_tools, heartbeats_tools, incidents_tools, playwright_tools, check_groups_tools, secrets_tools
-    
+
     # In SSE mode, get the client from the request context
     if config.transport_mode != "stdio":
         request_client = get_request_client(config, pingera_client)
@@ -430,33 +430,50 @@ async def execute_custom_check(
     or testing new services before setting up regular monitoring.
 
     Args:
-        type: Type of check ('web', 'api', 'tcp', 'ssl', 'multistep', 'synthetic') - REQUIRED
+        type: Type of check ('web', 'api', 'tcp', 'ssl', 'icmp', 'dns', 'multistep', 'synthetic') - REQUIRED
         name: A user-friendly name for the custom check (max 100 characters) - REQUIRED
         url: The URL to monitor (required for web/api checks). Supports international domain names.
-        host: The hostname or IP address to monitor (required for TCP/SSL checks, max 255 characters)
+        host: The hostname or IP address to monitor (required for TCP/SSL/ICMP/DNS checks, max 255 characters)
         port: The port number to monitor (required for TCP/SSL checks, range: 1-65535)
         timeout: Timeout in seconds (range: 1-30, default: 30)
         parameters: Additional parameters specific to the check type.
 
-        For 'synthetic' or 'multistep' checks, the 'parameters' dictionary must contain a 'pw_script' key. The value of this key should be the full Playwright script in Javascript or Typescript content as a string.
+    For 'synthetic' or 'multistep' checks, the 'parameters' dictionary must contain a 'pw_script' key.
 
-        Example for a 'synthetic' check:
-        {
-          "type": "synthetic",
-          "name": "Login Test",
-          "url": "https://pingera.ru",
-          "parameters": {
-            "pw_script": "Playwright script content as a string"
-          }
-        }
+    For 'icmp' checks, parameters can include:
+    - probe_count (1-100, default: 4)
+    - ip_version ('v4', 'v6', 'auto')
+    - probe_interval (0.001-10 seconds)
+    - probe_timeout (0.1-30 seconds)
+    - assertions: {max_packet_loss: 0-100}
 
-        Example for a 'tcp' check:
-        {
-          "type": "tcp",
-          "name": "Database Connection",
-          "host": "db.example.com",
-          "port": 5432
-        }
+    For 'dns' checks, parameters can include:
+    - record_type ('A', 'AAAA', 'MX', 'TXT', etc.)
+    - dns_servers (list of DNS server IPs)
+    - expected_answers (list of expected answers)
+    - validation_mode ('contains_all' or 'exact')
+
+    Example for an 'icmp' check:
+    {
+      "type": "icmp",
+      "name": "Ping Test",
+      "host": "example.com",
+      "parameters": {
+        "probe_count": 10,
+        "ip_version": "v4"
+      }
+    }
+
+    Example for a 'dns' check:
+    {
+      "type": "dns",
+      "name": "DNS Resolution Test",
+      "host": "example.com",
+      "parameters": {
+        "record_type": "A",
+        "expected_answers": ["93.184.216.34"]
+      }
+    }
 
     Returns:
         JSON with the job id that is executed asynchronously.

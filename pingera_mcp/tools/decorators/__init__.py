@@ -1,4 +1,0 @@
-
-"""
-Tool decorator registration modules.
-"""

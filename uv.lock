@@ -1323,7 +1323,7 @@ wheels = [
 
 [[package]]
 name = "pingera-mcp-server"
-version = "0.1.10"
+version = "0.1.8"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },

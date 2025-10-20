@@ -129,7 +129,28 @@ playwright_tools = PlaywrightGeneratorTools(pingera_client)
 check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
 secrets_tools = SecretsTools(pingera_client) # Initialize SecretsTools
 
-# Register read-only tools
+# Import tool registration modules
+from pingera_mcp.tools.decorators.register_all import register_all_tools
+
+# Prepare tool instances dictionary
+tool_instances = {
+    'status': status_tools,
+    'pages': pages_tools,
+    'components': component_tools,
+    'checks': checks_tools,
+    'check_groups': check_groups_tools,
+    'alerts': alerts_tools,
+    'heartbeats': heartbeats_tools,
+    'incidents': incidents_tools,
+    'playwright': playwright_tools,
+    'secrets': secrets_tools,
+}
+
+# Register all tools using the decorator modules
+register_all_tools(mcp, config, tool_instances, _update_tools_client)
+
+# Legacy code below (to be removed) - keeping for reference during transition
+"""
 @mcp.tool()
 async def list_pages(
     page: Optional[int] = None,

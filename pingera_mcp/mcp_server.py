@@ -1,9 +1,11 @@
+
 """
 MCP Server implementation for Pingera monitoring service.
 """
 import logging
 import json
 from typing import Optional, Dict, Any, List
+from functools import wraps
 
 from mcp.server.fastmcp import FastMCP
 
@@ -19,8 +21,8 @@ from pingera_mcp.tools import (
         HeartbeatsTools,
         IncidentsTools,
         PlaywrightGeneratorTools,
-        CheckGroupsTools, # Import CheckGroupsTools
-        SecretsTools, # Import SecretsTools
+        CheckGroupsTools,
+        SecretsTools,
     )
 
 # Configure logging
@@ -29,6 +31,22 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("pingera-mcp-server")
+
+
+def tool_filter(tool_name: str):
+    """Decorator to filter tools based on allowed_tools configuration."""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            if not config.is_tool_allowed(tool_name):
+                return json.dumps({
+                    "error": f"Tool '{tool_name}' is not available in the current context",
+                    "message": "This tool has been filtered out by server configuration"
+                })
+            return await func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 
 def create_mcp_server(config: Config) -> FastMCP:
     """Create and configure MCP server with the given configuration."""
@@ -99,11 +117,19 @@ def _update_tools_client():
     """
     Updates the PingeraClient for each tool instance.
     In SSE mode, this ensures the client is updated with the latest request context.
+    Also handles tool filtering based on X-MCP-Tools header.
     """
     global status_tools, pages_tools, component_tools, checks_tools, alerts_tools, heartbeats_tools, incidents_tools, playwright_tools, check_groups_tools, secrets_tools
 
     # In SSE mode, get the client from the request context
     if config.transport_mode != "stdio":
+        # Check for tool filtering header
+        from pingera_mcp.auth import get_allowed_tools_from_request
+        tools_header = get_allowed_tools_from_request(config)
+        if tools_header:
+            # Temporarily set allowed tools for this request
+            config.set_allowed_tools(tools_header)
+        
         request_client = get_request_client(config, pingera_client)
         if request_client:
             status_tools.client = request_client
@@ -126,11 +152,12 @@ alerts_tools = AlertsTools(pingera_client)
 heartbeats_tools = HeartbeatsTools(pingera_client)
 incidents_tools = IncidentsTools(pingera_client)
 playwright_tools = PlaywrightGeneratorTools(pingera_client)
-check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
-secrets_tools = SecretsTools(pingera_client) # Initialize SecretsTools
+check_groups_tools = CheckGroupsTools(pingera_client)
+secrets_tools = SecretsTools(pingera_client)
 
 # Register read-only tools
 @mcp.tool()
+@tool_filter("list_pages")
 async def list_pages(
     page: Optional[int] = None,
     per_page: Optional[int] = None,
@@ -153,6 +180,7 @@ async def list_pages(
     return await pages_tools.list_pages(page, per_page, status)
 
 @mcp.tool()
+@tool_filter("get_page_details")
 async def get_page_details(page_id: int) -> str:
     """
     Get detailed information about a specific status page.
@@ -167,6 +195,7 @@ async def get_page_details(page_id: int) -> str:
     return await pages_tools.get_page_details(page_id)
 
 @mcp.tool()
+@tool_filter("test_pingera_connection")
 async def test_pingera_connection() -> str:
     """
     Test the connection to Pingera API and verify authentication.
@@ -181,6 +210,7 @@ async def test_pingera_connection() -> str:
     return await status_tools.test_pingera_connection()
 
 @mcp.tool()
+@tool_filter("list_component_groups")
 async def list_component_groups(
     page_id: str,
     show_deleted: Optional[bool] = False
@@ -203,6 +233,7 @@ async def list_component_groups(
     return await component_tools.list_component_groups(page_id, show_deleted)
 
 @mcp.tool()
+@tool_filter("list_components")
 async def list_components(
     page_id: str,
     page: Optional[int] = None,
@@ -227,6 +258,7 @@ async def list_components(
     return await component_tools.list_components(page_id, page, page_size)
 
 @mcp.tool()
+@tool_filter("get_component_details")
 async def get_component_details(page_id: str, component_id: str) -> str:
     """
     Get detailed information about a specific component.
@@ -245,6 +277,7 @@ async def get_component_details(page_id: str, component_id: str) -> str:
     return await component_tools.get_component_details(page_id, component_id)
 
 @mcp.tool()
+@tool_filter("list_checks")
 async def list_checks(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
@@ -274,6 +307,7 @@ async def list_checks(
     return await checks_tools.list_checks(page, page_size, type, status, group_id, name)
 
 @mcp.tool()
+@tool_filter("get_check_details")
 async def get_check_details(check_id: str) -> str:
     """
     Get detailed configuration and settings for a specific monitoring check.
@@ -289,6 +323,7 @@ async def get_check_details(check_id: str) -> str:
     return await checks_tools.get_check_details(check_id)
 
 @mcp.tool()
+@tool_filter("get_check_results")
 async def get_check_results(
     check_id: str,
     from_date: Optional[str] = None,
@@ -316,6 +351,7 @@ async def get_check_results(
     return await checks_tools.get_check_results(check_id, from_date, to_date, page, page_size)
 
 @mcp.tool()
+@tool_filter("get_check_statistics")
 async def get_check_statistics(check_id: str) -> str:
     """
     Get statistical summary and performance metrics for a monitoring check.
@@ -333,6 +369,7 @@ async def get_check_statistics(check_id: str) -> str:
     return await checks_tools.get_check_statistics(check_id)
 
 @mcp.tool()
+@tool_filter("list_check_jobs")
 async def list_check_jobs() -> str:
     """
     List all currently running or queued check execution jobs.
@@ -347,6 +384,7 @@ async def list_check_jobs() -> str:
     return await checks_tools.list_check_jobs()
 
 @mcp.tool()
+@tool_filter("get_check_job_details")
 async def get_check_job_details(job_id: str) -> str:
     """
     Get detailed information about a specific check execution job.
@@ -361,6 +399,7 @@ async def get_check_job_details(job_id: str) -> str:
     return await checks_tools.get_check_job_details(job_id)
 
 @mcp.tool()
+@tool_filter("get_unified_results")
 async def get_unified_results(
     check_ids: Optional[List[str]] = None,
     from_date: Optional[str] = None,
@@ -390,6 +429,7 @@ async def get_unified_results(
     return await checks_tools.get_unified_results(check_ids, from_date, to_date, status, page, page_size)
 
 @mcp.tool()
+@tool_filter("get_unified_statistics")
 async def get_unified_statistics(
     check_ids: Optional[List[str]] = None,
     from_date: Optional[str] = None,
@@ -413,6 +453,7 @@ async def get_unified_statistics(
     return await checks_tools.get_unified_statistics(check_ids, from_date, to_date)
 
 @mcp.tool()
+@tool_filter("get_on_demand_job_status")
 async def get_on_demand_job_status(job_id: str) -> str:
     """
     Check the status and results of an on-demand check execution job.
@@ -430,6 +471,7 @@ async def get_on_demand_job_status(job_id: str) -> str:
     return await checks_tools.get_on_demand_job_status(job_id)
 
 @mcp.tool()
+@tool_filter("list_on_demand_checks")
 async def list_on_demand_checks(
     page: Optional[int] = None,
     page_size: Optional[int] = None
@@ -449,6 +491,7 @@ async def list_on_demand_checks(
 
 # --- Secrets Read-Only Tools ---
 @mcp.tool()
+@tool_filter("list_secrets")
 async def list_secrets(
     page: Optional[int] = None,
     page_size: Optional[int] = None
@@ -470,6 +513,7 @@ async def list_secrets(
     return await secrets_tools.list_secrets(page, page_size)
 
 @mcp.tool()
+@tool_filter("get_secret_details")
 async def get_secret_details(secret_id: str) -> str:
     """
     Get detailed information about a specific secret.
@@ -484,6 +528,7 @@ async def get_secret_details(secret_id: str) -> str:
     return await secrets_tools.get_secret_details(secret_id)
 
 @mcp.tool()
+@tool_filter("get_check_secrets")
 async def get_check_secrets(check_id: str) -> str:
     """
     Get all secrets associated with a monitoring check.
@@ -503,6 +548,7 @@ async def get_check_secrets(check_id: str) -> str:
 
 # --- New Check Groups Tools ---
 @mcp.tool()
+@tool_filter("list_check_groups")
 async def list_check_groups(
     page: Optional[int] = None,
     page_size: Optional[int] = None
@@ -524,6 +570,7 @@ async def list_check_groups(
     return await check_groups_tools.list_check_groups(page, page_size)
 
 @mcp.tool()
+@tool_filter("get_check_group_details")
 async def get_check_group_details(group_id: str) -> str:
     """
     Get detailed information about a specific check group.
@@ -538,6 +585,7 @@ async def get_check_group_details(group_id: str) -> str:
     return await check_groups_tools.get_check_group_details(group_id)
 
 @mcp.tool()
+@tool_filter("get_checks_in_group")
 async def get_checks_in_group(
     group_id: str,
     page: Optional[int] = None,
@@ -562,6 +610,7 @@ async def get_checks_in_group(
 # --- End New Check Groups Tools ---
 
 @mcp.tool()
+@tool_filter("list_alerts")
 async def list_alerts(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
@@ -586,6 +635,7 @@ async def list_alerts(
     return await alerts_tools.list_alerts(page, page_size, status)
 
 @mcp.tool()
+@tool_filter("get_alert_details")
 async def get_alert_details(alert_id: str) -> str:
     """
     Get detailed configuration for a specific alert rule.
@@ -603,6 +653,7 @@ async def get_alert_details(alert_id: str) -> str:
     return await alerts_tools.get_alert_details(alert_id)
 
 @mcp.tool()
+@tool_filter("get_alert_statistics")
 async def get_alert_statistics() -> str:
     """
     Get statistical overview of all alert activity.
@@ -617,6 +668,7 @@ async def get_alert_statistics() -> str:
     return await alerts_tools.get_alert_statistics()
 
 @mcp.tool()
+@tool_filter("list_alert_channels")
 async def list_alert_channels() -> str:
     """
     List all configured notification channels for alerts.
@@ -632,6 +684,7 @@ async def list_alert_channels() -> str:
     return await alerts_tools.list_alert_channels()
 
 @mcp.tool()
+@tool_filter("list_alert_rules")
 async def list_alert_rules() -> str:
     """
     List all alert rules and their trigger conditions.
@@ -647,6 +700,7 @@ async def list_alert_rules() -> str:
 
 # Register heartbeat tools
 @mcp.tool()
+@tool_filter("list_heartbeats")
 async def list_heartbeats(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
@@ -671,6 +725,7 @@ async def list_heartbeats(
     return await heartbeats_tools.list_heartbeats(page, page_size, status)
 
 @mcp.tool()
+@tool_filter("get_heartbeat_details")
 async def get_heartbeat_details(heartbeat_id: str) -> str:
     """
     Get detailed information about a specific heartbeat monitor.
@@ -688,6 +743,7 @@ async def get_heartbeat_details(heartbeat_id: str) -> str:
     return await heartbeats_tools.get_heartbeat_details(heartbeat_id)
 
 @mcp.tool()
+@tool_filter("create_heartbeat")
 async def create_heartbeat(heartbeat_data: dict) -> str:
     """
     Create a new heartbeat monitor for cron jobs or scheduled tasks.
@@ -705,6 +761,7 @@ async def create_heartbeat(heartbeat_data: dict) -> str:
     return await heartbeats_tools.create_heartbeat(heartbeat_data)
 
 @mcp.tool()
+@tool_filter("update_heartbeat")
 async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict) -> str:
     """
     Update configuration for an existing heartbeat monitor.
@@ -723,6 +780,7 @@ async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict) -> str:
     return await heartbeats_tools.update_heartbeat(heartbeat_id, heartbeat_data)
 
 @mcp.tool()
+@tool_filter("delete_heartbeat")
 async def delete_heartbeat(heartbeat_id: str) -> str:
     """
     Delete a heartbeat monitor permanently.
@@ -740,6 +798,7 @@ async def delete_heartbeat(heartbeat_id: str) -> str:
     return await heartbeats_tools.delete_heartbeat(heartbeat_id)
 
 @mcp.tool()
+@tool_filter("send_heartbeat_ping")
 async def send_heartbeat_ping(heartbeat_id: str) -> str:
     """
     Manually send a ping signal to a heartbeat monitor.
@@ -757,6 +816,7 @@ async def send_heartbeat_ping(heartbeat_id: str) -> str:
     return await heartbeats_tools.send_heartbeat_ping(heartbeat_id)
 
 @mcp.tool()
+@tool_filter("get_heartbeat_logs")
 async def get_heartbeat_logs(
     heartbeat_id: str,
     from_date: Optional[str] = None,
@@ -784,6 +844,7 @@ async def get_heartbeat_logs(
     return await heartbeats_tools.get_heartbeat_logs(heartbeat_id, from_date, to_date, page, page_size)
 
 @mcp.tool()
+@tool_filter("list_incidents")
 async def list_incidents(
     page_id: str,
     page: Optional[int] = None,
@@ -810,6 +871,7 @@ async def list_incidents(
     return await incidents_tools.list_incidents(page_id, page, page_size, status)
 
 @mcp.tool()
+@tool_filter("get_incident_details")
 async def get_incident_details(page_id: str, incident_id: str) -> str:
     """
     Get detailed information about a specific incident.
@@ -828,6 +890,7 @@ async def get_incident_details(page_id: str, incident_id: str) -> str:
     return await incidents_tools.get_incident_details(page_id, incident_id)
 
 @mcp.tool()
+@tool_filter("get_incident_updates")
 async def get_incident_updates(page_id: str, incident_id: str) -> str:
     """
     Get all status updates posted during an incident.
@@ -846,6 +909,7 @@ async def get_incident_updates(page_id: str, incident_id: str) -> str:
     return await incidents_tools.get_incident_updates(page_id, incident_id)
 
 @mcp.tool()
+@tool_filter("get_incident_update_details")
 async def get_incident_update_details(page_id: str, incident_id: str, update_id: str) -> str:
     """
     Get detailed information about a specific incident update.
@@ -870,6 +934,7 @@ if config.is_read_write():
     logger.info("Read-write mode enabled - adding write operations")
 
     @mcp.tool()
+    @tool_filter("create_page")
     async def create_page(
         name: str,
         subdomain: Optional[str] = None,
@@ -945,6 +1010,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("update_page")
     async def update_page(
         page_id: str,
         name: Optional[str] = None,
@@ -1026,6 +1092,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("patch_page")
     async def patch_page(
         page_id: str,
         name: Optional[str] = None,
@@ -1108,6 +1175,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("delete_page")
     async def delete_page(page_id: str) -> str:
         """
         Permanently delete a status page and all its associated data.
@@ -1125,6 +1193,7 @@ if config.is_read_write():
         return await pages_tools.delete_page(page_id)
 
     @mcp.tool()
+    @tool_filter("create_component")
     async def create_component(
         page_id: str,
         name: str,
@@ -1152,7 +1221,6 @@ if config.is_read_write():
             position: Display order position on the status page
             showcase: Whether to highlight this component prominently
             status: Initial status ('operational', 'degraded_performance', 'partial_outage', 'major_outage')
-            **kwargs: Additional component configuration
 
         Returns:
             JSON with created component details including ID and configuration.
@@ -1171,6 +1239,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("update_component")
     async def update_component(
         page_id: str,
         component_id: str,
@@ -1201,7 +1270,6 @@ if config.is_read_write():
             position: New display position
             showcase: Whether to highlight prominently
             status: New status setting
-            **kwargs: Additional configuration updates
 
         Returns:
             JSON with updated component details and configuration.
@@ -1213,6 +1281,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("patch_component")
     async def patch_component(
         page_id: str, 
         component_id: str,
@@ -1256,6 +1325,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("delete_component")
     async def delete_component(page_id: str, component_id: str) -> str:
         """
         Delete a component from a status page permanently.
@@ -1274,6 +1344,7 @@ if config.is_read_write():
         return await component_tools.delete_component(page_id, component_id)
 
     @mcp.tool()
+    @tool_filter("create_check")
     async def create_check(
         name: str,
         type: str,
@@ -1321,6 +1392,7 @@ if config.is_read_write():
 
 
     @mcp.tool()
+    @tool_filter("update_check")
     async def update_check(
         check_id: str,
         name: Optional[str] = None,
@@ -1369,6 +1441,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("delete_check")
     async def delete_check(check_id: str) -> str:
         """
         Delete a monitoring check permanently.
@@ -1386,6 +1459,7 @@ if config.is_read_write():
         return await checks_tools.delete_check(check_id)
 
     @mcp.tool()
+    @tool_filter("pause_check")
     async def pause_check(check_id: str) -> str:
         """
         Temporarily pause a monitoring check without deleting it.
@@ -1403,6 +1477,7 @@ if config.is_read_write():
         return await checks_tools.pause_check(check_id)
 
     @mcp.tool()
+    @tool_filter("resume_check")
     async def resume_check(check_id: str) -> str:
         """
         Resume a previously paused monitoring check.
@@ -1420,6 +1495,7 @@ if config.is_read_write():
         return await checks_tools.resume_check(check_id)
 
     @mcp.tool()
+    @tool_filter("create_alert")
     async def create_alert(alert_data: dict) -> str:
         """
         Create a new alert rule to get notified when issues are detected.
@@ -1442,6 +1518,7 @@ if config.is_read_write():
         return await alerts_tools.create_alert(alert_data)
 
     @mcp.tool()
+    @tool_filter("update_alert")
     async def update_alert(alert_id: str, alert_data: dict) -> str:
         """
         Update configuration for an existing alert rule.
@@ -1460,6 +1537,7 @@ if config.is_read_write():
         return await alerts_tools.update_alert(alert_id, alert_data)
 
     @mcp.tool()
+    @tool_filter("delete_alert")
     async def delete_alert(alert_id: str) -> str:
         """
         Delete an alert rule permanently.
@@ -1478,6 +1556,7 @@ if config.is_read_write():
 
     # --- Secrets Write Tools ---
     @mcp.tool()
+    @tool_filter("create_secret")
     async def create_secret(name: str, value: str) -> str:
         """
         Create a new organization secret.
@@ -1496,6 +1575,7 @@ if config.is_read_write():
         return await secrets_tools.create_secret(name, value)
 
     @mcp.tool()
+    @tool_filter("update_secret")
     async def update_secret(secret_id: str, value: str) -> str:
         """
         Update a secret's value.
@@ -1511,6 +1591,7 @@ if config.is_read_write():
         return await secrets_tools.update_secret(secret_id, value)
 
     @mcp.tool()
+    @tool_filter("delete_secret")
     async def delete_secret(secret_id: str) -> str:
         """
         Delete a secret permanently.
@@ -1528,6 +1609,7 @@ if config.is_read_write():
         return await secrets_tools.delete_secret(secret_id)
 
     @mcp.tool()
+    @tool_filter("add_secret_to_check")
     async def add_secret_to_check(
         check_id: str,
         secret_id: str,
@@ -1551,6 +1633,7 @@ if config.is_read_write():
         return await secrets_tools.add_secret_to_check(check_id, secret_id, env_var_name)
 
     @mcp.tool()
+    @tool_filter("update_check_secrets")
     async def update_check_secrets(
         check_id: str,
         secrets: List[dict]
@@ -1571,6 +1654,7 @@ if config.is_read_write():
         return await secrets_tools.update_check_secrets(check_id, secrets)
 
     @mcp.tool()
+    @tool_filter("remove_secret_from_check")
     async def remove_secret_from_check(check_id: str, secret_id: str) -> str:
         """
         Remove a secret association from a check.
@@ -1590,6 +1674,7 @@ if config.is_read_write():
 
 
     @mcp.tool()
+    @tool_filter("create_incident")
     async def create_incident(
         page_id: str,
         name: str,
@@ -1629,6 +1714,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("update_incident")
     async def update_incident(
         page_id: str,
         incident_id: str,
@@ -1704,6 +1790,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("patch_incident")
     async def patch_incident(
         page_id: str,
         incident_id: str,
@@ -1780,6 +1867,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("delete_incident")
     async def delete_incident(page_id: str, incident_id: str) -> str:
         """
         Delete an incident from a status page permanently.
@@ -1798,6 +1886,7 @@ if config.is_read_write():
         return await incidents_tools.delete_incident(page_id, incident_id)
 
     @mcp.tool()
+    @tool_filter("add_incident_update")
     async def add_incident_update(page_id: str, incident_id: str, update_data: dict) -> str:
         """
         Add a new status update to an existing incident.
@@ -1820,6 +1909,7 @@ if config.is_read_write():
         return await incidents_tools.add_incident_update(page_id, incident_id, update_data)
 
     @mcp.tool()
+    @tool_filter("update_incident_update")
     async def update_incident_update(page_id: str, incident_id: str, update_id: str, update_data: dict) -> str:
         """
         Edit an existing incident status update.
@@ -1840,6 +1930,7 @@ if config.is_read_write():
         return await incidents_tools.update_incident_update(page_id, incident_id, update_id, update_data)
 
     @mcp.tool()
+    @tool_filter("delete_incident_update")
     async def delete_incident_update(page_id: str, incident_id: str, update_id: str) -> str:
         """
         Delete a specific incident status update.
@@ -1859,6 +1950,7 @@ if config.is_read_write():
         return await incidents_tools.delete_incident_update(page_id, incident_id, update_id)
 
     @mcp.tool()
+    @tool_filter("create_icmp_check")
     async def create_icmp_check(
         name: str,
         host: str,
@@ -1899,6 +1991,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("create_dns_check")
     async def create_dns_check(
         name: str,
         host: str,
@@ -1942,6 +2035,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("create_synthetic_check")
     async def create_synthetic_check(
         name: str,
         url: str,
@@ -1996,6 +2090,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("create_multistep_check")
     async def create_multistep_check(
         name: str,
         url: str,
@@ -2055,6 +2150,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("execute_custom_check")
     async def execute_custom_check(
         type: str,
         name: str,
@@ -2124,6 +2220,7 @@ if config.is_read_write():
         return await checks_tools.execute_custom_check(type, name, url, host, port, timeout, parameters)
 
     @mcp.tool()
+    @tool_filter("execute_icmp_check")
     async def execute_icmp_check(
         name: str,
         host: str,
@@ -2177,6 +2274,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("execute_dns_check")
     async def execute_dns_check(
         name: str,
         host: str,
@@ -2233,6 +2331,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("execute_synthetic_check")
     async def execute_synthetic_check(
         name: str,
         url: str,
@@ -2283,6 +2382,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("execute_multistep_check")
     async def execute_multistep_check(
         name: str,
         url: str,
@@ -2347,6 +2447,7 @@ if config.is_read_write():
         )
 
     @mcp.tool()
+    @tool_filter("execute_existing_check")
     async def execute_existing_check(check_id: str) -> str:
         """
         Manually trigger an existing monitoring check to run immediately.
@@ -2366,6 +2467,7 @@ if config.is_read_write():
 
 # Register Playwright script generation tools (always available)
 @mcp.tool()
+@tool_filter("generate_synthetic_check_script")
 async def generate_synthetic_check_script(
     description: str,
     target_url: str,
@@ -2394,6 +2496,7 @@ async def generate_synthetic_check_script(
     )
 
 @mcp.tool()
+@tool_filter("generate_api_check_script")
 async def generate_api_check_script(
     url: str,
     description: str,

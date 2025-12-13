@@ -72,6 +72,21 @@ def create_mcp_server(config: Config) -> FastMCP:
         mcp_server = FastMCP(config.server_name, host=config.http_host, port=config.http_port)
     else:
         mcp_server = FastMCP(config.server_name)
+    
+    # Apply tool filtering if configured
+    if config.allowed_tools:
+        logger.info(f"Tool filtering enabled - will only expose {len(config.allowed_tools)} tools")
+        # Store original list_tools method
+        original_list_tools = mcp_server.list_tools
+        
+        # Wrap list_tools to filter tools
+        async def filtered_list_tools():
+            all_tools = await original_list_tools()
+            filtered = [tool for tool in all_tools if tool.name in config.allowed_tools]
+            logger.debug(f"Filtered {len(all_tools)} tools down to {len(filtered)} tools")
+            return filtered
+        
+        mcp_server.list_tools = filtered_list_tools
 
     # Initialize Pingera client for stdio mode (will be overridden per-request in SSE mode)
     pingera_client = PingeraClient(

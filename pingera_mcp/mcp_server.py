@@ -90,18 +90,29 @@ config = Config()
 # Create MCP server
 mcp = create_mcp_server(config)
 
-# Apply tool filtering by overriding _get_tools if configured
+# Apply tool filtering if configured by overriding list_tools at protocol level
 if config.allowed_tools:
     logger.info(f"Tool filtering enabled - will only expose {len(config.allowed_tools)} tools: {config.allowed_tools}")
-    original_get_tools = mcp._get_tools
     
-    def filtered_get_tools():
-        all_tools = original_get_tools()
-        filtered = {name: tool for name, tool in all_tools.items() if name in config.allowed_tools}
-        logger.info(f"Filtered {len(all_tools)} tools down to {len(filtered)} tools")
-        return filtered
+    # Store original list_tools implementation
+    from mcp.server.lowlevel.server import Server as MCPServer
+    original_list_tools = mcp.server.list_tools
     
-    mcp._get_tools = filtered_get_tools
+    # Create filtered version
+    async def filtered_list_tools():
+        all_tools_result = await original_list_tools()
+        filtered_tools = [
+            tool for tool in all_tools_result.tools 
+            if tool.name in config.allowed_tools
+        ]
+        logger.info(f"Filtered {len(all_tools_result.tools)} tools down to {len(filtered_tools)} tools")
+        
+        # Return new ListToolsResult with filtered tools
+        from mcp.types import ListToolsResult
+        return ListToolsResult(tools=filtered_tools)
+    
+    # Override the list_tools method
+    mcp.server.list_tools = filtered_list_tools
 
 # Initialize Pingera client (for module-level usage in stdio mode)
 if config.transport_mode == "stdio":

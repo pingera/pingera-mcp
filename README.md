@@ -97,50 +97,6 @@ async def main():
     print(f"Available tools: {len(tools)}")
 
 asyncio.run(main())
-
-
-### Tool Filtering
-
-You can limit which tools the MCP server exposes to reduce the context window size. This is useful when you only need a specific subset of tools.
-
-#### Command-line Flag (stdio mode)
-
-```bash
-python -m pingera_mcp --tools=list_pages,get_page_details,list_checks
-```
-
-#### HTTP Header (SSE mode)
-
-When making requests in SSE mode, include the `X-MCP-Tools` header:
-
-```bash
-curl -H "Authorization: YOUR_API_KEY" \
-     -H "X-MCP-Tools: list_pages,get_page_details,list_checks" \
-     http://localhost:5000/sse
-```
-
-#### Python Client Example
-
-```python
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-
-server_params = StdioServerParameters(
-    command="python",
-    args=["-m", "pingera_mcp", "--tools=list_pages,list_checks"],
-    env=None
-)
-
-async with stdio_client(server_params) as (read, write):
-    async with ClientSession(read, write) as session:
-        await session.initialize()
-        # Only list_pages and list_checks will be available
-        tools = await session.list_tools()
-```
-
-If the `--tools` flag or `X-MCP-Tools` header is not specified, all tools are exposed as normal.
-
-
 ```
 
 #### SSE Mode Configuration Options

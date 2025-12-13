@@ -49,9 +49,6 @@ class Config:
         
         # Server Name
         self.server_name: str = os.getenv("PINGERA_SERVER_NAME", "Pingera MCP Server")
-        
-        # Tool Filtering (can be set via CLI args or will be None)
-        self.allowed_tools: Optional[set] = None
     
     def is_read_only(self) -> bool:
         """Check if server is in read-only mode."""
@@ -60,14 +57,3 @@ class Config:
     def is_read_write(self) -> bool:
         """Check if server is in read-write mode."""
         return self.mode == OperationMode.READ_WRITE
-    
-    def set_allowed_tools(self, tools_str: str) -> None:
-        """Set allowed tools from comma-separated string."""
-        if tools_str:
-            self.allowed_tools = set(t.strip() for t in tools_str.split(',') if t.strip())
-    
-    def is_tool_allowed(self, tool_name: str) -> bool:
-        """Check if a tool is allowed to be exposed."""
-        if self.allowed_tools is None:
-            return True  # No filtering, allow all
-        return tool_name in self.allowed_tools

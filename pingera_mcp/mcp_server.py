@@ -1,11 +1,9 @@
-
 """
 MCP Server implementation for Pingera monitoring service.
 """
 import logging
 import json
 from typing import Optional, Dict, Any, List
-from functools import wraps
 
 from mcp.server.fastmcp import FastMCP
 
@@ -21,8 +19,8 @@ from pingera_mcp.tools import (
         HeartbeatsTools,
         IncidentsTools,
         PlaywrightGeneratorTools,
-        CheckGroupsTools,
-        SecretsTools,
+        CheckGroupsTools, # Import CheckGroupsTools
+        SecretsTools, # Import SecretsTools
     )
 
 # Configure logging
@@ -31,10 +29,6 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("pingera-mcp-server")
-
-
-
-
 
 def create_mcp_server(config: Config) -> FastMCP:
     """Create and configure MCP server with the given configuration."""
@@ -78,22 +72,6 @@ config = Config()
 # Create MCP server
 mcp = create_mcp_server(config)
 
-# Helper decorator for conditional tool registration
-def tool_filter(tool_name):
-    """Decorator that conditionally registers tools based on allowed_tools config"""
-    def decorator(func):
-        if config.allowed_tools is None or tool_name in config.allowed_tools:
-            # Register the tool
-            return mcp.tool()(func)
-        else:
-            # Don't register - just return the function
-            return func
-    return decorator
-
-# Log filtering status
-if config.allowed_tools:
-    logger.info(f"Limiting exposed tools to: {config.allowed_tools}")
-
 # Initialize Pingera client (for module-level usage in stdio mode)
 if config.transport_mode == "stdio":
     pingera_client = PingeraClient(
@@ -116,31 +94,16 @@ else:
     )
     logger.info(f"SSE mode: Client will be created per-request from Authorization headers")
 
-# Helper function to check if tool should be registered
-def _should_register_tool(tool_name: str) -> bool:
-    """Check if a tool should be registered based on allowed_tools filter."""
-    if config.allowed_tools is None:
-        return True  # No filtering, register all tools
-    return tool_name in config.allowed_tools
-
 # Helper function to update the client for tools
 def _update_tools_client():
     """
     Updates the PingeraClient for each tool instance.
     In SSE mode, this ensures the client is updated with the latest request context.
-    Also handles tool filtering based on X-MCP-Tools header.
     """
     global status_tools, pages_tools, component_tools, checks_tools, alerts_tools, heartbeats_tools, incidents_tools, playwright_tools, check_groups_tools, secrets_tools
 
     # In SSE mode, get the client from the request context
     if config.transport_mode != "stdio":
-        # Check for tool filtering header
-        from pingera_mcp.auth import get_allowed_tools_from_request
-        tools_header = get_allowed_tools_from_request(config)
-        if tools_header:
-            # Temporarily set allowed tools for this request
-            config.set_allowed_tools(tools_header)
-        
         request_client = get_request_client(config, pingera_client)
         if request_client:
             status_tools.client = request_client
@@ -163,12 +126,11 @@ alerts_tools = AlertsTools(pingera_client)
 heartbeats_tools = HeartbeatsTools(pingera_client)
 incidents_tools = IncidentsTools(pingera_client)
 playwright_tools = PlaywrightGeneratorTools(pingera_client)
-check_groups_tools = CheckGroupsTools(pingera_client)
-secrets_tools = SecretsTools(pingera_client)
+check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
+secrets_tools = SecretsTools(pingera_client) # Initialize SecretsTools
 
 # Register read-only tools
 @mcp.tool()
-@tool_filter("list_pages")
 async def list_pages(
     page: Optional[int] = None,
     per_page: Optional[int] = None,
@@ -190,7 +152,7 @@ async def list_pages(
     _update_tools_client()
     return await pages_tools.list_pages(page, per_page, status)
 
-@tool_filter("get_page_details")
+@mcp.tool()
 async def get_page_details(page_id: int) -> str:
     """
     Get detailed information about a specific status page.
@@ -204,7 +166,7 @@ async def get_page_details(page_id: int) -> str:
     _update_tools_client()
     return await pages_tools.get_page_details(page_id)
 
-@tool_filter("test_pingera_connection")
+@mcp.tool()
 async def test_pingera_connection() -> str:
     """
     Test the connection to Pingera API and verify authentication.
@@ -218,7 +180,7 @@ async def test_pingera_connection() -> str:
     _update_tools_client()
     return await status_tools.test_pingera_connection()
 
-@tool_filter("list_component_groups")
+@mcp.tool()
 async def list_component_groups(
     page_id: str,
     show_deleted: Optional[bool] = False
@@ -240,7 +202,7 @@ async def list_component_groups(
     _update_tools_client()
     return await component_tools.list_component_groups(page_id, show_deleted)
 
-@tool_filter("list_components")
+@mcp.tool()
 async def list_components(
     page_id: str,
     page: Optional[int] = None,
@@ -264,7 +226,7 @@ async def list_components(
     _update_tools_client()
     return await component_tools.list_components(page_id, page, page_size)
 
-@tool_filter("get_component_details")
+@mcp.tool()
 async def get_component_details(page_id: str, component_id: str) -> str:
     """
     Get detailed information about a specific component.
@@ -282,7 +244,7 @@ async def get_component_details(page_id: str, component_id: str) -> str:
     _update_tools_client()
     return await component_tools.get_component_details(page_id, component_id)
 
-@tool_filter("list_checks")
+@mcp.tool()
 async def list_checks(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
@@ -312,7 +274,6 @@ async def list_checks(
     return await checks_tools.list_checks(page, page_size, type, status, group_id, name)
 
 @mcp.tool()
-@tool_filter("get_check_details")
 async def get_check_details(check_id: str) -> str:
     """
     Get detailed configuration and settings for a specific monitoring check.
@@ -328,7 +289,6 @@ async def get_check_details(check_id: str) -> str:
     return await checks_tools.get_check_details(check_id)
 
 @mcp.tool()
-@tool_filter("get_check_results")
 async def get_check_results(
     check_id: str,
     from_date: Optional[str] = None,
@@ -356,7 +316,6 @@ async def get_check_results(
     return await checks_tools.get_check_results(check_id, from_date, to_date, page, page_size)
 
 @mcp.tool()
-@tool_filter("get_check_statistics")
 async def get_check_statistics(check_id: str) -> str:
     """
     Get statistical summary and performance metrics for a monitoring check.
@@ -374,7 +333,6 @@ async def get_check_statistics(check_id: str) -> str:
     return await checks_tools.get_check_statistics(check_id)
 
 @mcp.tool()
-@tool_filter("list_check_jobs")
 async def list_check_jobs() -> str:
     """
     List all currently running or queued check execution jobs.
@@ -389,7 +347,6 @@ async def list_check_jobs() -> str:
     return await checks_tools.list_check_jobs()
 
 @mcp.tool()
-@tool_filter("get_check_job_details")
 async def get_check_job_details(job_id: str) -> str:
     """
     Get detailed information about a specific check execution job.
@@ -404,7 +361,6 @@ async def get_check_job_details(job_id: str) -> str:
     return await checks_tools.get_check_job_details(job_id)
 
 @mcp.tool()
-@tool_filter("get_unified_results")
 async def get_unified_results(
     check_ids: Optional[List[str]] = None,
     from_date: Optional[str] = None,
@@ -434,7 +390,6 @@ async def get_unified_results(
     return await checks_tools.get_unified_results(check_ids, from_date, to_date, status, page, page_size)
 
 @mcp.tool()
-@tool_filter("get_unified_statistics")
 async def get_unified_statistics(
     check_ids: Optional[List[str]] = None,
     from_date: Optional[str] = None,
@@ -458,7 +413,512 @@ async def get_unified_statistics(
     return await checks_tools.get_unified_statistics(check_ids, from_date, to_date)
 
 @mcp.tool()
-@tool_filter("get_on_demand_job_status")
+async def create_icmp_check(
+    name: str,
+    host: str,
+    interval: int = 300,
+    timeout: int = 30,
+    active: bool = True,
+    probe_count: Optional[int] = 4,
+    ip_version: Optional[str] = "auto",
+    probe_interval: Optional[float] = 1.0,
+    probe_timeout: Optional[float] = 1.0,
+    max_packet_loss: Optional[float] = None
+) -> str:
+    """
+    Create a permanent ICMP (ping) monitoring check.
+
+    ICMP checks monitor network connectivity and latency to hosts using ICMP echo requests (ping).
+    They are useful for monitoring server availability, network latency, and packet loss.
+
+    Args:
+        name: A descriptive name for this ICMP check (required)
+        host: Hostname or IP address to ping (required, max 255 characters)
+        interval: How often to run the check in seconds (default: 300, range: 30-86400)
+        timeout: Overall check timeout in seconds (default: 30, range: 1-30)
+        active: Whether the check is active (default: True)
+        probe_count: Number of ping probes to send (default: 4, range: 1-100)
+        ip_version: IP version preference - 'v4', 'v6', or 'auto' (default: 'auto', prefers IPv6)
+        probe_interval: Interval between individual probes in seconds (default: 1.0, range: 0.001-10)
+        probe_timeout: Timeout for each individual probe in seconds (default: 1.0, range: 0.1-30)
+        max_packet_loss: Maximum acceptable packet loss percentage (range: 0-100, optional)
+
+    Returns:
+        JSON with created ICMP check details including check ID and configuration.
+    """
+    _update_tools_client()
+    return await checks_tools.create_icmp_check(
+        name, host, interval, timeout, active,
+        probe_count, ip_version, probe_interval, probe_timeout, max_packet_loss
+    )
+
+@mcp.tool()
+async def create_dns_check(
+    name: str,
+    host: str,
+    interval: int = 300,
+    timeout: int = 10,
+    active: bool = True,
+    record_type: Optional[str] = "A",
+    dns_servers: Optional[List[str]] = None,
+    expected_answers: Optional[List[str]] = None,
+    validation_mode: Optional[str] = "contains_all"
+) -> str:
+    """
+    Create a permanent DNS monitoring check.
+
+    DNS checks monitor DNS resolution and validate DNS records. They can verify that
+    your domain resolves correctly and returns expected IP addresses or other DNS records.
+
+    Args:
+        name: A descriptive name for this DNS check (required)
+        host: Domain name to query (required, e.g., 'example.com')
+        interval: How often to run the check in seconds (default: 300, range: 30-86400)
+        timeout: Check timeout in seconds (default: 10, range: 1-30)
+        active: Whether the check is active (default: True)
+        record_type: DNS record type to query (default: 'A')
+                    Supported types: A, AAAA, MX, TXT, CNAME, NS, SOA, PTR, SRV, CAA, etc.
+        dns_servers: List of custom DNS server IP addresses to use (optional)
+                    If not specified, uses system default DNS servers
+        expected_answers: List of expected DNS answers for validation (optional)
+                         The check will fail if actual answers don't match expectations
+        validation_mode: How to validate answers (default: 'contains_all')
+                        - 'contains_all': Actual answers must include all expected answers
+                        - 'exact': Actual answers must exactly match expected answers
+
+    Returns:
+        JSON with created DNS check details including check ID and configuration.
+    """
+    _update_tools_client()
+    return await checks_tools.create_dns_check(
+        name, host, interval, timeout, active,
+        record_type, dns_servers, expected_answers, validation_mode
+    )
+
+@mcp.tool()
+async def create_synthetic_check(
+    name: str,
+    url: str,
+    pw_script: str,
+    interval: int = 300,
+    timeout: int = 60,
+    active: bool = True
+) -> str:
+    """
+    Create a permanent synthetic browser monitoring check using Playwright.
+
+    Synthetic checks simulate real user interactions with your website using a headless
+    browser. They can navigate pages, fill forms, click buttons, and verify page content.
+    The check uses Playwright scripts written in JavaScript or TypeScript.
+
+    IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
+    The script should use the Playwright test framework and include proper assertions.
+
+    Args:
+        name: A descriptive name for this synthetic check (required, max 100 characters)
+        url: The starting URL for the browser test (required)
+        pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
+                  The script must be a valid Playwright test that includes:
+                  - Import statements for Playwright test framework
+                  - Test function with browser automation steps
+                  - Assertions using expect() to verify expected behavior
+                  Example structure:
+                  ```javascript
+                  const { test, expect } = require('@playwright/test');
+                  test('my test', async ({ page }) => {
+                    await page.goto('https://example.com');
+                    await expect(page.locator('h1')).toContainText('Example');
+                  });
+                  ```
+        interval: How often to run the check in seconds (default: 300, range: 30-86400)
+        timeout: Overall check timeout in seconds (default: 60, range: 1-300)
+        active: Whether the check is active (default: True)
+
+    Returns:
+        JSON with created synthetic check details including check ID and configuration.
+    """
+    _update_tools_client()
+    parameters = {"pw_script": pw_script}
+    return await checks_tools.create_check(
+        name=name,
+        type="synthetic",
+        url=url,
+        interval=interval,
+        timeout=timeout,
+        active=active,
+        parameters=parameters
+    )
+
+@mcp.tool()
+async def create_multistep_check(
+    name: str,
+    url: str,
+    pw_script: str,
+    interval: int = 300,
+    timeout: int = 60,
+    active: bool = True
+) -> str:
+    """
+    Create a permanent multi-step monitoring check using Playwright.
+
+    Multi-step checks are similar to synthetic checks but are specifically designed for
+    complex, multi-page workflows like checkout processes, login flows, or API sequences.
+    They use Playwright scripts to automate and verify multi-step user journeys.
+
+    IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
+    The script should include all steps of your workflow with proper error handling.
+
+    Args:
+        name: A descriptive name for this multi-step check (required, max 100 characters)
+        url: The starting URL for the workflow (required)
+        pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
+                  The script must be a valid Playwright test that includes:
+                  - Import statements for Playwright test framework
+                  - Test function with all workflow steps
+                  - Assertions at each critical step to verify progress
+                  - Proper error handling for failed steps
+                  Example for a login flow:
+                  ```javascript
+                  const { test, expect } = require('@playwright/test');
+                  test('login workflow', async ({ page }) => {
+                    await page.goto('https://example.com/login');
+                    await page.fill('#username', 'testuser');
+                    await page.fill('#password', 'testpass');
+                    await page.click('button[type="submit"]');
+                    await expect(page).toHaveURL(/.*dashboard/);
+                    await expect(page.locator('.welcome')).toBeVisible();
+                  });
+                  ```
+        interval: How often to run the check in seconds (default: 300, range: 30-86400)
+        timeout: Overall check timeout in seconds (default: 60, range: 1-300)
+        active: Whether the check is active (default: True)
+
+    Returns:
+        JSON with created multi-step check details including check ID and configuration.
+    """
+    _update_tools_client()
+    parameters = {"pw_script": pw_script}
+    return await checks_tools.create_check(
+        name=name,
+        type="multistep",
+        url=url,
+        interval=interval,
+        timeout=timeout,
+        active=active,
+        parameters=parameters
+    )
+
+@mcp.tool()
+async def execute_custom_check(
+    type: str,
+    name: str,
+    url: Optional[str] = None,
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    timeout: Optional[int] = 30,
+    parameters: Optional[dict] = None
+) -> str:
+    """
+    Execute a one-time custom monitoring check on any URL or service.
+
+    This allows you to test connectivity and performance to any endpoint
+    without creating a permanent monitoring check. Useful for troubleshooting
+    or testing new services before setting up regular monitoring.
+
+    Args:
+        type: Type of check ('web', 'api', 'tcp', 'ssl', 'icmp', 'dns', 'multistep', 'synthetic') - REQUIRED
+        name: A user-friendly name for the custom check (max 100 characters) - REQUIRED
+        url: The URL to monitor (required for web/api checks). Supports international domain names.
+        host: The hostname or IP address to monitor (required for TCP/SSL/ICMP/DNS checks, max 255 characters)
+        port: The port number to monitor (required for TCP/SSL checks, range: 1-65535)
+        timeout: Timeout in seconds (range: 1-30, default: 30)
+        parameters: Additional parameters specific to the check type.
+
+    For 'synthetic' or 'multistep' checks, the 'parameters' dictionary must contain a 'pw_script' key.
+
+    For 'icmp' checks, parameters can include:
+    - probe_count (1-100, default: 4)
+    - ip_version ('v4', 'v6', 'auto')
+    - probe_interval (0.001-10 seconds)
+    - probe_timeout (0.1-30 seconds)
+    - assertions: {max_packet_loss: 0-100}
+
+    For 'dns' checks, parameters can include:
+    - record_type ('A', 'AAAA', 'MX', 'TXT', etc.)
+    - dns_servers (list of DNS server IPs)
+    - expected_answers (list of expected answers)
+    - validation_mode ('contains_all' or 'exact')
+
+    Example for an 'icmp' check:
+    {
+      "type": "icmp",
+      "name": "Ping Test",
+      "host": "example.com",
+      "parameters": {
+        "probe_count": 10,
+        "ip_version": "v4"
+      }
+    }
+
+    Example for a 'dns' check:
+    {
+      "type": "dns",
+      "name": "DNS Resolution Test",
+      "host": "example.com",
+      "parameters": {
+        "record_type": "A",
+        "expected_answers": ["93.184.216.34"]
+      }
+    }
+
+    Returns:
+        JSON with the job id that is executed asynchronously.
+    """
+    _update_tools_client()
+    return await checks_tools.execute_custom_check(type, name, url, host, port, timeout, parameters)
+
+@mcp.tool()
+async def execute_icmp_check(
+    name: str,
+    host: str,
+    timeout: int = 30,
+    probe_count: Optional[int] = 4,
+    ip_version: Optional[str] = "auto",
+    probe_interval: Optional[float] = 1.0,
+    probe_timeout: Optional[float] = 1.0,
+    max_packet_loss: Optional[float] = None
+) -> str:
+    """
+    Execute a one-time ICMP (ping) check without creating a permanent monitor.
+
+    This performs an immediate ICMP ping test to check network connectivity and latency
+    to a host. Useful for quick diagnostics or testing before setting up permanent monitoring.
+
+    Args:
+        name: A descriptive name for this test (required, max 100 characters)
+        host: Hostname or IP address to ping (required, max 255 characters)
+        timeout: Overall check timeout in seconds (default: 30, range: 1-30)
+        probe_count: Number of ping probes to send (default: 4, range: 1-100)
+        ip_version: IP version preference - 'v4', 'v6', or 'auto' (default: 'auto', prefers IPv6)
+        probe_interval: Interval between individual probes in seconds (default: 1.0, range: 0.001-10)
+        probe_timeout: Timeout for each individual probe in seconds (default: 1.0, range: 0.1-30)
+        max_packet_loss: Maximum acceptable packet loss percentage (range: 0-100, optional)
+                        If specified and exceeded, the check will fail
+
+    Returns:
+        JSON with job ID for tracking the asynchronous execution.
+        Use get_on_demand_job_status() to check results.
+    """
+    _update_tools_client()
+    parameters = {}
+    if probe_count is not None:
+        parameters["probe_count"] = probe_count
+    if ip_version is not None:
+        parameters["ip_version"] = ip_version
+    if probe_interval is not None:
+        parameters["probe_interval"] = probe_interval
+    if probe_timeout is not None:
+        parameters["probe_timeout"] = probe_timeout
+    if max_packet_loss is not None:
+        parameters["assertions"] = {"max_packet_loss": max_packet_loss}
+    
+    return await checks_tools.execute_custom_check(
+        type="icmp",
+        name=name,
+        host=host,
+        timeout=timeout,
+        parameters=parameters if parameters else None
+    )
+
+@mcp.tool()
+async def execute_dns_check(
+    name: str,
+    host: str,
+    timeout: int = 10,
+    record_type: Optional[str] = "A",
+    dns_servers: Optional[List[str]] = None,
+    expected_answers: Optional[List[str]] = None,
+    validation_mode: Optional[str] = "contains_all"
+) -> str:
+    """
+    Execute a one-time DNS resolution check without creating a permanent monitor.
+
+    This performs an immediate DNS query to verify domain resolution and optionally
+    validate that DNS records match expected values. Useful for troubleshooting DNS
+    issues or testing DNS changes before they propagate.
+
+    Args:
+        name: A descriptive name for this test (required, max 100 characters)
+        host: Domain name to query (required, e.g., 'example.com')
+        timeout: Check timeout in seconds (default: 10, range: 1-30)
+        record_type: DNS record type to query (default: 'A')
+                    Supported types: A, AAAA, MX, TXT, CNAME, NS, SOA, PTR, SRV, CAA, etc.
+        dns_servers: List of custom DNS server IP addresses to use (optional)
+                    If not specified, uses system default DNS servers
+                    Example: ["8.8.8.8", "1.1.1.1"]
+        expected_answers: List of expected DNS answers for validation (optional)
+                         The check will fail if actual answers don't match expectations
+                         Example for A record: ["93.184.216.34"]
+        validation_mode: How to validate answers (default: 'contains_all')
+                        - 'contains_all': Actual answers must include all expected answers
+                        - 'exact': Actual answers must exactly match expected answers (order matters)
+
+    Returns:
+        JSON with job ID for tracking the asynchronous execution.
+        Use get_on_demand_job_status() to check results.
+    """
+    _update_tools_client()
+    parameters = {}
+    if record_type is not None:
+        parameters["record_type"] = record_type
+    if dns_servers is not None:
+        parameters["dns_servers"] = dns_servers
+    if expected_answers is not None:
+        parameters["expected_answers"] = expected_answers
+    if validation_mode is not None:
+        parameters["validation_mode"] = validation_mode
+    
+    return await checks_tools.execute_custom_check(
+        type="dns",
+        name=name,
+        host=host,
+        timeout=timeout,
+        parameters=parameters if parameters else None
+    )
+
+@mcp.tool()
+async def execute_synthetic_check(
+    name: str,
+    url: str,
+    pw_script: str,
+    timeout: int = 60
+) -> str:
+    """
+    Execute a one-time synthetic browser check without creating a permanent monitor.
+
+    This performs an immediate browser automation test using Playwright to simulate
+    real user interactions. Useful for testing UI workflows, verifying page functionality,
+    or troubleshooting before setting up permanent monitoring.
+
+    IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
+
+    Args:
+        name: A descriptive name for this test (required, max 100 characters)
+        url: The starting URL for the browser test (required)
+        pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
+                  The script must be a valid Playwright test that includes:
+                  - Import statements: const { test, expect } = require('@playwright/test');
+                  - Test function with browser automation steps
+                  - Assertions using expect() to verify expected behavior
+                  
+                  Example script:
+                  ```javascript
+                  const { test, expect } = require('@playwright/test');
+                  test('homepage test', async ({ page }) => {
+                    await page.goto('https://example.com');
+                    await expect(page.locator('h1')).toContainText('Example Domain');
+                    await expect(page.locator('p')).toBeVisible();
+                  });
+                  ```
+        timeout: Overall check timeout in seconds (default: 60, range: 1-300)
+
+    Returns:
+        JSON with job ID for tracking the asynchronous execution.
+        Use get_on_demand_job_status() to check results.
+    """
+    _update_tools_client()
+    parameters = {"pw_script": pw_script}
+    return await checks_tools.execute_custom_check(
+        type="synthetic",
+        name=name,
+        url=url,
+        timeout=timeout,
+        parameters=parameters
+    )
+
+@mcp.tool()
+async def execute_multistep_check(
+    name: str,
+    url: str,
+    pw_script: str,
+    timeout: int = 60
+) -> str:
+    """
+    Execute a one-time multi-step workflow check without creating a permanent monitor.
+
+    This performs an immediate browser automation test for complex, multi-page workflows
+    using Playwright. Ideal for testing login flows, checkout processes, or multi-step
+    forms before setting up permanent monitoring.
+
+    IMPORTANT: You must provide a complete Playwright script in the pw_script parameter
+    that covers all steps in your workflow.
+
+    Args:
+        name: A descriptive name for this test (required, max 100 characters)
+        url: The starting URL for the workflow (required)
+        pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
+                  The script must be a valid Playwright test that includes:
+                  - Import statements: const { test, expect } = require('@playwright/test');
+                  - Test function with all workflow steps
+                  - Assertions at each critical step to verify progress
+                  - Proper error handling for failed steps
+                  
+                  Example script for a login workflow:
+                  ```javascript
+                  const { test, expect } = require('@playwright/test');
+                  test('login workflow', async ({ page }) => {
+                    // Step 1: Navigate to login page
+                    await page.goto('https://example.com/login');
+                    await expect(page.locator('form#login')).toBeVisible();
+                    
+                    // Step 2: Fill credentials
+                    await page.fill('#username', 'testuser');
+                    await page.fill('#password', 'testpass');
+                    
+                    // Step 3: Submit form
+                    await page.click('button[type="submit"]');
+                    
+                    // Step 4: Verify successful login
+                    await expect(page).toHaveURL(/.*dashboard/);
+                    await expect(page.locator('.welcome-message')).toBeVisible();
+                  });
+                  ```
+        timeout: Overall check timeout in seconds (default: 60, range: 1-300)
+                Should be long enough to complete all workflow steps
+
+    Returns:
+        JSON with job ID for tracking the asynchronous execution.
+        Use get_on_demand_job_status() to check results.
+    """
+    _update_tools_client()
+    parameters = {"pw_script": pw_script}
+    return await checks_tools.execute_custom_check(
+        type="multistep",
+        name=name,
+        url=url,
+        timeout=timeout,
+        parameters=parameters
+    )
+
+@mcp.tool()
+async def execute_existing_check(check_id: str) -> str:
+    """
+    Manually trigger an existing monitoring check to run immediately.
+
+    Forces an immediate execution of a configured check, bypassing the normal
+    scheduled interval. Useful for testing after configuration changes or
+    getting fresh data on demand.
+
+    Args:
+        check_id: The unique identifier of the check to execute
+
+    Returns:
+        JSON with execution job details and immediate results if available.
+    """
+    _update_tools_client()
+    return await checks_tools.execute_existing_check(check_id)
+
+@mcp.tool()
 async def get_on_demand_job_status(job_id: str) -> str:
     """
     Check the status and results of an on-demand check execution job.
@@ -476,7 +936,6 @@ async def get_on_demand_job_status(job_id: str) -> str:
     return await checks_tools.get_on_demand_job_status(job_id)
 
 @mcp.tool()
-@tool_filter("list_on_demand_checks")
 async def list_on_demand_checks(
     page: Optional[int] = None,
     page_size: Optional[int] = None
@@ -496,7 +955,6 @@ async def list_on_demand_checks(
 
 # --- Secrets Read-Only Tools ---
 @mcp.tool()
-@tool_filter("list_secrets")
 async def list_secrets(
     page: Optional[int] = None,
     page_size: Optional[int] = None
@@ -518,7 +976,6 @@ async def list_secrets(
     return await secrets_tools.list_secrets(page, page_size)
 
 @mcp.tool()
-@tool_filter("get_secret_details")
 async def get_secret_details(secret_id: str) -> str:
     """
     Get detailed information about a specific secret.
@@ -533,7 +990,6 @@ async def get_secret_details(secret_id: str) -> str:
     return await secrets_tools.get_secret_details(secret_id)
 
 @mcp.tool()
-@tool_filter("get_check_secrets")
 async def get_check_secrets(check_id: str) -> str:
     """
     Get all secrets associated with a monitoring check.
@@ -553,7 +1009,6 @@ async def get_check_secrets(check_id: str) -> str:
 
 # --- New Check Groups Tools ---
 @mcp.tool()
-@tool_filter("list_check_groups")
 async def list_check_groups(
     page: Optional[int] = None,
     page_size: Optional[int] = None
@@ -575,7 +1030,6 @@ async def list_check_groups(
     return await check_groups_tools.list_check_groups(page, page_size)
 
 @mcp.tool()
-@tool_filter("get_check_group_details")
 async def get_check_group_details(group_id: str) -> str:
     """
     Get detailed information about a specific check group.
@@ -590,7 +1044,6 @@ async def get_check_group_details(group_id: str) -> str:
     return await check_groups_tools.get_check_group_details(group_id)
 
 @mcp.tool()
-@tool_filter("get_checks_in_group")
 async def get_checks_in_group(
     group_id: str,
     page: Optional[int] = None,
@@ -615,7 +1068,6 @@ async def get_checks_in_group(
 # --- End New Check Groups Tools ---
 
 @mcp.tool()
-@tool_filter("list_alerts")
 async def list_alerts(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
@@ -640,7 +1092,6 @@ async def list_alerts(
     return await alerts_tools.list_alerts(page, page_size, status)
 
 @mcp.tool()
-@tool_filter("get_alert_details")
 async def get_alert_details(alert_id: str) -> str:
     """
     Get detailed configuration for a specific alert rule.
@@ -658,7 +1109,6 @@ async def get_alert_details(alert_id: str) -> str:
     return await alerts_tools.get_alert_details(alert_id)
 
 @mcp.tool()
-@tool_filter("get_alert_statistics")
 async def get_alert_statistics() -> str:
     """
     Get statistical overview of all alert activity.
@@ -673,7 +1123,6 @@ async def get_alert_statistics() -> str:
     return await alerts_tools.get_alert_statistics()
 
 @mcp.tool()
-@tool_filter("list_alert_channels")
 async def list_alert_channels() -> str:
     """
     List all configured notification channels for alerts.
@@ -689,7 +1138,6 @@ async def list_alert_channels() -> str:
     return await alerts_tools.list_alert_channels()
 
 @mcp.tool()
-@tool_filter("list_alert_rules")
 async def list_alert_rules() -> str:
     """
     List all alert rules and their trigger conditions.
@@ -705,7 +1153,6 @@ async def list_alert_rules() -> str:
 
 # Register heartbeat tools
 @mcp.tool()
-@tool_filter("list_heartbeats")
 async def list_heartbeats(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
@@ -730,7 +1177,6 @@ async def list_heartbeats(
     return await heartbeats_tools.list_heartbeats(page, page_size, status)
 
 @mcp.tool()
-@tool_filter("get_heartbeat_details")
 async def get_heartbeat_details(heartbeat_id: str) -> str:
     """
     Get detailed information about a specific heartbeat monitor.
@@ -748,7 +1194,6 @@ async def get_heartbeat_details(heartbeat_id: str) -> str:
     return await heartbeats_tools.get_heartbeat_details(heartbeat_id)
 
 @mcp.tool()
-@tool_filter("create_heartbeat")
 async def create_heartbeat(heartbeat_data: dict) -> str:
     """
     Create a new heartbeat monitor for cron jobs or scheduled tasks.
@@ -766,7 +1211,6 @@ async def create_heartbeat(heartbeat_data: dict) -> str:
     return await heartbeats_tools.create_heartbeat(heartbeat_data)
 
 @mcp.tool()
-@tool_filter("update_heartbeat")
 async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict) -> str:
     """
     Update configuration for an existing heartbeat monitor.
@@ -785,7 +1229,6 @@ async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict) -> str:
     return await heartbeats_tools.update_heartbeat(heartbeat_id, heartbeat_data)
 
 @mcp.tool()
-@tool_filter("delete_heartbeat")
 async def delete_heartbeat(heartbeat_id: str) -> str:
     """
     Delete a heartbeat monitor permanently.
@@ -803,7 +1246,6 @@ async def delete_heartbeat(heartbeat_id: str) -> str:
     return await heartbeats_tools.delete_heartbeat(heartbeat_id)
 
 @mcp.tool()
-@tool_filter("send_heartbeat_ping")
 async def send_heartbeat_ping(heartbeat_id: str) -> str:
     """
     Manually send a ping signal to a heartbeat monitor.
@@ -821,7 +1263,6 @@ async def send_heartbeat_ping(heartbeat_id: str) -> str:
     return await heartbeats_tools.send_heartbeat_ping(heartbeat_id)
 
 @mcp.tool()
-@tool_filter("get_heartbeat_logs")
 async def get_heartbeat_logs(
     heartbeat_id: str,
     from_date: Optional[str] = None,
@@ -849,7 +1290,6 @@ async def get_heartbeat_logs(
     return await heartbeats_tools.get_heartbeat_logs(heartbeat_id, from_date, to_date, page, page_size)
 
 @mcp.tool()
-@tool_filter("list_incidents")
 async def list_incidents(
     page_id: str,
     page: Optional[int] = None,
@@ -876,7 +1316,6 @@ async def list_incidents(
     return await incidents_tools.list_incidents(page_id, page, page_size, status)
 
 @mcp.tool()
-@tool_filter("get_incident_details")
 async def get_incident_details(page_id: str, incident_id: str) -> str:
     """
     Get detailed information about a specific incident.
@@ -895,7 +1334,6 @@ async def get_incident_details(page_id: str, incident_id: str) -> str:
     return await incidents_tools.get_incident_details(page_id, incident_id)
 
 @mcp.tool()
-@tool_filter("get_incident_updates")
 async def get_incident_updates(page_id: str, incident_id: str) -> str:
     """
     Get all status updates posted during an incident.
@@ -914,7 +1352,6 @@ async def get_incident_updates(page_id: str, incident_id: str) -> str:
     return await incidents_tools.get_incident_updates(page_id, incident_id)
 
 @mcp.tool()
-@tool_filter("get_incident_update_details")
 async def get_incident_update_details(page_id: str, incident_id: str, update_id: str) -> str:
     """
     Get detailed information about a specific incident update.
@@ -939,7 +1376,6 @@ if config.is_read_write():
     logger.info("Read-write mode enabled - adding write operations")
 
     @mcp.tool()
-    @tool_filter("create_page")
     async def create_page(
         name: str,
         subdomain: Optional[str] = None,
@@ -1015,7 +1451,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("update_page")
     async def update_page(
         page_id: str,
         name: Optional[str] = None,
@@ -1097,7 +1532,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("patch_page")
     async def patch_page(
         page_id: str,
         name: Optional[str] = None,
@@ -1180,7 +1614,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("delete_page")
     async def delete_page(page_id: str) -> str:
         """
         Permanently delete a status page and all its associated data.
@@ -1198,7 +1631,6 @@ if config.is_read_write():
         return await pages_tools.delete_page(page_id)
 
     @mcp.tool()
-    @tool_filter("create_component")
     async def create_component(
         page_id: str,
         name: str,
@@ -1226,6 +1658,7 @@ if config.is_read_write():
             position: Display order position on the status page
             showcase: Whether to highlight this component prominently
             status: Initial status ('operational', 'degraded_performance', 'partial_outage', 'major_outage')
+            **kwargs: Additional component configuration
 
         Returns:
             JSON with created component details including ID and configuration.
@@ -1244,7 +1677,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("update_component")
     async def update_component(
         page_id: str,
         component_id: str,
@@ -1275,6 +1707,7 @@ if config.is_read_write():
             position: New display position
             showcase: Whether to highlight prominently
             status: New status setting
+            **kwargs: Additional configuration updates
 
         Returns:
             JSON with updated component details and configuration.
@@ -1286,7 +1719,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("patch_component")
     async def patch_component(
         page_id: str, 
         component_id: str,
@@ -1330,7 +1762,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("delete_component")
     async def delete_component(page_id: str, component_id: str) -> str:
         """
         Delete a component from a status page permanently.
@@ -1349,7 +1780,6 @@ if config.is_read_write():
         return await component_tools.delete_component(page_id, component_id)
 
     @mcp.tool()
-    @tool_filter("create_check")
     async def create_check(
         name: str,
         type: str,
@@ -1397,7 +1827,6 @@ if config.is_read_write():
 
 
     @mcp.tool()
-    @tool_filter("update_check")
     async def update_check(
         check_id: str,
         name: Optional[str] = None,
@@ -1446,7 +1875,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("delete_check")
     async def delete_check(check_id: str) -> str:
         """
         Delete a monitoring check permanently.
@@ -1464,7 +1892,6 @@ if config.is_read_write():
         return await checks_tools.delete_check(check_id)
 
     @mcp.tool()
-    @tool_filter("pause_check")
     async def pause_check(check_id: str) -> str:
         """
         Temporarily pause a monitoring check without deleting it.
@@ -1482,7 +1909,6 @@ if config.is_read_write():
         return await checks_tools.pause_check(check_id)
 
     @mcp.tool()
-    @tool_filter("resume_check")
     async def resume_check(check_id: str) -> str:
         """
         Resume a previously paused monitoring check.
@@ -1500,7 +1926,6 @@ if config.is_read_write():
         return await checks_tools.resume_check(check_id)
 
     @mcp.tool()
-    @tool_filter("create_alert")
     async def create_alert(alert_data: dict) -> str:
         """
         Create a new alert rule to get notified when issues are detected.
@@ -1523,7 +1948,6 @@ if config.is_read_write():
         return await alerts_tools.create_alert(alert_data)
 
     @mcp.tool()
-    @tool_filter("update_alert")
     async def update_alert(alert_id: str, alert_data: dict) -> str:
         """
         Update configuration for an existing alert rule.
@@ -1542,7 +1966,6 @@ if config.is_read_write():
         return await alerts_tools.update_alert(alert_id, alert_data)
 
     @mcp.tool()
-    @tool_filter("delete_alert")
     async def delete_alert(alert_id: str) -> str:
         """
         Delete an alert rule permanently.
@@ -1561,7 +1984,6 @@ if config.is_read_write():
 
     # --- Secrets Write Tools ---
     @mcp.tool()
-    @tool_filter("create_secret")
     async def create_secret(name: str, value: str) -> str:
         """
         Create a new organization secret.
@@ -1580,7 +2002,6 @@ if config.is_read_write():
         return await secrets_tools.create_secret(name, value)
 
     @mcp.tool()
-    @tool_filter("update_secret")
     async def update_secret(secret_id: str, value: str) -> str:
         """
         Update a secret's value.
@@ -1596,7 +2017,6 @@ if config.is_read_write():
         return await secrets_tools.update_secret(secret_id, value)
 
     @mcp.tool()
-    @tool_filter("delete_secret")
     async def delete_secret(secret_id: str) -> str:
         """
         Delete a secret permanently.
@@ -1614,7 +2034,6 @@ if config.is_read_write():
         return await secrets_tools.delete_secret(secret_id)
 
     @mcp.tool()
-    @tool_filter("add_secret_to_check")
     async def add_secret_to_check(
         check_id: str,
         secret_id: str,
@@ -1638,7 +2057,6 @@ if config.is_read_write():
         return await secrets_tools.add_secret_to_check(check_id, secret_id, env_var_name)
 
     @mcp.tool()
-    @tool_filter("update_check_secrets")
     async def update_check_secrets(
         check_id: str,
         secrets: List[dict]
@@ -1659,7 +2077,6 @@ if config.is_read_write():
         return await secrets_tools.update_check_secrets(check_id, secrets)
 
     @mcp.tool()
-    @tool_filter("remove_secret_from_check")
     async def remove_secret_from_check(check_id: str, secret_id: str) -> str:
         """
         Remove a secret association from a check.
@@ -1679,7 +2096,6 @@ if config.is_read_write():
 
 
     @mcp.tool()
-    @tool_filter("create_incident")
     async def create_incident(
         page_id: str,
         name: str,
@@ -1719,7 +2135,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("update_incident")
     async def update_incident(
         page_id: str,
         incident_id: str,
@@ -1795,7 +2210,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("patch_incident")
     async def patch_incident(
         page_id: str,
         incident_id: str,
@@ -1872,7 +2286,6 @@ if config.is_read_write():
         )
 
     @mcp.tool()
-    @tool_filter("delete_incident")
     async def delete_incident(page_id: str, incident_id: str) -> str:
         """
         Delete an incident from a status page permanently.
@@ -1891,7 +2304,6 @@ if config.is_read_write():
         return await incidents_tools.delete_incident(page_id, incident_id)
 
     @mcp.tool()
-    @tool_filter("add_incident_update")
     async def add_incident_update(page_id: str, incident_id: str, update_data: dict) -> str:
         """
         Add a new status update to an existing incident.
@@ -1914,7 +2326,6 @@ if config.is_read_write():
         return await incidents_tools.add_incident_update(page_id, incident_id, update_data)
 
     @mcp.tool()
-    @tool_filter("update_incident_update")
     async def update_incident_update(page_id: str, incident_id: str, update_id: str, update_data: dict) -> str:
         """
         Edit an existing incident status update.
@@ -1935,7 +2346,6 @@ if config.is_read_write():
         return await incidents_tools.update_incident_update(page_id, incident_id, update_id, update_data)
 
     @mcp.tool()
-    @tool_filter("delete_incident_update")
     async def delete_incident_update(page_id: str, incident_id: str, update_id: str) -> str:
         """
         Delete a specific incident status update.
@@ -1954,525 +2364,8 @@ if config.is_read_write():
         _update_tools_client()
         return await incidents_tools.delete_incident_update(page_id, incident_id, update_id)
 
-    @mcp.tool()
-    @tool_filter("create_icmp_check")
-    async def create_icmp_check(
-        name: str,
-        host: str,
-        interval: int = 300,
-        timeout: int = 30,
-        active: bool = True,
-        probe_count: Optional[int] = 4,
-        ip_version: Optional[str] = "auto",
-        probe_interval: Optional[float] = 1.0,
-        probe_timeout: Optional[float] = 1.0,
-        max_packet_loss: Optional[float] = None
-    ) -> str:
-        """
-        Create a permanent ICMP (ping) monitoring check.
-
-        ICMP checks monitor network connectivity and latency to hosts using ICMP echo requests (ping).
-        They are useful for monitoring server availability, network latency, and packet loss.
-
-        Args:
-            name: A descriptive name for this ICMP check (required)
-            host: Hostname or IP address to ping (required, max 255 characters)
-            interval: How often to run the check in seconds (default: 300, range: 30-86400)
-            timeout: Overall check timeout in seconds (default: 30, range: 1-30)
-            active: Whether the check is active (default: True)
-            probe_count: Number of ping probes to send (default: 4, range: 1-100)
-            ip_version: IP version preference - 'v4', 'v6', or 'auto' (default: 'auto', prefers IPv6)
-            probe_interval: Interval between individual probes in seconds (default: 1.0, range: 0.001-10)
-            probe_timeout: Timeout for each individual probe in seconds (default: 1.0, range: 0.1-30)
-            max_packet_loss: Maximum acceptable packet loss percentage (range: 0-100, optional)
-
-        Returns:
-            JSON with created ICMP check details including check ID and configuration.
-        """
-        _update_tools_client()
-        return await checks_tools.create_icmp_check(
-            name, host, interval, timeout, active,
-            probe_count, ip_version, probe_interval, probe_timeout, max_packet_loss
-        )
-
-    @mcp.tool()
-    @tool_filter("create_dns_check")
-    async def create_dns_check(
-        name: str,
-        host: str,
-        interval: int = 300,
-        timeout: int = 10,
-        active: bool = True,
-        record_type: Optional[str] = "A",
-        dns_servers: Optional[List[str]] = None,
-        expected_answers: Optional[List[str]] = None,
-        validation_mode: Optional[str] = "contains_all"
-    ) -> str:
-        """
-        Create a permanent DNS monitoring check.
-
-        DNS checks monitor DNS resolution and validate DNS records. They can verify that
-        your domain resolves correctly and returns expected IP addresses or other DNS records.
-
-        Args:
-            name: A descriptive name for this DNS check (required)
-            host: Domain name to query (required, e.g., 'example.com')
-            interval: How often to run the check in seconds (default: 300, range: 30-86400)
-            timeout: Check timeout in seconds (default: 10, range: 1-30)
-            active: Whether the check is active (default: True)
-            record_type: DNS record type to query (default: 'A')
-                        Supported types: A, AAAA, MX, TXT, CNAME, NS, SOA, PTR, SRV, CAA, etc.
-            dns_servers: List of custom DNS server IP addresses to use (optional)
-                        If not specified, uses system default DNS servers
-            expected_answers: List of expected DNS answers for validation (optional)
-                             The check will fail if actual answers don't match expectations
-            validation_mode: How to validate answers (default: 'contains_all')
-                            - 'contains_all': Actual answers must include all expected answers
-                            - 'exact': Actual answers must exactly match expected answers
-
-        Returns:
-            JSON with created DNS check details including check ID and configuration.
-        """
-        _update_tools_client()
-        return await checks_tools.create_dns_check(
-            name, host, interval, timeout, active,
-            record_type, dns_servers, expected_answers, validation_mode
-        )
-
-    @mcp.tool()
-    @tool_filter("create_synthetic_check")
-    async def create_synthetic_check(
-        name: str,
-        url: str,
-        pw_script: str,
-        interval: int = 300,
-        timeout: int = 60,
-        active: bool = True
-    ) -> str:
-        """
-        Create a permanent synthetic browser monitoring check using Playwright.
-
-        Synthetic checks simulate real user interactions with your website using a headless
-        browser. They can navigate pages, fill forms, click buttons, and verify page content.
-        The check uses Playwright scripts written in JavaScript or TypeScript.
-
-        IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
-        The script should use the Playwright test framework and include proper assertions.
-
-        Args:
-            name: A descriptive name for this synthetic check (required, max 100 characters)
-            url: The starting URL for the browser test (required)
-            pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
-                      The script must be a valid Playwright test that includes:
-                      - Import statements for Playwright test framework
-                      - Test function with browser automation steps
-                      - Assertions using expect() to verify expected behavior
-                      Example structure:
-                      ```javascript
-                      const { test, expect } = require('@playwright/test');
-                      test('my test', async ({ page }) => {
-                        await page.goto('https://example.com');
-                        await expect(page.locator('h1')).toContainText('Example');
-                      });
-                      ```
-            interval: How often to run the check in seconds (default: 300, range: 30-86400)
-            timeout: Overall check timeout in seconds (default: 60, range: 1-300)
-            active: Whether the check is active (default: True)
-
-        Returns:
-            JSON with created synthetic check details including check ID and configuration.
-        """
-        _update_tools_client()
-        parameters = {"pw_script": pw_script}
-        return await checks_tools.create_check(
-            name=name,
-            type="synthetic",
-            url=url,
-            interval=interval,
-            timeout=timeout,
-            active=active,
-            parameters=parameters
-        )
-
-    @mcp.tool()
-    @tool_filter("create_multistep_check")
-    async def create_multistep_check(
-        name: str,
-        url: str,
-        pw_script: str,
-        interval: int = 300,
-        timeout: int = 60,
-        active: bool = True
-    ) -> str:
-        """
-        Create a permanent multi-step monitoring check using Playwright.
-
-        Multi-step checks are similar to synthetic checks but are specifically designed for
-        complex, multi-page workflows like checkout processes, login flows, or API sequences.
-        They use Playwright scripts to automate and verify multi-step user journeys.
-
-        IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
-        The script should include all steps of your workflow with proper error handling.
-
-        Args:
-            name: A descriptive name for this multi-step check (required, max 100 characters)
-            url: The starting URL for the workflow (required)
-            pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
-                      The script must be a valid Playwright test that includes:
-                      - Import statements for Playwright test framework
-                      - Test function with all workflow steps
-                      - Assertions at each critical step to verify progress
-                      - Proper error handling for failed steps
-                      Example for a login flow:
-                      ```javascript
-                      const { test, expect } = require('@playwright/test');
-                      test('login workflow', async ({ page }) => {
-                        await page.goto('https://example.com/login');
-                        await page.fill('#username', 'testuser');
-                        await page.fill('#password', 'testpass');
-                        await page.click('button[type="submit"]');
-                        await expect(page).toHaveURL(/.*dashboard/);
-                        await expect(page.locator('.welcome')).toBeVisible();
-                      });
-                      ```
-            interval: How often to run the check in seconds (default: 300, range: 30-86400)
-            timeout: Overall check timeout in seconds (default: 60, range: 1-300)
-            active: Whether the check is active (default: True)
-
-        Returns:
-            JSON with created multi-step check details including check ID and configuration.
-        """
-        _update_tools_client()
-        parameters = {"pw_script": pw_script}
-        return await checks_tools.create_check(
-            name=name,
-            type="multistep",
-            url=url,
-            interval=interval,
-            timeout=timeout,
-            active=active,
-            parameters=parameters
-        )
-
-    @mcp.tool()
-    @tool_filter("execute_custom_check")
-    async def execute_custom_check(
-        type: str,
-        name: str,
-        url: Optional[str] = None,
-        host: Optional[str] = None,
-        port: Optional[int] = None,
-        timeout: Optional[int] = 30,
-        parameters: Optional[dict] = None
-    ) -> str:
-        """
-        Execute a one-time custom monitoring check on any URL or service.
-
-        This allows you to test connectivity and performance to any endpoint
-        without creating a permanent monitoring check. Useful for troubleshooting
-        or testing new services before setting up regular monitoring.
-
-        Args:
-            type: Type of check ('web', 'api', 'tcp', 'ssl', 'icmp', 'dns', 'multistep', 'synthetic') - REQUIRED
-            name: A user-friendly name for the custom check (max 100 characters) - REQUIRED
-            url: The URL to monitor (required for web/api checks). Supports international domain names.
-            host: The hostname or IP address to monitor (required for TCP/SSL/ICMP/DNS checks, max 255 characters)
-            port: The port number to monitor (required for TCP/SSL checks, range: 1-65535)
-            timeout: Timeout in seconds (range: 1-30, default: 30)
-            parameters: Additional parameters specific to the check type.
-
-        For 'synthetic' or 'multistep' checks, the 'parameters' dictionary must contain a 'pw_script' key.
-
-        For 'icmp' checks, parameters can include:
-        - probe_count (1-100, default: 4)
-        - ip_version ('v4', 'v6', 'auto')
-        - probe_interval (0.001-10 seconds)
-        - probe_timeout (0.1-30 seconds)
-        - assertions: {max_packet_loss: 0-100}
-
-        For 'dns' checks, parameters can include:
-        - record_type ('A', 'AAAA', 'MX', 'TXT', etc.)
-        - dns_servers (list of DNS server IPs)
-        - expected_answers (list of expected answers)
-        - validation_mode ('contains_all' or 'exact')
-
-        Example for an 'icmp' check:
-        {
-          "type": "icmp",
-          "name": "Ping Test",
-          "host": "example.com",
-          "parameters": {
-            "probe_count": 10,
-            "ip_version": "v4"
-          }
-        }
-
-        Example for a 'dns' check:
-        {
-          "type": "dns",
-          "name": "DNS Resolution Test",
-          "host": "example.com",
-          "parameters": {
-            "record_type": "A",
-            "expected_answers": ["93.184.216.34"]
-          }
-        }
-
-        Returns:
-            JSON with the job id that is executed asynchronously.
-        """
-        _update_tools_client()
-        return await checks_tools.execute_custom_check(type, name, url, host, port, timeout, parameters)
-
-    @mcp.tool()
-    @tool_filter("execute_icmp_check")
-    async def execute_icmp_check(
-        name: str,
-        host: str,
-        timeout: int = 30,
-        probe_count: Optional[int] = 4,
-        ip_version: Optional[str] = "auto",
-        probe_interval: Optional[float] = 1.0,
-        probe_timeout: Optional[float] = 1.0,
-        max_packet_loss: Optional[float] = None
-    ) -> str:
-        """
-        Execute a one-time ICMP (ping) check without creating a permanent monitor.
-
-        This performs an immediate ICMP ping test to check network connectivity and latency
-        to a host. Useful for quick diagnostics or testing before setting up permanent monitoring.
-
-        Args:
-            name: A descriptive name for this test (required, max 100 characters)
-            host: Hostname or IP address to ping (required, max 255 characters)
-            timeout: Overall check timeout in seconds (default: 30, range: 1-30)
-            probe_count: Number of ping probes to send (default: 4, range: 1-100)
-            ip_version: IP version preference - 'v4', 'v6', or 'auto' (default: 'auto', prefers IPv6)
-            probe_interval: Interval between individual probes in seconds (default: 1.0, range: 0.001-10)
-            probe_timeout: Timeout for each individual probe in seconds (default: 1.0, range: 0.1-30)
-            max_packet_loss: Maximum acceptable packet loss percentage (range: 0-100, optional)
-                            If specified and exceeded, the check will fail
-
-        Returns:
-            JSON with job ID for tracking the asynchronous execution.
-            Use get_on_demand_job_status() to check results.
-        """
-        _update_tools_client()
-        parameters = {}
-        if probe_count is not None:
-            parameters["probe_count"] = probe_count
-        if ip_version is not None:
-            parameters["ip_version"] = ip_version
-        if probe_interval is not None:
-            parameters["probe_interval"] = probe_interval
-        if probe_timeout is not None:
-            parameters["probe_timeout"] = probe_timeout
-        if max_packet_loss is not None:
-            parameters["assertions"] = {"max_packet_loss": max_packet_loss}
-
-        return await checks_tools.execute_custom_check(
-            type="icmp",
-            name=name,
-            host=host,
-            timeout=timeout,
-            parameters=parameters if parameters else None
-        )
-
-    @mcp.tool()
-    @tool_filter("execute_dns_check")
-    async def execute_dns_check(
-        name: str,
-        host: str,
-        timeout: int = 10,
-        record_type: Optional[str] = "A",
-        dns_servers: Optional[List[str]] = None,
-        expected_answers: Optional[List[str]] = None,
-        validation_mode: Optional[str] = "contains_all"
-    ) -> str:
-        """
-        Execute a one-time DNS resolution check without creating a permanent monitor.
-
-        This performs an immediate DNS query to verify domain resolution and optionally
-        validate that DNS records match expected values. Useful for troubleshooting DNS
-        issues or testing DNS changes before they propagate.
-
-        Args:
-            name: A descriptive name for this test (required, max 100 characters)
-            host: Domain name to query (required, e.g., 'example.com')
-            timeout: Check timeout in seconds (default: 10, range: 1-30)
-            record_type: DNS record type to query (default: 'A')
-                        Supported types: A, AAAA, MX, TXT, CNAME, NS, SOA, PTR, SRV, CAA, etc.
-            dns_servers: List of custom DNS server IP addresses to use (optional)
-                        If not specified, uses system default DNS servers
-                        Example: ["8.8.8.8", "1.1.1.1"]
-            expected_answers: List of expected DNS answers for validation (optional)
-                             The check will fail if actual answers don't match expectations
-                             Example for A record: ["93.184.216.34"]
-            validation_mode: How to validate answers (default: 'contains_all')
-                            - 'contains_all': Actual answers must include all expected answers
-                            - 'exact': Actual answers must exactly match expected answers (order matters)
-
-        Returns:
-            JSON with job ID for tracking the asynchronous execution.
-            Use get_on_demand_job_status() to check results.
-        """
-        _update_tools_client()
-        parameters = {}
-        if record_type is not None:
-            parameters["record_type"] = record_type
-        if dns_servers is not None:
-            parameters["dns_servers"] = dns_servers
-        if expected_answers is not None:
-            parameters["expected_answers"] = expected_answers
-        if validation_mode is not None:
-            parameters["validation_mode"] = validation_mode
-
-        return await checks_tools.execute_custom_check(
-            type="dns",
-            name=name,
-            host=host,
-            timeout=timeout,
-            parameters=parameters if parameters else None
-        )
-
-    @mcp.tool()
-    @tool_filter("execute_synthetic_check")
-    async def execute_synthetic_check(
-        name: str,
-        url: str,
-        pw_script: str,
-        timeout: int = 60
-    ) -> str:
-        """
-        Execute a one-time synthetic browser check without creating a permanent monitor.
-
-        This performs an immediate browser automation test using Playwright to simulate
-        real user interactions. Useful for testing UI workflows, verifying page functionality,
-        or troubleshooting before setting up permanent monitoring.
-
-        IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
-
-        Args:
-            name: A descriptive name for this test (required, max 100 characters)
-            url: The starting URL for the browser test (required)
-            pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
-                      The script must be a valid Playwright test that includes:
-                      - Import statements: const { test, expect } = require('@playwright/test');
-                      - Test function with browser automation steps
-                      - Assertions using expect() to verify expected behavior
-
-                      Example script:
-                      ```javascript
-                      const { test, expect } = require('@playwright/test');
-                      test('homepage test', async ({ page }) => {
-                        await page.goto('https://example.com');
-                        await expect(page.locator('h1')).toContainText('Example Domain');
-                        await expect(page.locator('p')).toBeVisible();
-                      });
-                      ```
-            timeout: Overall check timeout in seconds (default: 60, range: 1-300)
-
-        Returns:
-            JSON with job ID for tracking the asynchronous execution.
-            Use get_on_demand_job_status() to check results.
-        """
-        _update_tools_client()
-        parameters = {"pw_script": pw_script}
-        return await checks_tools.execute_custom_check(
-            type="synthetic",
-            name=name,
-            url=url,
-            timeout=timeout,
-            parameters=parameters
-        )
-
-    @mcp.tool()
-    @tool_filter("execute_multistep_check")
-    async def execute_multistep_check(
-        name: str,
-        url: str,
-        pw_script: str,
-        timeout: int = 60
-    ) -> str:
-        """
-        Execute a one-time multi-step workflow check without creating a permanent monitor.
-
-        This performs an immediate browser automation test for complex, multi-page workflows
-        using Playwright. Ideal for testing login flows, checkout processes, or multi-step
-        forms before setting up permanent monitoring.
-
-        IMPORTANT: You must provide a complete Playwright script in the pw_script parameter
-        that covers all steps in your workflow.
-
-        Args:
-            name: A descriptive name for this test (required, max 100 characters)
-            url: The starting URL for the workflow (required)
-            pw_script: Complete Playwright script content in JavaScript or TypeScript (required)
-                      The script must be a valid Playwright test that includes:
-                      - Import statements: const { test, expect } = require('@playwright/test');
-                      - Test function with all workflow steps
-                      - Assertions at each critical step to verify progress
-                      - Proper error handling for failed steps
-
-                      Example script for a login workflow:
-                      ```javascript
-                      const { test, expect } = require('@playwright/test');
-                      test('login workflow', async ({ page }) => {
-                        // Step 1: Navigate to login page
-                        await page.goto('https://example.com/login');
-                        await expect(page.locator('form#login')).toBeVisible();
-
-                        // Step 2: Fill credentials
-                        await page.fill('#username', 'testuser');
-                        await page.fill('#password', 'testpass');
-
-                        // Step 3: Submit form
-                        await page.click('button[type="submit"]');
-
-                        // Step 4: Verify successful login
-                        await expect(page).toHaveURL(/.*dashboard/);
-                        await expect(page.locator('.welcome-message')).toBeVisible();
-                      });
-                      ```
-            timeout: Overall check timeout in seconds (default: 60, range: 1-300)
-                    Should be long enough to complete all workflow steps
-
-        Returns:
-            JSON with job ID for tracking the asynchronous execution.
-            Use get_on_demand_job_status() to check results.
-        """
-        _update_tools_client()
-        parameters = {"pw_script": pw_script}
-        return await checks_tools.execute_custom_check(
-            type="multistep",
-            name=name,
-            url=url,
-            timeout=timeout,
-            parameters=parameters
-        )
-
-    @mcp.tool()
-    @tool_filter("execute_existing_check")
-    async def execute_existing_check(check_id: str) -> str:
-        """
-        Manually trigger an existing monitoring check to run immediately.
-
-        Forces an immediate execution of a configured check, bypassing the normal
-        scheduled interval. Useful for testing after configuration changes or
-        getting fresh data on demand.
-
-        Args:
-            check_id: The unique identifier of the check to execute
-
-        Returns:
-            JSON with execution job details and immediate results if available.
-        """
-        _update_tools_client()
-        return await checks_tools.execute_existing_check(check_id)
-
 # Register Playwright script generation tools (always available)
 @mcp.tool()
-@tool_filter("generate_synthetic_check_script")
 async def generate_synthetic_check_script(
     description: str,
     target_url: str,
@@ -2501,7 +2394,6 @@ async def generate_synthetic_check_script(
     )
 
 @mcp.tool()
-@tool_filter("generate_api_check_script")
 async def generate_api_check_script(
     url: str,
     description: str,

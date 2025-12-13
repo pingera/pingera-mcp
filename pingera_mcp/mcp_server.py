@@ -33,19 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger("pingera-mcp-server")
 
 
-def tool_filter(tool_name: str):
-    """Decorator to filter tools based on allowed_tools configuration."""
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            if not config.is_tool_allowed(tool_name):
-                return json.dumps({
-                    "error": f"Tool '{tool_name}' is not available in the current context",
-                    "message": "This tool has been filtered out by server configuration"
-                })
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
+
 
 
 def create_mcp_server(config: Config) -> FastMCP:
@@ -90,30 +78,6 @@ config = Config()
 # Create MCP server
 mcp = create_mcp_server(config)
 
-# Apply tool filtering if configured by overriding list_tools at protocol level
-if config.allowed_tools:
-    logger.info(f"Tool filtering enabled - will only expose {len(config.allowed_tools)} tools: {config.allowed_tools}")
-    
-    # Store original list_tools implementation
-    from mcp.server.lowlevel.server import Server as MCPServer
-    original_list_tools = mcp.server.list_tools
-    
-    # Create filtered version
-    async def filtered_list_tools():
-        all_tools_result = await original_list_tools()
-        filtered_tools = [
-            tool for tool in all_tools_result.tools 
-            if tool.name in config.allowed_tools
-        ]
-        logger.info(f"Filtered {len(all_tools_result.tools)} tools down to {len(filtered_tools)} tools")
-        
-        # Return new ListToolsResult with filtered tools
-        from mcp.types import ListToolsResult
-        return ListToolsResult(tools=filtered_tools)
-    
-    # Override the list_tools method
-    mcp.server.list_tools = filtered_list_tools
-
 # Initialize Pingera client (for module-level usage in stdio mode)
 if config.transport_mode == "stdio":
     pingera_client = PingeraClient(
@@ -135,6 +99,13 @@ else:
         max_retries=config.max_retries
     )
     logger.info(f"SSE mode: Client will be created per-request from Authorization headers")
+
+# Helper function to check if tool should be registered
+def _should_register_tool(tool_name: str) -> bool:
+    """Check if a tool should be registered based on allowed_tools filter."""
+    if config.allowed_tools is None:
+        return True  # No filtering, register all tools
+    return tool_name in config.allowed_tools
 
 # Helper function to update the client for tools
 def _update_tools_client():
@@ -180,9 +151,9 @@ check_groups_tools = CheckGroupsTools(pingera_client)
 secrets_tools = SecretsTools(pingera_client)
 
 # Register read-only tools
-@mcp.tool()
-@tool_filter("list_pages")
-async def list_pages(
+if _should_register_tool("list_pages"):
+    @mcp.tool()
+    async def list_pages(
     page: Optional[int] = None,
     per_page: Optional[int] = None,
     status: Optional[str] = None
@@ -203,9 +174,9 @@ async def list_pages(
     _update_tools_client()
     return await pages_tools.list_pages(page, per_page, status)
 
-@mcp.tool()
-@tool_filter("get_page_details")
-async def get_page_details(page_id: int) -> str:
+if _should_register_tool("get_page_details"):
+    @mcp.tool()
+    async def get_page_details(page_id: int) -> str:
     """
     Get detailed information about a specific status page.
 
@@ -218,9 +189,9 @@ async def get_page_details(page_id: int) -> str:
     _update_tools_client()
     return await pages_tools.get_page_details(page_id)
 
-@mcp.tool()
-@tool_filter("test_pingera_connection")
-async def test_pingera_connection() -> str:
+if _should_register_tool("test_pingera_connection"):
+    @mcp.tool()
+    async def test_pingera_connection() -> str:
     """
     Test the connection to Pingera API and verify authentication.
 
@@ -233,9 +204,9 @@ async def test_pingera_connection() -> str:
     _update_tools_client()
     return await status_tools.test_pingera_connection()
 
-@mcp.tool()
-@tool_filter("list_component_groups")
-async def list_component_groups(
+if _should_register_tool("list_component_groups"):
+    @mcp.tool()
+    async def list_component_groups(
     page_id: str,
     show_deleted: Optional[bool] = False
 ) -> str:
@@ -256,9 +227,9 @@ async def list_component_groups(
     _update_tools_client()
     return await component_tools.list_component_groups(page_id, show_deleted)
 
-@mcp.tool()
-@tool_filter("list_components")
-async def list_components(
+if _should_register_tool("list_components"):
+    @mcp.tool()
+    async def list_components(
     page_id: str,
     page: Optional[int] = None,
     page_size: Optional[int] = None
@@ -281,9 +252,9 @@ async def list_components(
     _update_tools_client()
     return await component_tools.list_components(page_id, page, page_size)
 
-@mcp.tool()
-@tool_filter("get_component_details")
-async def get_component_details(page_id: str, component_id: str) -> str:
+if _should_register_tool("get_component_details"):
+    @mcp.tool()
+    async def get_component_details(page_id: str, component_id: str) -> str:
     """
     Get detailed information about a specific component.
 
@@ -300,9 +271,9 @@ async def get_component_details(page_id: str, component_id: str) -> str:
     _update_tools_client()
     return await component_tools.get_component_details(page_id, component_id)
 
-@mcp.tool()
-@tool_filter("list_checks")
-async def list_checks(
+if _should_register_tool("list_checks"):
+    @mcp.tool()
+    async def list_checks(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
     type: Optional[str] = None,

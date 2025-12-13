@@ -78,6 +78,22 @@ config = Config()
 # Create MCP server
 mcp = create_mcp_server(config)
 
+# Helper decorator for conditional tool registration
+def tool_filter(tool_name):
+    """Decorator that conditionally registers tools based on allowed_tools config"""
+    def decorator(func):
+        if config.allowed_tools is None or tool_name in config.allowed_tools:
+            # Register the tool
+            return mcp.tool()(func)
+        else:
+            # Don't register - just return the function
+            return func
+    return decorator
+
+# Log filtering status
+if config.allowed_tools:
+    logger.info(f"Limiting exposed tools to: {config.allowed_tools}")
+
 # Initialize Pingera client (for module-level usage in stdio mode)
 if config.transport_mode == "stdio":
     pingera_client = PingeraClient(
@@ -151,9 +167,9 @@ check_groups_tools = CheckGroupsTools(pingera_client)
 secrets_tools = SecretsTools(pingera_client)
 
 # Register read-only tools
-if _should_register_tool("list_pages"):
-    @mcp.tool()
-    async def list_pages(
+@mcp.tool()
+@tool_filter("list_pages")
+async def list_pages(
     page: Optional[int] = None,
     per_page: Optional[int] = None,
     status: Optional[str] = None
@@ -174,9 +190,8 @@ if _should_register_tool("list_pages"):
     _update_tools_client()
     return await pages_tools.list_pages(page, per_page, status)
 
-if _should_register_tool("get_page_details"):
-    @mcp.tool()
-    async def get_page_details(page_id: int) -> str:
+@tool_filter("get_page_details")
+async def get_page_details(page_id: int) -> str:
     """
     Get detailed information about a specific status page.
 
@@ -189,9 +204,8 @@ if _should_register_tool("get_page_details"):
     _update_tools_client()
     return await pages_tools.get_page_details(page_id)
 
-if _should_register_tool("test_pingera_connection"):
-    @mcp.tool()
-    async def test_pingera_connection() -> str:
+@tool_filter("test_pingera_connection")
+async def test_pingera_connection() -> str:
     """
     Test the connection to Pingera API and verify authentication.
 
@@ -204,9 +218,8 @@ if _should_register_tool("test_pingera_connection"):
     _update_tools_client()
     return await status_tools.test_pingera_connection()
 
-if _should_register_tool("list_component_groups"):
-    @mcp.tool()
-    async def list_component_groups(
+@tool_filter("list_component_groups")
+async def list_component_groups(
     page_id: str,
     show_deleted: Optional[bool] = False
 ) -> str:
@@ -227,9 +240,8 @@ if _should_register_tool("list_component_groups"):
     _update_tools_client()
     return await component_tools.list_component_groups(page_id, show_deleted)
 
-if _should_register_tool("list_components"):
-    @mcp.tool()
-    async def list_components(
+@tool_filter("list_components")
+async def list_components(
     page_id: str,
     page: Optional[int] = None,
     page_size: Optional[int] = None
@@ -252,9 +264,8 @@ if _should_register_tool("list_components"):
     _update_tools_client()
     return await component_tools.list_components(page_id, page, page_size)
 
-if _should_register_tool("get_component_details"):
-    @mcp.tool()
-    async def get_component_details(page_id: str, component_id: str) -> str:
+@tool_filter("get_component_details")
+async def get_component_details(page_id: str, component_id: str) -> str:
     """
     Get detailed information about a specific component.
 
@@ -271,9 +282,8 @@ if _should_register_tool("get_component_details"):
     _update_tools_client()
     return await component_tools.get_component_details(page_id, component_id)
 
-if _should_register_tool("list_checks"):
-    @mcp.tool()
-    async def list_checks(
+@tool_filter("list_checks")
+async def list_checks(
     page: Optional[int] = None,
     page_size: Optional[int] = None,
     type: Optional[str] = None,

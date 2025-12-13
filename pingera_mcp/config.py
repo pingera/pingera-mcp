@@ -49,13 +49,6 @@ class Config:
         
         # Server Name
         self.server_name: str = os.getenv("PINGERA_SERVER_NAME", "Pingera MCP Server")
-        
-        # Tool Filtering - limits which tools are exposed
-        # Format: comma-separated list of tool names, e.g., "list_pages,list_checks"
-        allowed_tools_env = os.getenv("PINGERA_ALLOWED_TOOLS", "")
-        self.allowed_tools: Optional[set] = None
-        if allowed_tools_env:
-            self.allowed_tools = {t.strip() for t in allowed_tools_env.split(",") if t.strip()}
     
     def is_read_only(self) -> bool:
         """Check if server is in read-only mode."""

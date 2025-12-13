@@ -1,8 +1,9 @@
+
 """
 Authentication extraction utilities for dual-mode MCP operation.
 """
 import logging
-from typing import Optional, Tuple, Set
+from typing import Optional, Tuple
 from fastmcp.server.dependencies import get_http_request
 
 from .sdk_client import PingeraSDKClient
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 def extract_auth_from_request() -> Optional[Tuple[Optional[str], Optional[str]]]:
     """
     Extract authentication credentials from HTTP request headers.
-
+    
     Returns:
         Tuple of (api_key, jwt_token) or None if not in HTTP mode
         At most one will be set, the other will be None
@@ -22,14 +23,14 @@ def extract_auth_from_request() -> Optional[Tuple[Optional[str], Optional[str]]]
     try:
         request = get_http_request()
         auth_header = request.headers.get('Authorization')
-
+        
         if not auth_header:
             logger.warning("No Authorization header found in HTTP request")
             return None
-
+            
         # Parse the auth header
         auth_type, credentials = get_auth_type(auth_header)
-
+        
         if auth_type == "bearer":
             logger.debug("Extracted Bearer token from request")
             return (None, credentials)
@@ -39,7 +40,7 @@ def extract_auth_from_request() -> Optional[Tuple[Optional[str], Optional[str]]]
         else:
             logger.warning(f"Unknown auth type: {auth_type}")
             return None
-
+            
     except Exception as e:
         # Not in HTTP context, return None
         logger.debug(f"Not in HTTP context or error extracting auth: {e}")
@@ -49,20 +50,20 @@ def extract_auth_from_request() -> Optional[Tuple[Optional[str], Optional[str]]]
 def get_auth_type(auth_header: str) -> Tuple[str, str]:
     """
     Determine authentication type from Authorization header.
-
+    
     Supports two formats:
     1. "Bearer JWT_TOKEN" - JWT token authentication
     2. "API_KEY" - Raw API key authentication (no prefix)
-
+    
     Args:
         auth_header: The Authorization header value
-
+        
     Returns:
         Tuple of (auth_type, credentials)
         auth_type is either "bearer" or "api_key"
     """
     parts = auth_header.strip().split(maxsplit=1)
-
+    
     if len(parts) == 2 and parts[0].lower() == 'bearer':
         # Format: "Bearer JWT_TOKEN"
         return ("bearer", parts[1])
@@ -78,21 +79,21 @@ def create_client_from_auth(
 ) -> PingeraSDKClient:
     """
     Create a PingeraClient instance from extracted authentication credentials.
-
+    
     Args:
         api_key: API key for authentication
-        jwt_token: JWT token for Bearer authentication
+        jwt_token: JWT token for Bearer authentication  
         config: Configuration object for base_url, timeout, etc.
-
+        
     Returns:
         Configured PingeraSDKClient instance
     """
     if config is None:
         from .config import Config
         config = Config()
-
+    
     logger.info(f"Creating client with {'JWT token' if jwt_token else 'API key'}")
-
+    
     return PingeraSDKClient(
         api_key=api_key,
         jwt_token=jwt_token,
@@ -108,14 +109,14 @@ def get_request_client(
 ) -> PingeraSDKClient:
     """
     Get the appropriate client for the current request context.
-
+    
     In HTTP/SSE mode: Creates a new client from request auth headers
     In stdio mode: Returns the default global client
-
+    
     Args:
         config: Server configuration
         default_client: The default/global client instance
-
+        
     Returns:
         Client instance to use for this request
     """
@@ -131,56 +132,6 @@ def get_request_client(
             # Could raise an exception here, but for now fall back to default
         else:
             logger.debug("No auth header found, using default client credentials")
-
+    
     # For stdio mode or when no auth header in SSE mode, use default client
     return default_client
-
-
-def get_allowed_tools_from_request() -> Optional[Set[str]]:
-    """
-    Extract the set of allowed tools from the 'X-MCP-Tools' header.
-
-    Returns:
-        A set of tool names, or None if the header is not present or invalid.
-    """
-    try:
-        request = get_http_request()
-        tools_header = request.headers.get("X-MCP-Tools")
-
-        if not tools_header:
-            return None
-
-        allowed_tools = {tool.strip() for tool in tools_header.split(',')}
-        logger.debug(f"Allowed tools from header: {allowed_tools}")
-        return allowed_tools
-
-    except Exception as e:
-        # Not in HTTP context or error extracting header
-        logger.debug(f"Not in HTTP context or error extracting tools header: {e}")
-        return None
-
-
-def tool_registration_decorator(func):
-    """
-    Decorator to conditionally register a tool based on configuration.
-    """
-    def wrapper(*args, **kwargs):
-        # This function will be executed when the tool is called,
-        # not when it's registered.
-        # The actual registration logic should happen elsewhere,
-        # likely during server startup or configuration loading.
-        # For now, we'll assume a global config or a way to access allowed tools.
-        
-        # Placeholder for actual registration check
-        # In a real scenario, you'd check against a global list of allowed tools
-        # or retrieve it from the current request context if applicable.
-
-        # Example:
-        # allowed_tools = get_allowed_tools_from_request() # Or from config
-        # if func.__name__ in allowed_tools:
-        #     return func(*args, **kwargs)
-        # else:
-        #     raise ToolNotAvailableError(f"Tool '{func.__name__}' is not allowed.")
-        
-        return func(*args, **kwargs)
-    return wrapper

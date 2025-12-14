@@ -54,21 +54,12 @@ class Config:
         self.requested_tools: Optional[List[str]] = self._parse_tools(cli_args)
     
     def _parse_tools(self, cli_args) -> Optional[List[str]]:
-        """Parse --tools flag from CLI args or MCP_TOOLS environment variable"""
-        # First check CLI args
+        """Parse --tools flag from CLI args."""
         if cli_args and hasattr(cli_args, 'tools') and cli_args.tools:
             tools_str = cli_args.tools.strip()
             if tools_str:
                 tools = [t.strip() for t in tools_str.split(',') if t.strip()]
                 return tools if tools else None
-        # Then check environment variable (useful for SSE mode)
-        env_tools = os.getenv('MCP_TOOLS')
-        if env_tools:
-            tools_str = env_tools.strip()
-            if tools_str:
-                tools = [t.strip() for t in tools_str.split(',') if t.strip()]
-                return tools if tools else None
-        
         return None
     
     def is_read_only(self) -> bool:

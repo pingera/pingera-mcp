@@ -36,25 +36,52 @@ This feature allows clients to request only a subset of available MCP tools, red
 
 class ToolRegistry:
     def __init__(self):
-        self._tools = {}  # tool_name -> (registration_func, read_only_flag)
+        self._tools = {}  # tool_name -> (registration_func, requires_write_mode)
     
-    def register(self, name: str, read_only: bool = True):
-        """Decorator to register a tool registration function"""
+    def register(self, name: str, requires_write: bool = False):
+        """
+        Decorator to register a tool registration function.
+        
+        Args:
+            name: Tool name (must be unique)
+            requires_write: True if tool requires write mode, False for read-only tools
+        """
         def decorator(func):
-            self._tools[name] = (func, read_only)
+            self._tools[name] = (func, requires_write)
             return func
         return decorator
     
-    def get_tools_to_register(self, requested_tools: list, is_read_write: bool):
-        """Filter tools based on request and mode"""
-        pass
+    def get_tools_to_register(self, requested_tools: Optional[list], is_read_write_mode: bool):
+        """
+        Filter tools based on client request and server mode.
+        
+        Args:
+            requested_tools: List of tool names requested (None = all tools)
+            is_read_write_mode: Whether server is in read-write mode
+            
+        Returns:
+            Dict of tool_name -> registration_func for tools that should be registered
+        """
+        result = {}
+        for tool_name, (register_func, requires_write) in self._tools.items():
+            # Skip if tool requires write mode but server is read-only
+            if requires_write and not is_read_write_mode:
+                continue
+                
+            # Skip if client requested specific tools and this isn't one of them
+            if requested_tools is not None and tool_name not in requested_tools:
+                continue
+                
+            result[tool_name] = register_func
+        return result
 ```
 
 **Advantages**:
-- Centralized tool management
+- Centralized tool management with access control metadata
 - Easy to add/remove tools
 - Clear separation between tool definition and registration
 - No manual lists to maintain
+- Single source of truth for tool permissions (read-only vs write)
 
 ### Phase 2: Tool Registration Refactoring
 
@@ -69,14 +96,23 @@ async def list_pages(...):
 
 **New Pattern**:
 ```python
-@tool_registry.register("list_pages", read_only=True)
+# Read-only tool (requires_write=False, which is the default)
+@tool_registry.register("list_pages")
 def register_list_pages(mcp_instance):
     @mcp_instance.tool()
     async def list_pages(...):
         # implementation
     return list_pages
 
-# This registration happens conditionally later
+# Write tool (requires_write=True)
+@tool_registry.register("create_page", requires_write=True)
+def register_create_page(mcp_instance):
+    @mcp_instance.tool()
+    async def create_page(...):
+        # implementation
+    return create_page
+
+# This registration happens conditionally later based on mode and filters
 ```
 
 **Alternative Pattern (Cleaner)**:
@@ -85,10 +121,17 @@ def register_list_pages(mcp_instance):
 async def _list_pages_impl(...):
     # implementation
 
+async def _create_page_impl(...):
+    # implementation
+
 # Register with metadata
-@tool_registry.register("list_pages", read_only=True)
+@tool_registry.register("list_pages")  # read-only by default
 def register_list_pages(mcp_instance):
     return mcp_instance.tool()(_list_pages_impl)
+
+@tool_registry.register("create_page", requires_write=True)
+def register_create_page(mcp_instance):
+    return mcp_instance.tool()(_create_page_impl)
 ```
 
 **Files to Modify**:
@@ -195,27 +238,27 @@ def register_tools(mcp_instance, config, tool_registry):
     """Register tools based on configuration"""
     
     if config.transport_mode == "stdio":
-        # In stdio mode, only register requested tools
-        for tool_name, (register_func, is_read_only) in tool_registry.items():
-            # Check if tool should be exposed
-            if not config.should_expose_tool(tool_name):
-                logger.info(f"Skipping tool: {tool_name}")
-                continue
-            
-            # Check read/write mode compatibility
-            if not is_read_only and config.is_read_only():
-                logger.info(f"Skipping write tool in read-only mode: {tool_name}")
-                continue
-            
-            # Register the tool
+        # In stdio mode, only register requested tools that are compatible with server mode
+        requested_tools = config.requested_tools  # None if --tools flag not provided
+        tools_to_register = tool_registry.get_tools_to_register(
+            requested_tools=requested_tools,
+            is_read_write_mode=config.is_read_write()
+        )
+        
+        for tool_name, register_func in tools_to_register.items():
             logger.info(f"Registering tool: {tool_name}")
             register_func(mcp_instance)
     
     else:  # SSE mode
-        # In SSE mode, register all tools (filter at list_tools level)
-        for tool_name, (register_func, is_read_only) in tool_registry.items():
-            if not is_read_only and config.is_read_only():
-                continue
+        # In SSE mode, register all tools compatible with server mode
+        # (tool list filtering happens at runtime based on request headers)
+        tools_to_register = tool_registry.get_tools_to_register(
+            requested_tools=None,  # Register all tools
+            is_read_write_mode=config.is_read_write()
+        )
+        
+        for tool_name, register_func in tools_to_register.items():
+            logger.info(f"Registering tool: {tool_name}")
             register_func(mcp_instance)
 ```
 
@@ -347,6 +390,8 @@ TRANSPORT_MODE=stdio
 3. **Security**: Limit exposed capabilities per client
 4. **Flexibility**: Different clients can use different tool subsets
 5. **Backward Compatible**: No changes needed for existing clients
+6. **Centralized Access Control**: Tool registry handles both selective exposure AND read-only/write mode filtering in one place
+7. **Simplified Logic**: No need to manually check `config.is_read_write()` in server code - the registry handles it
 
 ## Potential Issues
 

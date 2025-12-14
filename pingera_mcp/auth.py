@@ -47,6 +47,37 @@ def extract_auth_from_request() -> Optional[Tuple[Optional[str], Optional[str]]]
         return None
 
 
+def extract_requested_tools_from_request() -> Optional[list[str]]:
+    """
+    Extract requested tools list from X-MCP-Tools HTTP request header.
+    
+    Returns:
+        List of requested tool names or None if not in HTTP mode or header not present
+    """
+    try:
+        request = get_http_request()
+        tools_header = request.headers.get('X-MCP-Tools')
+        
+        if not tools_header:
+            logger.debug("No X-MCP-Tools header found in HTTP request")
+            return None
+            
+        # Parse comma-separated tool names
+        tools = [t.strip() for t in tools_header.split(',') if t.strip()]
+        
+        if tools:
+            logger.info(f"Extracted {len(tools)} requested tools from X-MCP-Tools header: {', '.join(tools)}")
+            return tools
+        else:
+            logger.warning("X-MCP-Tools header present but empty")
+            return None
+            
+    except Exception as e:
+        # Not in HTTP context, return None
+        logger.debug(f"Not in HTTP context or error extracting tools: {e}")
+        return None
+
+
 def get_auth_type(auth_header: str) -> Tuple[str, str]:
     """
     Determine authentication type from Authorization header.

@@ -234,10 +234,10 @@ def register_test_pingera_connection(mcp_instance):
     async def test_pingera_connection(mcp_instance) -> str:
         """
         Test the connection to Pingera API and verify authentication.
-    
+
         Use this tool to verify that your API key is working and the service is accessible.
         It provides connection status, API version info, and any authentication issues.
-    
+
         Returns:
             JSON with connection status, API information, and authentication details.
         """
@@ -253,15 +253,15 @@ def register_list_component_groups(mcp_instance):
     ) -> str:
         """
         Get only component groups (not individual components) for a status page.
-    
+
         Use this tool specifically when someone asks for "component groups", "groups only",
         or wants to see just the organizational containers for components. This excludes
         individual components and shows only the group containers.
-    
+
         Args:
             page_id: The ID of the status page (required, e.g., "tih6xo7z8v7n")
             show_deleted: Whether to include deleted component groups (default: False)
-    
+
         Returns:
             JSON with list of component groups only, including their names, IDs, positions, and component counts.
         """
@@ -278,16 +278,16 @@ def register_list_components(mcp_instance):
     ) -> str:
         """
         Get all components (individual services and groups) for a status page with their IDs.
-    
+
         Use this tool when someone asks for "components", "all components", "component list",
         or wants to see services/systems on a status page. This includes both individual
         components and component groups with their unique identifiers.
-    
+
         Args:
             page_id: The ID of the status page (required, e.g., "tih6xo7z8v7n")
             page: Page number for pagination (optional, default: 1)
             page_size: Number of components per page (optional, default: 20)
-    
+
         Returns:
             JSON with complete list of components including names, IDs, status, type (group/individual), and configuration.
         """
@@ -300,14 +300,14 @@ def register_get_component_details(mcp_instance):
     async def get_component_details(page_id: str, component_id: str) -> str:
         """
         Get detailed information about a specific component.
-    
+
         Components represent individual services or systems that are monitored and displayed
         on your status page. Each component has a status and can be linked to monitoring checks.
-    
+
         Args:
             page_id: The ID of the status page
             component_id: The unique identifier of the component
-    
+
         Returns:
             JSON with component details including name, description, status, position, and linked checks.
         """
@@ -327,10 +327,10 @@ def register_list_checks(mcp_instance):
     ) -> str:
         """
         List all monitoring checks in your account.
-    
+
         Checks are automated tests that monitor your websites, APIs, and services.
         They run at regular intervals and can trigger alerts when issues are detected.
-    
+
         Args:
             page: Page number for pagination (default: 1)
             page_size: Number of items per page (default: 20, max: 100)
@@ -338,7 +338,7 @@ def register_list_checks(mcp_instance):
             status: Filter by status (can specify multiple statuses separated by commas)
             group_id: Filter checks by group ID (use "ungrouped" for checks not assigned to any group)
             name: Filter checks by name using case-insensitive partial matching
-    
+
         Returns:
             JSON with list of checks including names, URLs, types, intervals, and current status.
         """
@@ -351,10 +351,10 @@ def register_get_check_details(mcp_instance):
     async def get_check_details(check_id: str) -> str:
         """
         Get detailed configuration and settings for a specific monitoring check.
-    
+
         Args:
             check_id: The unique identifier of the monitoring check
-    
+
         Returns:
             JSON with complete check configuration including URL, intervals, timeouts,
             expected responses, notification settings, and linked components.
@@ -374,17 +374,17 @@ def register_get_check_results(mcp_instance):
     ) -> str:
         """
         Get historical results and performance data for a monitoring check.
-    
+
         This provides detailed execution history including response times, status codes,
         error messages, and uptime statistics for the specified time period.
-    
+
         Args:
             check_id: The unique identifier of the monitoring check
             from_date: Start date in ISO format (e.g., '2024-01-01T00:00:00Z')
             to_date: End date in ISO format (e.g., '2024-01-31T23:59:59Z')
             page: Page number for pagination
             page_size: Number of results per page
-    
+
         Returns:
             JSON with check results including timestamps, response times, status codes, and error details.
         """
@@ -397,13 +397,13 @@ def register_get_check_statistics(mcp_instance):
     async def get_check_statistics(check_id: str) -> str:
         """
         Get statistical summary and performance metrics for a monitoring check.
-    
+
         Provides uptime percentage, average response time, total executions,
         and other key performance indicators for the check.
-    
+
         Args:
             check_id: The unique identifier of the monitoring check
-    
+
         Returns:
             JSON with statistics including uptime %, avg response time, success rate, and error counts.
         """
@@ -416,10 +416,10 @@ def register_list_check_jobs(mcp_instance):
     async def list_check_jobs() -> str:
         """
         List all currently running or queued check execution jobs.
-    
+
         Shows the status of scheduled and on-demand check executions,
         useful for monitoring the execution queue and identifying any stuck jobs.
-    
+
         Returns:
             JSON with list of active jobs including job IDs, check IDs, status, and execution times.
         """
@@ -432,10 +432,10 @@ def register_check_job_details(mcp_instance):
     async def get_check_job_details(job_id: str) -> str:
         """
         Get detailed information about a specific check execution job.
-    
+
         Args:
             job_id: The unique identifier of the check job
-    
+
         Returns:
             JSON with job details including execution status, start/end times, results, and any errors.
         """
@@ -455,10 +455,10 @@ def register_get_unified_results(mcp_instance):
     ) -> str:
         """
         Get combined results from multiple checks in a unified format.
-    
+
         Useful for analyzing performance across multiple services or getting
         an overview of all your monitoring data in a single request.
-    
+
         Args:
             check_ids: List of check IDs to include (if None, includes all checks)
             from_date: Start date in ISO format
@@ -466,7 +466,7 @@ def register_get_unified_results(mcp_instance):
             status: Filter by result status ('success', 'failure', 'timeout')
             page: Page number for pagination
             page_size: Number of results per page
-    
+
         Returns:
             JSON with unified results from multiple checks including timestamps and performance data.
         """
@@ -483,15 +483,15 @@ def register_get_unified_statistics(mcp_instance):
     ) -> str:
         """
         Get combined statistical summary across multiple monitoring checks.
-    
+
         Provides aggregated uptime, performance metrics, and trends across
         your entire monitoring infrastructure or a subset of checks.
-    
+
         Args:
             check_ids: List of check IDs to analyze (if None, includes all checks)
             from_date: Start date for statistics calculation
             to_date: End date for statistics calculation
-    
+
         Returns:
             JSON with aggregated statistics including overall uptime, avg response times, and trends.
         """
@@ -515,10 +515,10 @@ def register_create_icmp_check(mcp_instance):
     ) -> str:
         """
         Create a permanent ICMP (ping) monitoring check.
-    
+
         ICMP checks monitor network connectivity and latency to hosts using ICMP echo requests (ping).
         They are useful for monitoring server availability, network latency, and packet loss.
-    
+
         Args:
             name: A descriptive name for this ICMP check (required)
             host: Hostname or IP address to ping (required, max 255 characters)
@@ -530,7 +530,7 @@ def register_create_icmp_check(mcp_instance):
             probe_interval: Interval between individual probes in seconds (default: 1.0, range: 0.001-10)
             probe_timeout: Timeout for each individual probe in seconds (default: 1.0, range: 0.1-30)
             max_packet_loss: Maximum acceptable packet loss percentage (range: 0-100, optional)
-    
+
         Returns:
             JSON with created ICMP check details including check ID and configuration.
         """
@@ -556,10 +556,10 @@ def register_create_dns_check(mcp_instance):
     ) -> str:
         """
         Create a permanent DNS monitoring check.
-    
+
         DNS checks monitor DNS resolution and validate DNS records. They can verify that
         your domain resolves correctly and returns expected IP addresses or other DNS records.
-    
+
         Args:
             name: A descriptive name for this DNS check (required)
             host: Domain name to query (required, e.g., 'example.com')
@@ -574,8 +574,8 @@ def register_create_dns_check(mcp_instance):
                              The check will fail if actual answers don't match expectations
             validation_mode: How to validate answers (default: 'contains_all')
                             - 'contains_all': Actual answers must include all expected answers
-                            - 'exact': Actual answers must exactly match expected answers
-    
+                            - 'exact': Actual answers must exactly match expected answers (order matters)
+
         Returns:
             JSON with created DNS check details including check ID and configuration.
         """
@@ -598,14 +598,14 @@ def register_create_synthetic_check(mcp_instance):
     ) -> str:
         """
         Create a permanent synthetic browser monitoring check using Playwright.
-    
+
         Synthetic checks simulate real user interactions with your website using a headless
         browser. They can navigate pages, fill forms, click buttons, and verify page content.
         The check uses Playwright scripts written in JavaScript or TypeScript.
-    
+
         IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
         The script should use the Playwright test framework and include proper assertions.
-    
+
         Args:
             name: A descriptive name for this synthetic check (required, max 100 characters)
             url: The starting URL for the browser test (required)
@@ -625,7 +625,7 @@ def register_create_synthetic_check(mcp_instance):
             interval: How often to run the check in seconds (default: 300, range: 30-86400)
             timeout: Overall check timeout in seconds (default: 60, range: 1-300)
             active: Whether the check is active (default: True)
-    
+
         Returns:
             JSON with created synthetic check details including check ID and configuration.
         """
@@ -654,14 +654,14 @@ def register_create_multistep_check(mcp_instance):
     ) -> str:
         """
         Create a permanent multi-step monitoring check using Playwright.
-    
+
         Multi-step checks are similar to synthetic checks but are specifically designed for
         complex, multi-page workflows like checkout processes, login flows, or API sequences.
         They use Playwright scripts to automate and verify multi-step user journeys.
-    
+
         IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
         The script should include all steps of your workflow with proper error handling.
-    
+
         Args:
             name: A descriptive name for this multi-step check (required, max 100 characters)
             url: The starting URL for the workflow (required)
@@ -676,9 +676,6 @@ def register_create_multistep_check(mcp_instance):
                       const { test, expect } = require('@playwright/test');
                       test('login workflow', async ({ page }) => {
                         await page.goto('https://example.com/login');
-                        await page.fill('#username', 'testuser');
-                        await page.fill('#password', 'testpass');
-                        await page.click('button[type="submit"]');
                         await expect(page).toHaveURL(/.*dashboard/);
                         await expect(page.locator('.welcome')).toBeVisible();
                       });
@@ -686,7 +683,7 @@ def register_create_multistep_check(mcp_instance):
             interval: How often to run the check in seconds (default: 300, range: 30-86400)
             timeout: Overall check timeout in seconds (default: 60, range: 1-300)
             active: Whether the check is active (default: True)
-    
+
         Returns:
             JSON with created multi-step check details including check ID and configuration.
         """
@@ -716,11 +713,11 @@ def register_execute_custom_check(mcp_instance):
     ) -> str:
         """
         Execute a one-time custom monitoring check on any URL or service.
-    
+
         This allows you to test connectivity and performance to any endpoint
         without creating a permanent monitoring check. Useful for troubleshooting
         or testing new services before setting up regular monitoring.
-    
+
         Args:
             type: Type of check ('web', 'api', 'tcp', 'ssl', 'icmp', 'dns', 'multistep', 'synthetic') - REQUIRED
             name: A user-friendly name for the custom check (max 100 characters) - REQUIRED
@@ -729,22 +726,22 @@ def register_execute_custom_check(mcp_instance):
             port: The port number to monitor (required for TCP/SSL checks, range: 1-65535)
             timeout: Timeout in seconds (range: 1-30, default: 30)
             parameters: Additional parameters specific to the check type.
-    
+
         For 'synthetic' or 'multistep' checks, the 'parameters' dictionary must contain a 'pw_script' key.
-    
+
         For 'icmp' checks, parameters can include:
         - probe_count (1-100, default: 4)
         - ip_version ('v4', 'v6', 'auto')
         - probe_interval (0.001-10 seconds)
         - probe_timeout (0.1-30 seconds)
         - assertions: {max_packet_loss: 0-100}
-    
+
         For 'dns' checks, parameters can include:
         - record_type ('A', 'AAAA', 'MX', 'TXT', etc.)
         - dns_servers (list of DNS server IPs)
         - expected_answers (list of expected answers)
         - validation_mode ('contains_all' or 'exact')
-    
+
         Example for an 'icmp' check:
         {
           "type": "icmp",
@@ -755,7 +752,7 @@ def register_execute_custom_check(mcp_instance):
             "ip_version": "v4"
           }
         }
-    
+
         Example for a 'dns' check:
         {
           "type": "dns",
@@ -766,7 +763,7 @@ def register_execute_custom_check(mcp_instance):
             "expected_answers": ["93.184.216.34"]
           }
         }
-    
+
         Returns:
             JSON with the job id that is executed asynchronously.
         """
@@ -788,10 +785,10 @@ def register_execute_icmp_check(mcp_instance):
     ) -> str:
         """
         Execute a one-time ICMP (ping) check without creating a permanent monitor.
-    
+
         This performs an immediate ICMP ping test to check network connectivity and latency
         to a host. Useful for quick diagnostics or testing before setting up permanent monitoring.
-    
+
         Args:
             name: A descriptive name for this test (required, max 100 characters)
             host: Hostname or IP address to ping (required, max 255 characters)
@@ -802,7 +799,7 @@ def register_execute_icmp_check(mcp_instance):
             probe_timeout: Timeout for each individual probe in seconds (default: 1.0, range: 0.1-30)
             max_packet_loss: Maximum acceptable packet loss percentage (range: 0-100, optional)
                             If specified and exceeded, the check will fail
-    
+
         Returns:
             JSON with job ID for tracking the asynchronous execution.
             Use get_on_demand_job_status() to check results.
@@ -819,7 +816,7 @@ def register_execute_icmp_check(mcp_instance):
             parameters["probe_timeout"] = probe_timeout
         if max_packet_loss is not None:
             parameters["assertions"] = {"max_packet_loss": max_packet_loss}
-    
+
         return await checks_tools.execute_custom_check(
             type="icmp",
             name=name,
@@ -842,11 +839,11 @@ def register_execute_dns_check(mcp_instance):
     ) -> str:
         """
         Execute a one-time DNS resolution check without creating a permanent monitor.
-    
+
         This performs an immediate DNS query to verify domain resolution and optionally
         validate that DNS records match expected values. Useful for troubleshooting DNS
         issues or testing DNS changes before they propagate.
-    
+
         Args:
             name: A descriptive name for this test (required, max 100 characters)
             host: Domain name to query (required, e.g., 'example.com')
@@ -862,7 +859,7 @@ def register_execute_dns_check(mcp_instance):
             validation_mode: How to validate answers (default: 'contains_all')
                             - 'contains_all': Actual answers must include all expected answers
                             - 'exact': Actual answers must exactly match expected answers (order matters)
-    
+
         Returns:
             JSON with job ID for tracking the asynchronous execution.
             Use get_on_demand_job_status() to check results.
@@ -877,7 +874,7 @@ def register_execute_dns_check(mcp_instance):
             parameters["expected_answers"] = expected_answers
         if validation_mode is not None:
             parameters["validation_mode"] = validation_mode
-    
+
         return await checks_tools.execute_custom_check(
             type="dns",
             name=name,
@@ -897,13 +894,13 @@ def register_execute_synthetic_check(mcp_instance):
     ) -> str:
         """
         Execute a one-time synthetic browser check without creating a permanent monitor.
-    
+
         This performs an immediate browser automation test using Playwright to simulate
         real user interactions. Useful for testing UI workflows, verifying page functionality,
         or troubleshooting before setting up permanent monitoring.
-    
+
         IMPORTANT: You must provide a complete Playwright script in the pw_script parameter.
-    
+
         Args:
             name: A descriptive name for this test (required, max 100 characters)
             url: The starting URL for the browser test (required)
@@ -912,7 +909,7 @@ def register_execute_synthetic_check(mcp_instance):
                       - Import statements: const { test, expect } = require('@playwright/test');
                       - Test function with browser automation steps
                       - Assertions using expect() to verify expected behavior
-    
+
                       Example script:
                       ```javascript
                       const { test, expect } = require('@playwright/test');
@@ -923,7 +920,7 @@ def register_execute_synthetic_check(mcp_instance):
                       });
                       ```
             timeout: Overall check timeout in seconds (default: 60, range: 1-300)
-    
+
         Returns:
             JSON with job ID for tracking the asynchronous execution.
             Use get_on_demand_job_status() to check results.
@@ -949,14 +946,14 @@ def register_execute_multistep_check(mcp_instance):
     ) -> str:
         """
         Execute a one-time multi-step workflow check without creating a permanent monitor.
-    
+
         This performs an immediate browser automation test for complex, multi-page workflows
         using Playwright. Ideal for testing login flows, checkout processes, or multi-step
         forms before setting up permanent monitoring.
-    
+
         IMPORTANT: You must provide a complete Playwright script in the pw_script parameter
         that covers all steps in your workflow.
-    
+
         Args:
             name: A descriptive name for this test (required, max 100 characters)
             url: The starting URL for the workflow (required)
@@ -966,7 +963,7 @@ def register_execute_multistep_check(mcp_instance):
                       - Test function with all workflow steps
                       - Assertions at each critical step to verify progress
                       - Proper error handling for failed steps
-    
+
                       Example script for a login workflow:
                       ```javascript
                       const { test, expect } = require('@playwright/test');
@@ -974,14 +971,14 @@ def register_execute_multistep_check(mcp_instance):
                         // Step 1: Navigate to login page
                         await page.goto('https://example.com/login');
                         await expect(page.locator('form#login')).toBeVisible();
-    
+
                         // Step 2: Fill credentials
                         await page.fill('#username', 'testuser');
                         await page.fill('#password', 'testpass');
-    
+
                         // Step 3: Submit form
                         await page.click('button[type="submit"]');
-    
+
                         // Step 4: Verify successful login
                         await expect(page).toHaveURL(/.*dashboard/);
                         await expect(page.locator('.welcome-message')).toBeVisible();
@@ -989,7 +986,7 @@ def register_execute_multistep_check(mcp_instance):
                       ```
             timeout: Overall check timeout in seconds (default: 60, range: 1-300)
                     Should be long enough to complete all workflow steps
-    
+
         Returns:
             JSON with job ID for tracking the asynchronous execution.
             Use get_on_demand_job_status() to check results.
@@ -1003,21 +1000,21 @@ def register_execute_multistep_check(mcp_instance):
             timeout=timeout,
             parameters=parameters
         )
-    
+
 @tool_registry.register("execute_existing_check", requires_write=True)
 def register_execute_existing_check(mcp_instance):
     @mcp_instance.tool()
     async def execute_existing_check(check_id: str) -> str:
         """
         Manually trigger an existing monitoring check to run immediately.
-    
+
         Forces an immediate execution of a configured check, bypassing the normal
         scheduled interval. Useful for testing after configuration changes or
         getting fresh data on demand.
-    
+
         Args:
             check_id: The unique identifier of the check to execute
-    
+
         Returns:
             JSON with execution job details and immediate results if available.
         """
@@ -1030,13 +1027,13 @@ def register_get_on_demand_job_status(mcp_instance):
     async def get_on_demand_job_status(job_id: str) -> str:
         """
         Check the status and results of an on-demand check execution job.
-    
+
         After triggering a manual check execution, use this to monitor the job
         progress and retrieve results once the execution completes.
-    
+
         Args:
             job_id: The job ID returned from execute_existing_check or execute_custom_check
-    
+
         Returns:
             JSON with job status, execution progress, and results if completed.
         """
@@ -1052,11 +1049,11 @@ def register_list_on_demand_checks(mcp_instance):
     ) -> str:
         """
         List on-demand checks.
-    
+
         Args:
             page: Page number for pagination
             page_size: Number of items per page
-    
+
         Returns:
             JSON string containing on-demand checks data
         """
@@ -1073,14 +1070,14 @@ def register_list_secrets(mcp_instance):
     ) -> str:
         """
         List all organization secrets.
-    
+
         Secrets are encrypted values that can be used in monitoring checks
         for sensitive data like API keys, passwords, or tokens.
-    
+
         Args:
             page: Page number for pagination (default: 1)
             page_size: Number of items per page (default: 20, max: 100)
-    
+
         Returns:
             JSON with list of secrets (values are excluded for security).
         """
@@ -1093,10 +1090,10 @@ def register_get_secret_details(mcp_instance):
     async def get_secret_details(secret_id: str) -> str:
         """
         Get detailed information about a specific secret.
-    
+
         Args:
             secret_id: The unique identifier of the secret
-    
+
         Returns:
             JSON with secret details including the decrypted value.
         """
@@ -1109,13 +1106,13 @@ def register_get_check_secrets(mcp_instance):
     async def get_check_secrets(check_id: str) -> str:
         """
         Get all secrets associated with a monitoring check.
-    
+
         Shows which secrets are available to a check as environment variables
         during execution.
-    
+
         Args:
             check_id: The unique identifier of the check
-    
+
         Returns:
             JSON with list of secrets associated with this check.
         """
@@ -1133,14 +1130,14 @@ def register_list_check_groups(mcp_instance):
     ) -> str:
         """
         List all check groups in your account.
-    
+
         Check groups are containers that help organize monitoring checks into logical
         collections. Use this tool to see all available groups and their basic information.
-    
+
         Args:
             page: Page number for pagination (default: 1)
             page_size: Number of items per page (default: 20, max: 100)
-    
+
         Returns:
             JSON with list of check groups including their names, IDs, and check counts.
         """
@@ -1153,10 +1150,10 @@ def register_get_check_group_details(mcp_instance):
     async def get_check_group_details(group_id: str) -> str:
         """
         Get detailed information about a specific check group.
-    
+
         Args:
             group_id: The unique identifier of the check group
-    
+
         Returns:
             JSON with check group details including name, description, and configuration.
         """
@@ -1173,15 +1170,15 @@ def register_get_checks_in_group(mcp_instance):
     ) -> str:
         """
         Get all monitoring checks that belong to a specific check group.
-    
+
         Use this tool to see which checks are organized under a particular group.
         This helps understand the monitoring setup and check organization.
-    
+
         Args:
             group_id: The unique identifier of the check group
             page: Page number for pagination (default: 1)
             page_size: Number of items per page (default: 20, max: 100)
-    
+
         Returns:
             JSON with list of checks in the group including their names, URLs, types, and status.
         """
@@ -1199,16 +1196,16 @@ def register_list_alerts(mcp_instance):
     ) -> str:
         """
         List all alert configurations in your account.
-    
+
         Alerts are rules that trigger notifications when monitoring checks fail
         or meet specific conditions. Each alert can be configured with different
         channels, thresholds, and escalation rules.
-    
+
         Args:
             page: Page number for pagination
             page_size: Number of alerts per page
             status: Filter by alert status ('active', 'paused', 'disabled')
-    
+
         Returns:
             JSON with list of alerts including names, conditions, notification channels, and status.
         """
@@ -1221,13 +1218,13 @@ def register_get_alert_details(mcp_instance):
     async def get_alert_details(alert_id: str) -> str:
         """
         Get detailed configuration for a specific alert rule.
-    
+
         Shows complete alert setup including trigger conditions, notification
         channels, escalation rules, and recent activity.
-    
+
         Args:
             alert_id: The unique identifier of the alert rule
-    
+
         Returns:
             JSON with alert details including conditions, channels, thresholds, and escalation settings.
         """
@@ -1240,10 +1237,10 @@ def register_get_alert_statistics(mcp_instance):
     async def get_alert_statistics() -> str:
         """
         Get statistical overview of all alert activity.
-    
+
         Provides summary of alert triggers, resolution times, most frequently
         triggered alerts, and overall notification volume.
-    
+
         Returns:
             JSON with alert statistics including trigger counts, avg resolution time, and trends.
         """
@@ -1256,11 +1253,11 @@ def register_list_alert_channels(mcp_instance):
     async def list_alert_channels() -> str:
         """
         List all configured notification channels for alerts.
-    
+
         Shows available notification methods like email, SMS, webhooks,
         and their configuration status. These channels are used by alert rules
         to deliver notifications when issues are detected.
-    
+
         Returns:
             JSON with list of notification channels including types, names, and status.
         """
@@ -1273,10 +1270,10 @@ def register_list_alert_rules(mcp_instance):
     async def list_alert_rules() -> str:
         """
         List all alert rules and their trigger conditions.
-    
+
         Shows the specific conditions and thresholds that will trigger each alert,
         including response time requirements, uptime requirements, and error conditions.
-    
+
         Returns:
             JSON with list of alert rules including conditions, thresholds, and linked checks.
         """
@@ -1294,16 +1291,16 @@ def register_list_heartbeats(mcp_instance):
     ) -> str:
         """
         List all heartbeat monitors in your account.
-    
+
         Heartbeats monitor cron jobs, scheduled tasks, and background processes
         by expecting regular "ping" signals. If a ping is missed, it indicates
         the monitored process may have failed or stopped running.
-    
+
         Args:
             page: Page number for pagination
             page_size: Number of heartbeats per page
             status: Filter by status ('active', 'inactive', 'grace_period', 'down')
-    
+
         Returns:
             JSON with list of heartbeats including names, URLs, intervals, and last ping times.
         """
@@ -1316,13 +1313,13 @@ def register_get_heartbeat_details(mcp_instance):
     async def get_heartbeat_details(heartbeat_id: str) -> str:
         """
         Get detailed information about a specific heartbeat monitor.
-    
+
         Shows configuration, recent activity, ping history, and current status
         for monitoring cron jobs and scheduled tasks.
-    
+
         Args:
             heartbeat_id: The unique identifier of the heartbeat monitor
-    
+
         Returns:
             JSON with heartbeat details including schedule, grace period, last ping, and history.
         """
@@ -1335,13 +1332,13 @@ def register_create_heartbeat(mcp_instance):
     async def create_heartbeat(heartbeat_data: dict) -> str:
         """
         Create a new heartbeat monitor for cron jobs or scheduled tasks.
-    
+
         Set up monitoring for background processes by creating a heartbeat that
         expects regular ping signals. Configure the expected interval and grace period.
-    
+
         Args:
             heartbeat_data: Dictionary with heartbeat configuration (name, interval, grace_period, etc.)
-    
+
         Returns:
             JSON with created heartbeat details including the unique ping URL to use in your scripts.
         """
@@ -1354,14 +1351,14 @@ def register_update_heartbeat(mcp_instance):
     async def update_heartbeat(heartbeat_id: str, heartbeat_data: dict) -> str:
         """
         Update configuration for an existing heartbeat monitor.
-    
+
         Modify settings like expected interval, grace period, notification rules,
         or other heartbeat configuration parameters.
-    
+
         Args:
             heartbeat_id: The unique identifier of the heartbeat to update
             heartbeat_data: Dictionary with updated heartbeat configuration
-    
+
         Returns:
             JSON with updated heartbeat details and configuration.
         """
@@ -1374,13 +1371,13 @@ def register_delete_heartbeat(mcp_instance):
     async def delete_heartbeat(heartbeat_id: str) -> str:
         """
         Delete a heartbeat monitor permanently.
-    
+
         This will stop monitoring the associated cron job or scheduled task.
         The heartbeat ping URL will become inactive after deletion.
-    
+
         Args:
             heartbeat_id: The unique identifier of the heartbeat to delete
-    
+
         Returns:
             JSON confirming successful deletion.
         """
@@ -1393,13 +1390,13 @@ def register_send_heartbeat_ping(mcp_instance):
     async def send_heartbeat_ping(heartbeat_id: str) -> str:
         """
         Manually send a ping signal to a heartbeat monitor.
-    
+
         This simulates a successful execution of the monitored process.
         Normally, your cron jobs or scripts would ping the heartbeat URL automatically.
-    
+
         Args:
             heartbeat_id: The unique identifier of the heartbeat to ping
-    
+
         Returns:
             JSON confirming the ping was received and recorded.
         """
@@ -1418,17 +1415,17 @@ def register_get_heartbeat_logs(mcp_instance):
     ) -> str:
         """
         Get historical ping logs and activity for a heartbeat monitor.
-    
+
         Shows when pings were received, missed pings that triggered alerts,
         and the overall reliability pattern of the monitored process.
-    
+
         Args:
             heartbeat_id: The unique identifier of the heartbeat
             from_date: Start date in ISO format for log retrieval
             to_date: End date in ISO format for log retrieval
             page: Page number for pagination
             page_size: Number of log entries per page
-    
+
         Returns:
             JSON with ping history including timestamps, status, and any alert triggers.
         """
@@ -1446,17 +1443,17 @@ def register_list_incidents(mcp_instance):
     ) -> str:
         """
         List all incidents for a specific status page.
-    
+
         Incidents represent service outages, maintenance windows, or other
         events that affect your services and need to be communicated to users
         through your status page.
-    
+
         Args:
             page_id: The ID of the status page to get incidents for
             page: Page number for pagination
             page_size: Number of incidents per page
             status: Filter by incident status ('investigating', 'identified', 'monitoring', 'resolved')
-    
+
         Returns:
             JSON with list of incidents including titles, status, impact level, and timestamps.
         """
@@ -1469,14 +1466,14 @@ def register_get_incident_details(mcp_instance):
     async def get_incident_details(page_id: str, incident_id: str) -> str:
         """
         Get detailed information about a specific incident.
-    
+
         Shows complete incident details including description, affected components,
         impact level, timeline, and all status updates posted during the incident.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
-    
+
         Returns:
             JSON with incident details including description, components, updates, and resolution timeline.
         """
@@ -1489,14 +1486,14 @@ def register_get_incident_updates(mcp_instance):
     async def get_incident_updates(page_id: str, incident_id: str) -> str:
         """
         Get all status updates posted during an incident.
-    
+
         Shows chronological list of updates that were posted to keep users
         informed about the incident progress, investigation, and resolution.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
-    
+
         Returns:
             JSON with list of incident updates including timestamps, status changes, and messages.
         """
@@ -1509,15 +1506,15 @@ def register_get_incident_update_details(mcp_instance):
     async def get_incident_update_details(page_id: str, incident_id: str, update_id: str) -> str:
         """
         Get detailed information about a specific incident update.
-    
+
         Shows the complete content of a specific status update that was posted
         during an incident, including the message, timestamp, and status change.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
             update_id: The unique identifier of the specific update
-    
+
         Returns:
             JSON with update details including message content, timestamp, and status information.
         """
@@ -1552,10 +1549,10 @@ def register_update_page(mcp_instance):
     ) -> str:
         """
         FULL UPDATE: Replace all page configuration (PUT method). Requires many fields to be specified.
-    
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name,
         use patch_page instead which is designed for partial updates.
-    
+
         Args:
             page_id: The unique identifier of the page to update
             name: New name/title for the status page
@@ -1578,7 +1575,7 @@ def register_update_page(mcp_instance):
             allow_webhook_subscribers: Whether to allow webhook subscriptions
             allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
             support_url: URL to your support or contact page
-    
+
         Returns:
             JSON with updated page details and configuration.
         """
@@ -1635,11 +1632,11 @@ def register_patch_page(mcp_instance):
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a status page (PATCH method).
-    
+
         Use this for simple updates like changing the name, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most page updates.
-    
+
         Args:
             page_id: The unique identifier of the page to patch
             name: Display name of the status page
@@ -1662,7 +1659,7 @@ def register_patch_page(mcp_instance):
             allow_webhook_subscribers: Whether to allow webhook subscriptions
             allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
             support_url: URL to your support or contact page
-    
+
         Returns:
             JSON with updated page configuration.
         """
@@ -1697,13 +1694,13 @@ def register_delete_page(mcp_instance):
     async def delete_page(page_id: str) -> str:
         """
         Permanently delete a status page and all its associated data.
-    
+
         WARNING: This action cannot be undone. All components, incidents,
         and historical data associated with this page will be deleted.
-    
+
         Args:
             page_id: The unique identifier of the page to delete
-    
+
         Returns:
             JSON confirming successful deletion.
         """
@@ -1726,10 +1723,10 @@ def register_create_component(mcp_instance):
     ) -> str:
         """
         Create a new component or component group on a status page.
-    
+
         Components represent individual services, systems, or features that users
         care about. They can be organized into groups and have their own status.
-    
+
         Args:
             page_id: The ID of the status page to add the component to
             name: Display name for the component
@@ -1741,7 +1738,7 @@ def register_create_component(mcp_instance):
             showcase: Whether to highlight this component prominently
             status: Initial status ('operational', 'degraded_performance', 'partial_outage', 'major_outage')
             **kwargs: Additional component configuration
-    
+
         Returns:
             JSON with created component details including ID and configuration.
         """
@@ -1776,10 +1773,10 @@ def register_update_component(mcp_instance):
     ) -> str:
         """
         FULL UPDATE: Replace all component configuration (PUT method). Requires many fields to be specified.
-    
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name or status,
         use patch_component instead which is designed for partial updates.
-    
+
         Args:
             page_id: The ID of the status page
             component_id: The unique identifier of the component to update
@@ -1792,7 +1789,7 @@ def register_update_component(mcp_instance):
             showcase: Whether to highlight prominently
             status: New status setting
             **kwargs: Additional configuration updates
-    
+
         Returns:
             JSON with updated component details and configuration.
         """
@@ -1820,11 +1817,11 @@ def register_patch_component(mcp_instance):
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of a component (PATCH method).
-    
+
         Use this for simple updates like changing the name, status, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most component updates.
-    
+
         Args:
             page_id: The ID of the status page
             component_id: The unique identifier of the component
@@ -1837,7 +1834,7 @@ def register_patch_component(mcp_instance):
             showcase: Whether to prominently display this component on the status page
             status: Current operational status of the component
             start_date: Date when monitoring for this component started (ISO format)
-    
+
         Returns:
             JSON with updated component configuration.
         """
@@ -1853,14 +1850,14 @@ def register_delete_component(mcp_instance):
     async def delete_component(page_id: str, component_id: str) -> str:
         """
         Delete a component from a status page permanently.
-    
+
         This removes the component from the status page display and
         deletes all associated historical status data.
-    
+
         Args:
             page_id: The ID of the status page
             component_id: The unique identifier of the component to delete
-    
+
         Returns:
             JSON confirming successful deletion.
         """
@@ -1883,11 +1880,11 @@ def register_create_check(mcp_instance):
     ) -> str:
         """
         Create a new monitoring check to watch a website, API, or service.
-    
+
         Set up automated monitoring that will test your service at regular
         intervals and alert you when issues are detected.
         If name is not set, AI agent should generate it from the URL or description.
-    
+
         Args:
             name: A user-friendly name for the monitor check. Max 100 characters.
             type: The type of check. Valid: 'web', 'api', 'ssl', 'tcp', 'synthetic', 'multistep'.
@@ -1898,7 +1895,7 @@ def register_create_check(mcp_instance):
             timeout: Request timeout in seconds. Range: 1-30. Default: 10.
             active: A flag to set the check as active or paused. Default: True.
             parameters: Additional parameters for 'synthetic' and 'multistep' checks.
-    
+
         Returns:
             A JSON object with the created check's details.
         """
@@ -1933,10 +1930,10 @@ def register_update_check(mcp_instance):
     ) -> str:
         """
         Update configuration for an existing monitoring check.
-    
+
         Modify check settings like its name, URL, interval, or active status.
         Only include the parameters you wish to change.
-    
+
         Args:
             check_id: The unique identifier of the check to update. (Required)
             name: A new user-friendly name for the monitor check.
@@ -1948,7 +1945,7 @@ def register_update_check(mcp_instance):
             active: A new flag to set the check as active (true) or paused (false).
             parameters: New additional parameters. For synthetic or multistep checks, the 'parameters' dictionary must contain a 'pw_script' key. The value of this key should be the full Playwright script in Javascript or Typescript content as a string.
             secrets: List of secrets to associate with this check (replaces all existing associations). Each dict must have 'secret_id' and 'env_variable' keys.
-    
+
         Returns:
             A JSON object with the updated check details.
         """
@@ -1965,20 +1962,20 @@ def register_update_check(mcp_instance):
             parameters=parameters,
             secrets=secrets,
         )
-    
+
 @tool_registry.register("delete_check", requires_write=True)
 def register_delete_check(mcp_instance):
     @mcp_instance.tool()
     async def delete_check(check_id: str) -> str:
         """
         Delete a monitoring check permanently.
-    
+
         This stops all monitoring for the specified check and removes
         all historical data and results.
-    
+
         Args:
             check_id: The unique identifier of the check to delete
-    
+
         Returns:
             JSON confirming successful deletion.
         """
@@ -1991,13 +1988,13 @@ def register_pause_check(mcp_instance):
     async def pause_check(check_id: str) -> str:
         """
         Temporarily pause a monitoring check without deleting it.
-    
+
         The check will stop running but all configuration and historical
         data will be preserved. Can be resumed later.
-    
+
         Args:
             check_id: The unique identifier of the check to pause
-    
+
         Returns:
             JSON confirming the check has been paused.
         """
@@ -2010,13 +2007,13 @@ def register_resume_check(mcp_instance):
     async def resume_check(check_id: str) -> str:
         """
         Resume a previously paused monitoring check.
-    
+
         The check will start running again at its configured interval
         with all previous settings intact.
-    
+
         Args:
             check_id: The unique identifier of the check to resume
-    
+
         Returns:
             JSON confirming the check has been resumed.
         """
@@ -2029,10 +2026,10 @@ def register_create_alert(mcp_instance):
     async def create_alert(alert_data: dict) -> str:
         """
         Create a new alert rule to get notified when issues are detected.
-    
+
         Set up notifications that will be sent when monitoring checks fail
         or meet specific conditions like response time thresholds.
-    
+
         Args:
             alert_data: Dictionary with alert configuration including:
                 - name: Alert rule name
@@ -2040,7 +2037,7 @@ def register_create_alert(mcp_instance):
                 - conditions: Trigger conditions (failures, response time, etc.)
                 - channels: Notification channels (email, SMS, webhook, etc.)
                 - escalation: Escalation rules and delays
-    
+
         Returns:
             JSON with created alert rule details and configuration.
         """
@@ -2053,14 +2050,14 @@ def register_update_alert(mcp_instance):
     async def update_alert(alert_id: str, alert_data: dict) -> str:
         """
         Update configuration for an existing alert rule.
-    
+
         Modify alert conditions, notification channels, escalation rules,
         or which checks the alert applies to.
-    
+
         Args:
             alert_id: The unique identifier of the alert rule to update
             alert_data: Dictionary with updated alert configuration
-    
+
         Returns:
             JSON with updated alert rule details and configuration.
         """
@@ -2073,13 +2070,13 @@ def register_delete_alert(mcp_instance):
     async def delete_alert(alert_id: str) -> str:
         """
         Delete an alert rule permanently.
-    
+
         This stops all notifications from this alert rule and removes
         the configuration. Historical alert activity may be preserved.
-    
+
         Args:
             alert_id: The unique identifier of the alert rule to delete
-    
+
         Returns:
             JSON confirming successful deletion.
         """
@@ -2093,14 +2090,14 @@ def register_create_secret(mcp_instance):
     async def create_secret(name: str, value: str) -> str:
         """
         Create a new organization secret.
-    
+
         Secrets are encrypted values that can be used in monitoring checks
         for sensitive data like API keys, passwords, or tokens.
-    
+
         Args:
             name: Name of the secret (used for identification)
             value: Secret value (will be encrypted in storage)
-    
+
         Returns:
             JSON with created secret details.
         """
@@ -2113,11 +2110,11 @@ def register_update_secret(mcp_instance):
     async def update_secret(secret_id: str, value: str) -> str:
         """
         Update a secret's value.
-    
+
         Args:
             secret_id: The unique identifier of the secret to update
             value: New secret value (will be encrypted)
-    
+
         Returns:
             JSON with updated secret details.
         """
@@ -2130,13 +2127,13 @@ def register_delete_secret(mcp_instance):
     async def delete_secret(secret_id: str) -> str:
         """
         Delete a secret permanently.
-    
+
         WARNING: This will remove the secret from all checks that use it.
         Checks using this secret may fail if they depend on it.
-    
+
         Args:
             secret_id: The unique identifier of the secret to delete
-    
+
         Returns:
             JSON confirming successful deletion.
         """
@@ -2153,15 +2150,15 @@ def register_add_secret_to_check(mcp_instance):
     ) -> str:
         """
         Associate a secret with a monitoring check.
-    
+
         The secret will be available to the check as an environment variable
         during execution.
-    
+
         Args:
             check_id: The unique identifier of the check
             secret_id: The unique identifier of the secret
             env_var_name: Environment variable name to use (e.g., 'API_KEY')
-    
+
         Returns:
             JSON with the association details.
         """
@@ -2177,13 +2174,13 @@ def register_update_check_secrets(mcp_instance):
     ) -> str:
         """
         Replace all secret associations for a check.
-    
+
         This removes all existing secret associations and adds the new ones.
-    
+
         Args:
             check_id: The unique identifier of the check
             secrets: List of dicts with 'secret_id' and 'env_var_name' keys
-    
+
         Returns:
             JSON with updated associations.
         """
@@ -2196,13 +2193,13 @@ def register_remove_secret_from_check(mcp_instance):
     async def remove_secret_from_check(check_id: str, secret_id: str) -> str:
         """
         Remove a secret association from a check.
-    
+
         The secret will no longer be available to the check.
-    
+
         Args:
             check_id: The unique identifier of the check
             secret_id: The unique identifier of the secret to remove
-    
+
         Returns:
             JSON confirming removal.
         """
@@ -2225,10 +2222,10 @@ def register_create_incident(mcp_instance):
     ) -> str:
         """
         Create a new incident on a status page to communicate issues to users.
-    
+
         Post an incident when you need to inform users about service outages,
         maintenance, or other events affecting your services.
-    
+
         Args:
             page_id: The ID of the status page to post the incident on
             name: The name/title of the incident (1-200 characters, required)
@@ -2237,7 +2234,7 @@ def register_create_incident(mcp_instance):
             impact: Impact level ('none', 'minor', 'major', 'critical')
             deliver_notifications: Whether to send notifications when creating this incident (default: True)
             components: A dictionary mapping component IDs to their status during incident creation
-    
+
         Returns:
             JSON with created incident details including ID and public URL.
         """
@@ -2251,7 +2248,7 @@ def register_create_incident(mcp_instance):
             deliver_notifications=deliver_notifications,
             components=components
         )
-    
+
 @tool_registry.register("update_incident", requires_write=True)
 def register_update_incident(mcp_instance):
     @mcp_instance.tool()
@@ -2278,10 +2275,10 @@ def register_update_incident(mcp_instance):
     ) -> str:
         """
         FULL UPDATE: Replace all incident configuration (PUT method). Requires many fields to be specified.
-    
+
         WARNING: This is a full replacement operation. For simple changes like updating just the name or status,
         use patch_incident instead which is designed for partial updates.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
@@ -2302,7 +2299,7 @@ def register_update_incident(mcp_instance):
             scheduled_auto_completed: Whether scheduled maintenance should auto be marked completed
             reminder_intervals: Intervals for reminder notifications
             metadata: Additional metadata associated with the incident
-    
+
         Returns:
             JSON with updated incident details.
         """
@@ -2355,11 +2352,11 @@ def register_patch_incident(mcp_instance):
     ) -> str:
         """
         RECOMMENDED: Partially update specific fields of an incident (PATCH method).
-    
+
         Use this for simple updates like changing the name, status, description, or other individual fields.
         Only the fields you specify will be updated, leaving other settings unchanged.
         This is the preferred method for most incident updates.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
@@ -2380,7 +2377,7 @@ def register_patch_incident(mcp_instance):
             scheduled_auto_completed: Whether scheduled maintenance should auto be marked completed
             reminder_intervals: Intervals for reminder notifications
             metadata: Additional metadata associated with the incident
-    
+
         Returns:
             JSON with updated incident configuration.
         """
@@ -2413,14 +2410,14 @@ def register_delete_incident(mcp_instance):
     async def delete_incident(page_id: str, incident_id: str) -> str:
         """
         Delete an incident from a status page permanently.
-    
+
         This removes the incident and all its updates from the status page.
         Use with caution as this action cannot be undone.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident to delete
-    
+
         Returns:
             JSON confirming successful deletion.
         """
@@ -2433,10 +2430,10 @@ def register_add_incident_update(mcp_instance):
     async def add_incident_update(page_id: str, incident_id: str, update_data: dict) -> str:
         """
         Add a new status update to an existing incident.
-    
+
         Post updates to keep users informed about incident progress,
         investigation findings, or resolution steps.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
@@ -2444,7 +2441,7 @@ def register_add_incident_update(mcp_instance):
                 - body: The update message text
                 - status: New incident status if changed
                 - deliver_notifications: Whether to notify subscribers
-    
+
         Returns:
             JSON with created update details including timestamp and content.
         """
@@ -2457,16 +2454,16 @@ def register_update_incident_update(mcp_instance):
     async def update_incident_update(page_id: str, incident_id: str, update_id: str, update_data: dict) -> str:
         """
         Edit an existing incident status update.
-    
+
         Modify the content or status of a previously posted incident update.
         Useful for correcting typos or adding additional information.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
             update_id: The unique identifier of the update to modify
             update_data: Dictionary with updated content and settings
-    
+
         Returns:
             JSON with updated incident update details.
         """
@@ -2479,15 +2476,15 @@ def register_delete_incident_update(mcp_instance):
     async def delete_incident_update(page_id: str, incident_id: str, update_id: str) -> str:
         """
         Delete a specific incident status update.
-    
+
         Remove an incident update from the timeline. This action cannot
         be undone and may confuse users if the update was already public.
-    
+
         Args:
             page_id: The ID of the status page
             incident_id: The unique identifier of the incident
             update_id: The unique identifier of the update to delete
-    
+
         Returns:
             JSON confirming successful deletion.
         """
@@ -2505,16 +2502,16 @@ def register_generate_synthetic_check_script(mcp_instance):
     ) -> str:
         """
         Generate a Playwright script for synthetic browser monitoring.
-    
+
         This tool creates a complete Playwright test script based on your description
         of what should be tested. The script will include proper error handling,
         screenshots, and basic validation.
-    
+
         Args:
             description: Natural language description of what the test should do
             target_url: The URL to test
             script_name: Optional name for the test (auto-generated if not provided)
-    
+
         Returns:
             JSON with the generated Playwright script and usage instructions
         """
@@ -2540,11 +2537,11 @@ def register_generate_api_check_script(mcp_instance):
     ) -> str:
         """
         Generates a Playwright script for an API check.
-    
+
         This tool creates automated API tests that can validate endpoint responses,
         check status codes, and verify response content. It supports various HTTP methods
         and allows for custom request payloads and response assertions.
-    
+
         Args:
             url: The API endpoint URL to check.
             description: A clear description of the API endpoint and what it verifies.
@@ -2554,7 +2551,7 @@ def register_generate_api_check_script(mcp_instance):
             expected_status: The expected HTTP status code for the response.
             contains_string: A string that is expected to be present in the response body.
             custom_code: A string containing custom JavaScript code to execute for more complex assertions.
-    
+
         Returns:
             A string containing the generated Playwright script in TypeScript.
         """
@@ -2589,10 +2586,12 @@ def register_tools():
             register_func(mcp)
 
     else:  # SSE mode
-        # In SSE mode, register all tools compatible with server mode
-        # (tool list filtering happens at runtime based on request headers)
+        # In SSE mode, register all tools by default
+        # Runtime filtering will happen based on X-MCP-Tools header per request
+        # However, we still respect MCP_TOOLS env var as a default filter
+        requested_tools = config.requested_tools
         tools_to_register = tool_registry.get_tools_to_register(
-            requested_tools=None,  # Register all tools
+            requested_tools=requested_tools,
             is_read_write_mode=config.is_read_write()
         )
 
@@ -2606,13 +2605,13 @@ def initialize_server(cli_args=None):
     global config, mcp, pingera_client, status_tools, pages_tools, component_tools
     global checks_tools, alerts_tools, heartbeats_tools, incidents_tools
     global playwright_tools, check_groups_tools, secrets_tools
-    
+
     # Load configuration with CLI args
     config = Config(cli_args=cli_args)
-    
+
     # Create MCP server
     mcp = create_mcp_server(config)
-    
+
     # Initialize Pingera client
     if config.transport_mode == "stdio":
         pingera_client = PingeraClient(
@@ -2633,7 +2632,7 @@ def initialize_server(cli_args=None):
             max_retries=config.max_retries
         )
         logger.info(f"SSE mode: Client will be created per-request from Authorization headers")
-    
+
     # Initialize tool instances
     status_tools = StatusTools(pingera_client)
     pages_tools = PagesTools(pingera_client)
@@ -2645,8 +2644,8 @@ def initialize_server(cli_args=None):
     playwright_tools = PlaywrightGeneratorTools(pingera_client)
     check_groups_tools = CheckGroupsTools(pingera_client)
     secrets_tools = SecretsTools(pingera_client)
-    
+
     # Register tools
     register_tools()
-    
+
     return mcp

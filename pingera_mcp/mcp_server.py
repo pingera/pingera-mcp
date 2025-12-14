@@ -256,8 +256,9 @@ def register_create_page(mcp_instance):
 # PoC tools registered via tool_registry - see bottom of file for registration
 # (Old direct @mcp.tool() decorators removed to demonstrate selective registration)
 
-@mcp.tool()
-async def test_pingera_connection() -> str:
+# TEMPORARILY DISABLED - These should be moved to tool_registry pattern
+# @mcp.tool()
+async def test_pingera_connection_OLD() -> str:
     """
     Test the connection to Pingera API and verify authentication.
 

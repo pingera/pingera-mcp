@@ -40,7 +40,8 @@ server_params = StdioServerParameters(
         "3.10",
         "python",
         "-m",
-        "pingera_mcp"
+        "pingera_mcp",
+        "--tools=list_pages,get_page_details"
     ],
     env={
         "PINGERA_API_KEY": os.getenv("PINGERA_API_KEY", "your_api_key_here"),

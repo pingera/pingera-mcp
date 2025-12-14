@@ -66,31 +66,20 @@ def create_mcp_server(config: Config) -> FastMCP:
 
     return mcp_server
 
-# Config will be loaded after CLI args are parsed in __main__.py
+# Global variables - will be initialized by initialize_server()
 config = None
 mcp = None
-
-# Initialize Pingera client (for module-level usage in stdio mode)
-if config.transport_mode == "stdio":
-    pingera_client = PingeraClient(
-        api_key=config.api_key if config.api_key else None,
-        jwt_token=config.jwt_token if config.jwt_token else None,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        max_retries=config.max_retries
-    )
-    auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
-    logger.info(f"Using Pingera SDK client with {auth_method} authentication")
-else:
-    # In SSE mode, client will be created per-request from auth headers
-    pingera_client = PingeraClient(
-        api_key=config.api_key if config.api_key else "placeholder",
-        jwt_token=config.jwt_token if config.jwt_token else None,
-        base_url=config.base_url,
-        timeout=config.timeout,
-        max_retries=config.max_retries
-    )
-    logger.info(f"SSE mode: Client will be created per-request from Authorization headers")
+pingera_client = None
+status_tools = None
+pages_tools = None
+component_tools = None
+checks_tools = None
+alerts_tools = None
+heartbeats_tools = None
+incidents_tools = None
+playwright_tools = None
+check_groups_tools = None
+secrets_tools = None
 
 # Helper function to update the client for tools
 def _update_tools_client():
@@ -101,7 +90,7 @@ def _update_tools_client():
     global status_tools, pages_tools, component_tools, checks_tools, alerts_tools, heartbeats_tools, incidents_tools, playwright_tools, check_groups_tools, secrets_tools
 
     # In SSE mode, get the client from the request context
-    if config.transport_mode != "stdio":
+    if config and config.transport_mode != "stdio":
         request_client = get_request_client(config, pingera_client)
         if request_client:
             status_tools.client = request_client
@@ -114,18 +103,6 @@ def _update_tools_client():
             playwright_tools.client = request_client
             check_groups_tools.client = request_client
             secrets_tools.client = request_client
-
-# Initialize tool instances
-status_tools = StatusTools(pingera_client)
-pages_tools = PagesTools(pingera_client)
-component_tools = ComponentTools(pingera_client)
-checks_tools = ChecksTools(pingera_client)
-alerts_tools = AlertsTools(pingera_client)
-heartbeats_tools = HeartbeatsTools(pingera_client)
-incidents_tools = IncidentsTools(pingera_client)
-playwright_tools = PlaywrightGeneratorTools(pingera_client)
-check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
-secrets_tools = SecretsTools(pingera_client) # Initialize SecretsTools
 
 # Import tool registry
 from .tool_registry import tool_registry

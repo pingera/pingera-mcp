@@ -14,7 +14,7 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import create_react_agent
 
 # --- Configuration ---
-SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:5000")
+SERVER_URL = os.getenv("MCP_SERVER_URL", "http://127.0.0.1:5000/sse")
 PINGERA_API_KEY = os.getenv("PINGERA_API_KEY")
 
 async def main():

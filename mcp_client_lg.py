@@ -43,6 +43,7 @@ async def main():
                 "transport": "streamable_http",
                 "headers": {
                     "Authorization": PINGERA_API_KEY,
+                    "X-MCP-Tools": "list_pages,get_page_details,list_checks"
                 },
             }
         }

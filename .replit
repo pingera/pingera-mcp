@@ -54,6 +54,10 @@ task = "shell.exec"
 args = "python -m pingera_mcp"
 
 [[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
 localPort = 6274
 externalPort = 80
 

@@ -35,7 +35,7 @@ server_params = StdioServerParameters(
     args=[
         "-m",
         "pingera_mcp",
-        "--tools=list_pages,get_page_details"
+        "--tools=list_pages,get_page_details,list_checks"
     ],
     env={
         "PINGERA_API_KEY": os.getenv("PINGERA_API_KEY", "your_api_key_here"),

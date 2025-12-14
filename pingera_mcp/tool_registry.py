@@ -60,16 +60,16 @@ class ToolRegistry:
         """
         tools_to_register = {}
 
-        for tool_name, tool_info in self._tools.items():
+        for tool_name, (register_func, requires_write) in self._tools.items():
             # If specific tools are requested, only include those (regardless of mode)
             if requested_tools is not None and tool_name not in requested_tools:
                 continue
 
             # Check if tool requires write mode and we're in read-only mode
-            if tool_info.requires_write and not is_read_write_mode:
+            if requires_write and not is_read_write_mode:
                 continue
 
-            tools_to_register[tool_name] = tool_info.register_func
+            tools_to_register[tool_name] = register_func
 
         return tools_to_register
 

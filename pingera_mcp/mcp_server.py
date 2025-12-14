@@ -104,12 +104,36 @@ def _update_tools_client():
             check_groups_tools.client = request_client
             secrets_tools.client = request_client
 
-# Import tool registry
+# Import tool registry and registration functions
 from .tool_registry import tool_registry
+from .tool_registration import (
+    register_pages_tools,
+    register_components_tools,
+    register_checks_tools,
+    register_alerts_tools,
+    register_heartbeats_tools,
+    register_incidents_tools,
+    register_check_groups_tools,
+    register_secrets_tools,
+    register_playwright_tools,
+    register_status_tools,
+)
 
-# Register PoC tools using the registry pattern
-@tool_registry.register("list_pages", requires_write=False)
-def register_list_pages(mcp_instance):
+# Register all tool definitions when module loads
+register_pages_tools()
+register_components_tools()
+register_checks_tools()
+register_alerts_tools()
+register_heartbeats_tools()
+register_incidents_tools()
+register_check_groups_tools()
+register_secrets_tools()
+register_playwright_tools()
+register_status_tools()
+
+# Example of what the old registration looked like (now in tool_registration/pages.py)
+# @tool_registry.register("list_pages", requires_write=False)
+# def register_list_pages(mcp_instance):
     @mcp_instance.tool()
     async def list_pages(
         page: Optional[int] = None,

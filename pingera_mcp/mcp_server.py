@@ -129,42 +129,132 @@ playwright_tools = PlaywrightGeneratorTools(pingera_client)
 check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
 secrets_tools = SecretsTools(pingera_client) # Initialize SecretsTools
 
-# Register read-only tools
-@mcp.tool()
-async def list_pages(
-    page: Optional[int] = None,
-    per_page: Optional[int] = None,
-    status: Optional[str] = None
-) -> str:
-    """
-    List all status pages in your Pingera account.
+# Import tool registry
+from .tool_registry import tool_registry
 
-    This is typically the first tool you should use to discover available pages and their IDs.
-    Each page has a unique ID that you'll need for other operations like listing incidents or components.
+# Register PoC tools using the registry pattern
+@tool_registry.register("list_pages", requires_write=False)
+def register_list_pages(mcp_instance):
+    @mcp_instance.tool()
+    async def list_pages(
+        page: Optional[int] = None,
+        per_page: Optional[int] = None,
+        status: Optional[str] = None
+    ) -> str:
+        """
+        List all status pages in your Pingera account.
 
-    Args:
-        page: Page number for pagination (default: 1)
-        per_page: Number of items per page (default: 20, max: 100)
+        This is typically the first tool you should use to discover available pages and their IDs.
+        Each page has a unique ID that you'll need for other operations like listing incidents or components.
 
-    Returns:
-        JSON with list of status pages including their names, IDs, domains, and configuration details.
-    """
-    _update_tools_client()
-    return await pages_tools.list_pages(page, per_page, status)
+        Args:
+            page: Page number for pagination (default: 1)
+            per_page: Number of items per page (default: 20, max: 100)
 
-@mcp.tool()
-async def get_page_details(page_id: int) -> str:
-    """
-    Get detailed information about a specific status page.
+        Returns:
+            JSON with list of status pages including their names, IDs, domains, and configuration details.
+        """
+        _update_tools_client()
+        return await pages_tools.list_pages(page, per_page, status)
+    return list_pages
 
-    Args:
-        page_id: The unique identifier of the status page
+@tool_registry.register("get_page_details", requires_write=False)
+def register_get_page_details(mcp_instance):
+    @mcp_instance.tool()
+    async def get_page_details(page_id: int) -> str:
+        """
+        Get detailed information about a specific status page.
 
-    Returns:
-        JSON with complete page details including settings, components, branding, and configuration.
-    """
-    _update_tools_client()
-    return await pages_tools.get_page_details(page_id)
+        Args:
+            page_id: The unique identifier of the status page
+
+        Returns:
+            JSON with complete page details including settings, components, branding, and configuration.
+        """
+        _update_tools_client()
+        return await pages_tools.get_page_details(page_id)
+    return get_page_details
+
+@tool_registry.register("create_page", requires_write=True)
+def register_create_page(mcp_instance):
+    @mcp_instance.tool()
+    async def create_page(
+        name: str,
+        subdomain: Optional[str] = None,
+        domain: Optional[str] = None,
+        url: Optional[str] = None,
+        language: Optional[str] = None,
+        headline: Optional[str] = None,
+        page_description: Optional[str] = None,
+        time_zone: Optional[str] = None,
+        country: Optional[str] = None,
+        city: Optional[str] = None,
+        state: Optional[str] = None,
+        viewers_must_be_team_members: Optional[bool] = None,
+        hidden_from_search: Optional[bool] = None,
+        allow_page_subscribers: Optional[bool] = None,
+        allow_incident_subscribers: Optional[bool] = None,
+        allow_email_subscribers: Optional[bool] = None,
+        allow_sms_subscribers: Optional[bool] = None,
+        allow_webhook_subscribers: Optional[bool] = None,
+        allow_rss_atom_feeds: Optional[bool] = None,
+        support_url: Optional[str] = None,
+    ) -> str:
+        """
+        Create a new status page.
+
+        Args:
+            name: Display name of the status page (required)
+            subdomain: Subdomain for accessing the status page (e.g., 'mycompany' for mycompany.pingera.ru)
+            domain: Custom domain for the status page
+            url: Company URL - users will be redirected there when clicking on the logo
+            language: Language for the status page interface ("ru" or "en")
+            headline: Headline text displayed on the status page
+            page_description: Brief description of what this status page monitors
+            time_zone: Timezone for displaying dates and times on the status page
+            country: Country where your organization is located
+            city: City where your organization is located
+            state: State/region where your organization is located
+            viewers_must_be_team_members: Whether only team members can view this page (True = private, False = public)
+            hidden_from_search: Whether to hide this page from search engines
+            allow_page_subscribers: Whether to allow users to subscribe to page updates
+            allow_incident_subscribers: Whether to allow users to subscribe to incident updates
+            allow_email_subscribers: Whether to allow email subscriptions
+            allow_sms_subscribers: Whether to allow SMS subscriptions
+            allow_webhook_subscribers: Whether to allow webhook subscriptions
+            allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
+            support_url: URL to your support or contact page
+
+        Returns:
+            JSON string containing the created page details
+        """
+        _update_tools_client()
+        return await pages_tools.create_page(
+            name=name,
+            subdomain=subdomain,
+            domain=domain,
+            url=url,
+            language=language,
+            headline=headline,
+            page_description=page_description,
+            time_zone=time_zone,
+            country=country,
+            city=city,
+            state=state,
+            viewers_must_be_team_members=viewers_must_be_team_members,
+            hidden_from_search=hidden_from_search,
+            allow_page_subscribers=allow_page_subscribers,
+            allow_incident_subscribers=allow_incident_subscribers,
+            allow_email_subscribers=allow_email_subscribers,
+            allow_sms_subscribers=allow_sms_subscribers,
+            allow_webhook_subscribers=allow_webhook_subscribers,
+            allow_rss_atom_feeds=allow_rss_atom_feeds,
+            support_url=support_url,
+        )
+    return create_page
+
+# PoC tools registered via tool_registry - see bottom of file for registration
+# (Old direct @mcp.tool() decorators removed to demonstrate selective registration)
 
 @mcp.tool()
 async def test_pingera_connection() -> str:
@@ -1374,82 +1464,7 @@ async def get_incident_update_details(page_id: str, incident_id: str, update_id:
 # Register write tools only if in read-write mode
 if config.is_read_write():
     logger.info("Read-write mode enabled - adding write operations")
-
-    @mcp.tool()
-    async def create_page(
-        name: str,
-        subdomain: Optional[str] = None,
-        domain: Optional[str] = None,
-        url: Optional[str] = None,
-        language: Optional[str] = None,
-        headline: Optional[str] = None,
-        page_description: Optional[str] = None,
-        time_zone: Optional[str] = None,
-        country: Optional[str] = None,
-        city: Optional[str] = None,
-        state: Optional[str] = None,
-        viewers_must_be_team_members: Optional[bool] = None,
-        hidden_from_search: Optional[bool] = None,
-        allow_page_subscribers: Optional[bool] = None,
-        allow_incident_subscribers: Optional[bool] = None,
-        allow_email_subscribers: Optional[bool] = None,
-        allow_sms_subscribers: Optional[bool] = None,
-        allow_webhook_subscribers: Optional[bool] = None,
-        allow_rss_atom_feeds: Optional[bool] = None,
-        support_url: Optional[str] = None,
-    ) -> str:
-        """
-        Create a new status page.
-
-        Args:
-            name: Display name of the status page (required)
-            subdomain: Subdomain for accessing the status page (e.g., 'mycompany' for mycompany.pingera.ru)
-            domain: Custom domain for the status page
-            url: Company URL - users will be redirected there when clicking on the logo
-            language: Language for the status page interface ("ru" or "en")
-            headline: Headline text displayed on the status page
-            page_description: Brief description of what this status page monitors
-            time_zone: Timezone for displaying dates and times on the status page
-            country: Country where your organization is located
-            city: City where your organization is located
-            state: State/region where your organization is located
-            viewers_must_be_team_members: Whether only team members can view this page (True = private, False = public)
-            hidden_from_search: Whether to hide this page from search engines
-            allow_page_subscribers: Whether to allow users to subscribe to page updates
-            allow_incident_subscribers: Whether to allow users to subscribe to incident updates
-            allow_email_subscribers: Whether to allow email subscriptions
-            allow_sms_subscribers: Whether to allow SMS subscriptions
-            allow_webhook_subscribers: Whether to allow webhook subscriptions
-            allow_rss_atom_feeds: Whether to provide RSS/Atom feeds
-            support_url: URL to your support or contact page
-
-        Returns:
-            JSON string containing the created page details
-        """
-        _update_tools_client()
-        return await pages_tools.create_page(
-            name=name,
-            subdomain=subdomain,
-            domain=domain,
-            url=url,
-            language=language,
-            headline=headline,
-            page_description=page_description,
-            time_zone=time_zone,
-            country=country,
-            city=city,
-            state=state,
-            viewers_must_be_team_members=viewers_must_be_team_members,
-            hidden_from_search=hidden_from_search,
-            allow_page_subscribers=allow_page_subscribers,
-            allow_incident_subscribers=allow_incident_subscribers,
-            allow_email_subscribers=allow_email_subscribers,
-            allow_sms_subscribers=allow_sms_subscribers,
-            allow_webhook_subscribers=allow_webhook_subscribers,
-            allow_rss_atom_feeds=allow_rss_atom_feeds,
-            support_url=support_url,
-        )
-        return create_page
+    # create_page is now registered via tool_registry
 
     @mcp.tool()
     async def update_page(
@@ -2436,3 +2451,36 @@ async def generate_api_check_script(
         contains_string=contains_string,
         custom_code=custom_code
     )
+
+# Register tools based on configuration
+def register_tools():
+    """Register tools based on server configuration and client request."""
+    
+    if config.transport_mode == "stdio":
+        # In stdio mode, only register requested tools that are compatible with server mode
+        requested_tools = config.requested_tools  # None if --tools flag not provided
+        tools_to_register = tool_registry.get_tools_to_register(
+            requested_tools=requested_tools,
+            is_read_write_mode=config.is_read_write()
+        )
+        
+        logger.info(f"Registering {len(tools_to_register)} tools for stdio mode")
+        for tool_name, register_func in tools_to_register.items():
+            logger.debug(f"Registering tool: {tool_name}")
+            register_func(mcp)
+    
+    else:  # SSE mode
+        # In SSE mode, register all tools compatible with server mode
+        # (tool list filtering happens at runtime based on request headers)
+        tools_to_register = tool_registry.get_tools_to_register(
+            requested_tools=None,  # Register all tools
+            is_read_write_mode=config.is_read_write()
+        )
+        
+        logger.info(f"Registering {len(tools_to_register)} tools for SSE mode")
+        for tool_name, register_func in tools_to_register.items():
+            logger.debug(f"Registering tool: {tool_name}")
+            register_func(mcp)
+
+# Actually register the tools
+register_tools()

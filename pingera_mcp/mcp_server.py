@@ -721,7 +721,7 @@ async def execute_icmp_check(
         parameters["probe_timeout"] = probe_timeout
     if max_packet_loss is not None:
         parameters["assertions"] = {"max_packet_loss": max_packet_loss}
-    
+
     return await checks_tools.execute_custom_check(
         type="icmp",
         name=name,
@@ -777,7 +777,7 @@ async def execute_dns_check(
         parameters["expected_answers"] = expected_answers
     if validation_mode is not None:
         parameters["validation_mode"] = validation_mode
-    
+
     return await checks_tools.execute_custom_check(
         type="dns",
         name=name,
@@ -810,7 +810,7 @@ async def execute_synthetic_check(
                   - Import statements: const { test, expect } = require('@playwright/test');
                   - Test function with browser automation steps
                   - Assertions using expect() to verify expected behavior
-                  
+
                   Example script:
                   ```javascript
                   const { test, expect } = require('@playwright/test');
@@ -862,7 +862,7 @@ async def execute_multistep_check(
                   - Test function with all workflow steps
                   - Assertions at each critical step to verify progress
                   - Proper error handling for failed steps
-                  
+
                   Example script for a login workflow:
                   ```javascript
                   const { test, expect } = require('@playwright/test');
@@ -870,14 +870,14 @@ async def execute_multistep_check(
                     // Step 1: Navigate to login page
                     await page.goto('https://example.com/login');
                     await expect(page.locator('form#login')).toBeVisible();
-                    
+
                     // Step 2: Fill credentials
                     await page.fill('#username', 'testuser');
                     await page.fill('#password', 'testpass');
-                    
+
                     // Step 3: Submit form
                     await page.click('button[type="submit"]');
-                    
+
                     // Step 4: Verify successful login
                     await expect(page).toHaveURL(/.*dashboard/);
                     await expect(page.locator('.welcome-message')).toBeVisible();
@@ -1143,7 +1143,7 @@ async def list_alert_rules() -> str:
     List all alert rules and their trigger conditions.
 
     Shows the specific conditions and thresholds that will trigger each alert,
-    including response time thresholds, uptime requirements, and error conditions.
+    including response time requirements, uptime requirements, and error conditions.
 
     Returns:
         JSON with list of alert rules including conditions, thresholds, and linked checks.
@@ -1449,6 +1449,7 @@ if config.is_read_write():
             allow_rss_atom_feeds=allow_rss_atom_feeds,
             support_url=support_url,
         )
+        return create_page
 
     @mcp.tool()
     async def update_page(
@@ -1477,7 +1478,7 @@ if config.is_read_write():
         """
         FULL UPDATE: Replace all page configuration (PUT method). Requires many fields to be specified.
 
-        WARNING: This is a full replacement operation. For simple changes like updating just the name, 
+        WARNING: This is a full replacement operation. For simple changes like updating just the name,
         use patch_page instead which is designed for partial updates.
 
         Args:
@@ -1693,7 +1694,7 @@ if config.is_read_write():
         """
         FULL UPDATE: Replace all component configuration (PUT method). Requires many fields to be specified.
 
-        WARNING: This is a full replacement operation. For simple changes like updating just the name or status, 
+        WARNING: This is a full replacement operation. For simple changes like updating just the name or status,
         use patch_component instead which is designed for partial updates.
 
         Args:
@@ -1720,7 +1721,7 @@ if config.is_read_write():
 
     @mcp.tool()
     async def patch_component(
-        page_id: str, 
+        page_id: str,
         component_id: str,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -2159,7 +2160,7 @@ if config.is_read_write():
         """
         FULL UPDATE: Replace all incident configuration (PUT method). Requires many fields to be specified.
 
-        WARNING: This is a full replacement operation. For simple changes like updating just the name or status, 
+        WARNING: This is a full replacement operation. For simple changes like updating just the name or status,
         use patch_incident instead which is designed for partial updates.
 
         Args:

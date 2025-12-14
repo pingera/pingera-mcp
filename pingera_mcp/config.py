@@ -3,7 +3,7 @@ Configuration management for Pingera MCP Server.
 """
 import os
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from dotenv import load_dotenv
 
@@ -20,8 +20,8 @@ class OperationMode(str, Enum):
 class Config:
     """Configuration class for Pingera MCP Server."""
     
-    def __init__(self) -> None:
-        """Initialize configuration from environment variables."""
+    def __init__(self, cli_args=None) -> None:
+        """Initialize configuration from environment variables and CLI args."""
         # API Configuration
         self.api_key: str = os.getenv("PINGERA_API_KEY", "")
         self.jwt_token: str = os.getenv("PINGERA_JWT_TOKEN", "")
@@ -49,6 +49,18 @@ class Config:
         
         # Server Name
         self.server_name: str = os.getenv("PINGERA_SERVER_NAME", "Pingera MCP Server")
+        
+        # Tool filtering
+        self.requested_tools: Optional[List[str]] = self._parse_tools(cli_args)
+    
+    def _parse_tools(self, cli_args) -> Optional[List[str]]:
+        """Parse --tools flag from CLI args."""
+        if cli_args and hasattr(cli_args, 'tools') and cli_args.tools:
+            tools_str = cli_args.tools.strip()
+            if tools_str:
+                tools = [t.strip() for t in tools_str.split(',') if t.strip()]
+                return tools if tools else None
+        return None
     
     def is_read_only(self) -> bool:
         """Check if server is in read-only mode."""

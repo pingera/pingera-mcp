@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
 """
-Main entry point for the Pingera MCP server.
+Main entry point for Pingera MCP Server.
 """
-import logging
+import argparse
 from .mcp_server import mcp, config
 
-logger = logging.getLogger(__name__)
+def parse_args():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(description='Pingera MCP Server')
+    parser.add_argument(
+        '--tools',
+        type=str,
+        help='Comma-separated list of tools to expose (e.g., list_pages,create_page,list_checks)'
+    )
+    return parser.parse_args()
+
+def main() -> None:
+    """Run the MCP server."""
+    # Note: CLI args are already parsed in config initialization
+    # This is just for documentation - the config is created before this runs
+    mcp.run()
 
 if __name__ == "__main__":
-    # Run the FastMCP server in appropriate mode
-    if config.transport_mode == "sse":
-        logger.info(f"Starting MCP server in SSE mode on {config.http_host}:{config.http_port}")
-        mcp.run(transport="streamable-http")
-    else:
-        logger.info("Starting MCP server in stdio mode")
-        mcp.run()
+    main()

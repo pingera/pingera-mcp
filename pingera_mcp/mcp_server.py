@@ -134,28 +134,28 @@ register_status_tools()
 # Example of what the old registration looked like (now in tool_registration/pages.py)
 # @tool_registry.register("list_pages", requires_write=False)
 # def register_list_pages(mcp_instance):
-    @mcp_instance.tool()
-    async def list_pages(
-        page: Optional[int] = None,
-        per_page: Optional[int] = None,
-        status: Optional[str] = None
-    ) -> str:
-        """
-        List all status pages in your Pingera account.
+@mcp_instance.tool()
+async def list_pages(
+    page: Optional[int] = None,
+    per_page: Optional[int] = None,
+    status: Optional[str] = None
+) -> str:
+    """
+    List all status pages in your Pingera account.
 
-        This is typically the first tool you should use to discover available pages and their IDs.
-        Each page has a unique ID that you'll need for other operations like listing incidents or components.
+    This is typically the first tool you should use to discover available pages and their IDs.
+    Each page has a unique ID that you'll need for other operations like listing incidents or components.
 
-        Args:
-            page: Page number for pagination (default: 1)
-            per_page: Number of items per page (default: 20, max: 100)
+    Args:
+        page: Page number for pagination (default: 1)
+        per_page: Number of items per page (default: 20, max: 100)
 
-        Returns:
-            JSON with list of status pages including their names, IDs, domains, and configuration details.
-        """
-        _update_tools_client()
-        return await pages_tools.list_pages(page, per_page, status)
-    return list_pages
+    Returns:
+        JSON with list of status pages including their names, IDs, domains, and configuration details.
+    """
+    _update_tools_client()
+    return await pages_tools.list_pages(page, per_page, status)
+return list_pages
 
 @tool_registry.register("get_page_details", requires_write=False)
 def register_get_page_details(mcp_instance):

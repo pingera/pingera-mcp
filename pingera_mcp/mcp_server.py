@@ -66,11 +66,9 @@ def create_mcp_server(config: Config) -> FastMCP:
 
     return mcp_server
 
-# Load configuration
-config = Config()
-
-# Create MCP server
-mcp = create_mcp_server(config)
+# Config will be loaded after CLI args are parsed in __main__.py
+config = None
+mcp = None
 
 # Initialize Pingera client (for module-level usage in stdio mode)
 if config.transport_mode == "stdio":
@@ -304,5 +302,52 @@ def register_tools():
             logger.debug(f"Registering tool: {tool_name}")
             register_func(mcp)
 
-# Actually register the tools
-register_tools()
+def initialize_server(cli_args=None):
+    """Initialize the server with CLI arguments."""
+    global config, mcp, pingera_client, status_tools, pages_tools, component_tools
+    global checks_tools, alerts_tools, heartbeats_tools, incidents_tools
+    global playwright_tools, check_groups_tools, secrets_tools
+    
+    # Load configuration with CLI args
+    config = Config(cli_args=cli_args)
+    
+    # Create MCP server
+    mcp = create_mcp_server(config)
+    
+    # Initialize Pingera client
+    if config.transport_mode == "stdio":
+        pingera_client = PingeraClient(
+            api_key=config.api_key if config.api_key else None,
+            jwt_token=config.jwt_token if config.jwt_token else None,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            max_retries=config.max_retries
+        )
+        auth_method = "JWT Bearer token" if config.jwt_token else "API Key"
+        logger.info(f"Using Pingera SDK client with {auth_method} authentication")
+    else:
+        pingera_client = PingeraClient(
+            api_key=config.api_key if config.api_key else "placeholder",
+            jwt_token=config.jwt_token if config.jwt_token else None,
+            base_url=config.base_url,
+            timeout=config.timeout,
+            max_retries=config.max_retries
+        )
+        logger.info(f"SSE mode: Client will be created per-request from Authorization headers")
+    
+    # Initialize tool instances
+    status_tools = StatusTools(pingera_client)
+    pages_tools = PagesTools(pingera_client)
+    component_tools = ComponentTools(pingera_client)
+    checks_tools = ChecksTools(pingera_client)
+    alerts_tools = AlertsTools(pingera_client)
+    heartbeats_tools = HeartbeatsTools(pingera_client)
+    incidents_tools = IncidentsTools(pingera_client)
+    playwright_tools = PlaywrightGeneratorTools(pingera_client)
+    check_groups_tools = CheckGroupsTools(pingera_client)
+    secrets_tools = SecretsTools(pingera_client)
+    
+    # Register tools
+    register_tools()
+    
+    return mcp

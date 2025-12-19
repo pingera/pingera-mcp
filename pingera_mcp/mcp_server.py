@@ -50,16 +50,23 @@ def create_mcp_server(config: Config) -> FastMCP:
         else:
             logger.info("Server will accept requests without Authorization header (using env credentials)")
 
-    # Create MCP server with host/port for SSE mode
-    if config.transport_mode == "sse":
-        mcp_server = FastMCP(config.server_name, host=config.http_host, port=config.http_port)
-    else:
-        mcp_server = FastMCP(config.server_name)
-    
     # Add middleware for tool filtering (works in both stdio and SSE modes)
     from .tool_registry import tool_registry
     filter_middleware = ToolFilterMiddleware(config, tool_registry)
-    mcp_server.add_middleware(filter_middleware)
+    
+    # Create MCP server with host/port for SSE mode
+    if config.transport_mode == "sse":
+        mcp_server = FastMCP(
+            config.server_name, 
+            host=config.http_host, 
+            port=config.http_port,
+            middleware=[filter_middleware]
+        )
+    else:
+        mcp_server = FastMCP(
+            config.server_name,
+            middleware=[filter_middleware]
+        )
 
     # Initialize Pingera client for stdio mode (will be overridden per-request in SSE mode)
     pingera_client = PingeraClient(
@@ -140,33 +147,21 @@ register_status_tools()
 
 # Register tools based on configuration
 def register_tools():
-    """Register tools based on server configuration and client request."""
+    """Register all tools - middleware will handle filtering based on mode and client request."""
+    # Register all tools compatible with server mode
+    # Middleware will filter based on:
+    # - --tools flag (stdio mode)
+    # - X-MCP-Tools header (SSE mode)
+    # - read-only/read-write mode
+    tools_to_register = tool_registry.get_tools_to_register(
+        requested_tools=None,  # Register all tools
+        is_read_write_mode=config.is_read_write()
+    )
 
-    if config.transport_mode == "stdio":
-        # In stdio mode, only register requested tools that are compatible with server mode
-        requested_tools = config.requested_tools  # None if --tools flag not provided
-        tools_to_register = tool_registry.get_tools_to_register(
-            requested_tools=requested_tools,
-            is_read_write_mode=config.is_read_write()
-        )
-
-        logger.info(f"Registering {len(tools_to_register)} tools for stdio mode")
-        for tool_name, register_func in tools_to_register.items():
-            logger.debug(f"Registering tool: {tool_name}")
-            register_func(mcp)
-
-    else:  # SSE mode
-        # In SSE mode, register all tools compatible with server mode
-        # (tool list filtering happens at runtime based on request headers)
-        tools_to_register = tool_registry.get_tools_to_register(
-            requested_tools=None,  # Register all tools
-            is_read_write_mode=config.is_read_write()
-        )
-
-        logger.info(f"Registering {len(tools_to_register)} tools for SSE mode")
-        for tool_name, register_func in tools_to_register.items():
-            logger.debug(f"Registering tool: {tool_name}")
-            register_func(mcp)
+    logger.info(f"Registering {len(tools_to_register)} tools (middleware will filter based on request)")
+    for tool_name, register_func in tools_to_register.items():
+        logger.debug(f"Registering tool: {tool_name}")
+        register_func(mcp)
 
 def initialize_server(cli_args=None):
     """Initialize the server with CLI arguments."""

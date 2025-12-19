@@ -29,9 +29,17 @@ class ToolFilterMiddleware(Middleware):
         self._filtered_tools_cache = {}  # Cache per request
     
     def _get_requested_tools(self, context: MiddlewareContext) -> Optional[List[str]]:
-        """Extract requested tools from X-MCP-Tools header."""
+        """
+        Extract requested tools from:
+        1. X-MCP-Tools header (SSE mode)
+        2. --tools CLI flag (stdio mode, stored in config)
+        """
+        # In stdio mode, use tools from config (--tools flag)
+        if self.config.transport_mode == "stdio" and self.config.requested_tools:
+            return self.config.requested_tools
+        
+        # In SSE mode, get from request headers
         try:
-            # In SSE mode, get from request headers
             if hasattr(context, 'request') and context.request:
                 tools_header = context.request.headers.get('X-MCP-Tools', '').strip()
                 if tools_header:

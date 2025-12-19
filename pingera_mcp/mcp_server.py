@@ -10,6 +10,7 @@ from mcp.server.fastmcp import FastMCP
 from .config import Config
 from pingera_mcp import PingeraClient
 from pingera_mcp.auth import get_request_client
+from pingera_mcp.middleware import ToolFilterMiddleware
 from pingera_mcp.tools import (
         StatusTools,
         PagesTools,
@@ -54,6 +55,11 @@ def create_mcp_server(config: Config) -> FastMCP:
         mcp_server = FastMCP(config.server_name, host=config.http_host, port=config.http_port)
     else:
         mcp_server = FastMCP(config.server_name)
+    
+    # Add middleware for tool filtering (works in both stdio and SSE modes)
+    from .tool_registry import tool_registry
+    filter_middleware = ToolFilterMiddleware(config, tool_registry)
+    mcp_server.add_middleware(filter_middleware)
 
     # Initialize Pingera client for stdio mode (will be overridden per-request in SSE mode)
     pingera_client = PingeraClient(

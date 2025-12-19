@@ -262,39 +262,26 @@ def register_tools(mcp_instance, config, tool_registry):
             register_func(mcp_instance)
 ```
 
-### Phase 8: SSE Mode Runtime Filtering
+### Phase 8: SSE Mode Runtime Filtering ✅
 
 **Goal**: Filter tools at runtime based on request headers
 
 **Implementation Strategy**:
-Since we can't modify FastMCP's core `list_tools()` method directly, we need to:
+Use FastMCP's middleware system to filter tools before they reach the client.
 
-1. Hook into request context
-2. Store requested tools in thread-local or context variable
-3. Filter in tool execution phase
+**Implementation**:
+1. Created `ToolFilterMiddleware` class in `pingera_mcp/middleware.py`
+2. Middleware intercepts `on_list_tools()` to filter based on:
+   - `X-MCP-Tools` header (client-requested tools)
+   - Server mode (read-only vs read-write)
+3. Middleware intercepts `on_call_tool()` to prevent execution of filtered tools
+4. Added middleware to MCP server in `create_mcp_server()`
 
-**Alternative**: Implement custom MCP protocol handler that wraps FastMCP
-
-```python
-# In mcp_server.py
-
-from contextvars import ContextVar
-
-_request_tools = ContextVar('request_tools', default=None)
-
-def before_request_hook():
-    """Called before processing MCP request in SSE mode"""
-    if config.transport_mode == "sse":
-        tools = get_requested_tools_from_request()
-        _request_tools.set(tools)
-
-def should_expose_tool_for_request(tool_name: str) -> bool:
-    """Check if tool should be exposed for current request"""
-    requested = _request_tools.get()
-    if requested is None:
-        return True
-    return tool_name in requested
-```
+**Benefits**:
+- Clean, framework-native approach
+- Works in both stdio and SSE modes
+- Consistent filtering and execution prevention
+- No hacky context variables needed
 
 ## Implementation Order
 

@@ -5,7 +5,7 @@ import logging
 import json
 from typing import Optional, Dict, Any, List
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from .config import Config
 from pingera_mcp import PingeraClient
@@ -63,7 +63,7 @@ def create_mcp_server(config: Config) -> FastMCP:
     # Add middleware for tool filtering
     from .tool_registry import tool_registry
     filter_middleware = ToolFilterMiddleware(config, tool_registry)
-    mcp_server.add_middleware(middleware=filter_middleware)
+    mcp_server.add_middleware(ToolFilterMiddleware(config, tool_registry))
     
     logger.info("Tool filtering middleware registered successfully")
 

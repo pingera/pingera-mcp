@@ -3,8 +3,10 @@
 Middleware for filtering tools based on client requests and server mode.
 """
 import logging
-from typing import List, Optional
-from fastmcp.server.middleware import Middleware, MiddlewareContext
+from typing import List, Optional, Sequence
+from fastmcp.server.middleware import Middleware, MiddlewareContext, CallNext
+from mcp.types import Tool
+import mcp.types as mt
 
 logger = logging.getLogger("pingera-mcp-server")
 
@@ -29,20 +31,8 @@ class ToolFilterMiddleware(Middleware):
         self.tool_registry = tool_registry
         self._filtered_tools_cache = {}  # Cache per request
     
-    async def __call__(self, context: MiddlewareContext, call_next):
-        """
-        Main middleware entry point - handles all MCP messages.
-        Filters tools for list_tools and validates tool execution.
-        """
-        method = context.method if hasattr(context, 'method') else None
-        
-        if method == 'tools/list':
-            return await self.on_list_tools(context, call_next)
-        elif method == 'tools/call':
-            return await self.on_call_tool(context, call_next)
-        else:
-            # Pass through other methods unchanged
-            return await call_next(context)
+    # Note: FastMCP Middleware uses specific hooks, not __call__
+    # The base class dispatches to on_list_tools, on_call_tool, etc.
     
     def _get_requested_tools(self, context: MiddlewareContext) -> Optional[List[str]]:
         """
@@ -94,7 +84,11 @@ class ToolFilterMiddleware(Middleware):
         
         return True
     
-    async def on_list_tools(self, context: MiddlewareContext, call_next):
+    async def on_list_tools(
+        self, 
+        context: MiddlewareContext[mt.ListToolsRequest], 
+        call_next: CallNext[mt.ListToolsRequest, Sequence[Tool]]
+    ) -> Sequence[Tool]:
         """Filter tools list based on request headers and server mode."""
         # Get all tools from server
         result = await call_next(context)
@@ -119,9 +113,13 @@ class ToolFilterMiddleware(Middleware):
         
         return filtered_tools
     
-    async def on_call_tool(self, context: MiddlewareContext, call_next):
+    async def on_call_tool(
+        self,
+        context: MiddlewareContext[mt.CallToolRequestParams],
+        call_next: CallNext[mt.CallToolRequestParams, mt.CallToolResult]
+    ) -> mt.CallToolResult:
         """Prevent execution of filtered tools."""
-        tool_name = context.params.get('name')
+        tool_name = context.message.params.name if hasattr(context.message, 'params') else None
         
         # Check if this tool was filtered out in the list
         request_id = id(context)

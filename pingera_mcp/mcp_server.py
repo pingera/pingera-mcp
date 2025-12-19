@@ -59,16 +59,18 @@ def create_mcp_server(config: Config) -> FastMCP:
         )
     else:
         mcp_server = FastMCP(config.server_name)
-    
+
     # Add middleware for tool filtering (works in both stdio and SSE modes)
     from .tool_registry import tool_registry
     filter_middleware = ToolFilterMiddleware(config, tool_registry)
-    
-    # Check if FastMCP has middleware support - if not, we'll handle filtering differently
-    if hasattr(mcp_server, 'middleware'):
-        mcp_server.middleware.append(filter_middleware)
+
+    # Add middleware to the server's middleware stack
+    # FastMCP stores middleware in the underlying MCP server instance
+    if hasattr(mcp_server, '_mcp') and hasattr(mcp_server._mcp, 'middleware'):
+        mcp_server._mcp.middleware.append(filter_middleware)
+        logger.info("Tool filtering middleware registered successfully")
     else:
-        logger.warning("FastMCP doesn't support middleware - tool filtering will be done via wrapper functions")
+        logger.warning("Could not register middleware - FastMCP API may have changed")
 
     # Initialize Pingera client for stdio mode (will be overridden per-request in SSE mode)
     pingera_client = PingeraClient(
@@ -170,13 +172,13 @@ def initialize_server(cli_args=None):
     global config, mcp, pingera_client, status_tools, pages_tools, component_tools
     global checks_tools, alerts_tools, heartbeats_tools, incidents_tools
     global playwright_tools, check_groups_tools, secrets_tools
-    
+
     # Load configuration with CLI args
     config = Config(cli_args=cli_args)
-    
+
     # Create MCP server
     mcp = create_mcp_server(config)
-    
+
     # Initialize Pingera client
     if config.transport_mode == "stdio":
         pingera_client = PingeraClient(
@@ -197,7 +199,7 @@ def initialize_server(cli_args=None):
             max_retries=config.max_retries
         )
         logger.info(f"SSE mode: Client will be created per-request from Authorization headers")
-    
+
     # Initialize tool instances
     status_tools = StatusTools(pingera_client)
     pages_tools = PagesTools(pingera_client)
@@ -209,8 +211,8 @@ def initialize_server(cli_args=None):
     playwright_tools = PlaywrightGeneratorTools(pingera_client)
     check_groups_tools = CheckGroupsTools(pingera_client)
     secrets_tools = SecretsTools(pingera_client)
-    
+
     # Register tools
     register_tools()
-    
+
     return mcp

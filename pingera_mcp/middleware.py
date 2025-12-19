@@ -46,10 +46,17 @@ class ToolFilterMiddleware(Middleware):
         
         # In SSE mode, get from request headers
         try:
-            if hasattr(context, 'request') and context.request:
-                tools_header = context.request.headers.get('X-MCP-Tools', '').strip()
+            # Try to access the HTTP request from the context
+            # FastMCP may store it in different ways depending on the transport
+            from pingera_mcp.auth import get_http_request
+            request = get_http_request()
+            if request:
+                tools_header = request.headers.get('X-MCP-Tools', '').strip()
                 if tools_header:
+                    logger.info(f"Found X-MCP-Tools header: {tools_header}")
                     return [t.strip() for t in tools_header.split(',') if t.strip()]
+                else:
+                    logger.debug("No X-MCP-Tools header found in request")
         except Exception as e:
             logger.warning(f"Failed to extract X-MCP-Tools header: {e}")
         

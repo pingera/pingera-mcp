@@ -50,23 +50,20 @@ def create_mcp_server(config: Config) -> FastMCP:
         else:
             logger.info("Server will accept requests without Authorization header (using env credentials)")
 
-    # Create middleware for tool filtering
-    from .tool_registry import tool_registry
-    filter_middleware = ToolFilterMiddleware(config, tool_registry)
-
-    # Create MCP server with middleware
+    # Create MCP server
     if config.transport_mode == "sse":
         mcp_server = FastMCP(
             config.server_name, 
             host=config.http_host, 
-            port=config.http_port,
-            middleware=[filter_middleware]
+            port=config.http_port
         )
     else:
-        mcp_server = FastMCP(
-            config.server_name,
-            middleware=[filter_middleware]
-        )
+        mcp_server = FastMCP(config.server_name)
+    
+    # Add middleware for tool filtering
+    from .tool_registry import tool_registry
+    filter_middleware = ToolFilterMiddleware(config, tool_registry)
+    mcp_server.add_middleware(filter_middleware)
     
     logger.info("Tool filtering middleware registered successfully")
 

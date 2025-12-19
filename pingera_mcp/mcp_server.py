@@ -50,23 +50,25 @@ def create_mcp_server(config: Config) -> FastMCP:
         else:
             logger.info("Server will accept requests without Authorization header (using env credentials)")
 
-    # Add middleware for tool filtering (works in both stdio and SSE modes)
-    from .tool_registry import tool_registry
-    filter_middleware = ToolFilterMiddleware(config, tool_registry)
-    
     # Create MCP server with host/port for SSE mode
     if config.transport_mode == "sse":
         mcp_server = FastMCP(
             config.server_name, 
             host=config.http_host, 
-            port=config.http_port,
-            middleware=[filter_middleware]
+            port=config.http_port
         )
     else:
-        mcp_server = FastMCP(
-            config.server_name,
-            middleware=[filter_middleware]
-        )
+        mcp_server = FastMCP(config.server_name)
+    
+    # Add middleware for tool filtering (works in both stdio and SSE modes)
+    from .tool_registry import tool_registry
+    filter_middleware = ToolFilterMiddleware(config, tool_registry)
+    
+    # Check if FastMCP has middleware support - if not, we'll handle filtering differently
+    if hasattr(mcp_server, 'middleware'):
+        mcp_server.middleware.append(filter_middleware)
+    else:
+        logger.warning("FastMCP doesn't support middleware - tool filtering will be done via wrapper functions")
 
     # Initialize Pingera client for stdio mode (will be overridden per-request in SSE mode)
     pingera_client = PingeraClient(

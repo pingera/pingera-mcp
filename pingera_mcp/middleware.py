@@ -24,9 +24,25 @@ class ToolFilterMiddleware(Middleware):
             config: Server configuration instance
             tool_registry: ToolRegistry instance with tool metadata
         """
+        super().__init__()
         self.config = config
         self.tool_registry = tool_registry
         self._filtered_tools_cache = {}  # Cache per request
+    
+    async def __call__(self, context: MiddlewareContext, call_next):
+        """
+        Main middleware entry point - handles all MCP messages.
+        Filters tools for list_tools and validates tool execution.
+        """
+        method = context.method if hasattr(context, 'method') else None
+        
+        if method == 'tools/list':
+            return await self.on_list_tools(context, call_next)
+        elif method == 'tools/call':
+            return await self.on_call_tool(context, call_next)
+        else:
+            # Pass through other methods unchanged
+            return await call_next(context)
     
     def _get_requested_tools(self, context: MiddlewareContext) -> Optional[List[str]]:
         """

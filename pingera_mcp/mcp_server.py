@@ -63,7 +63,7 @@ def create_mcp_server(config: Config) -> FastMCP:
     # Add middleware for tool filtering
     from .tool_registry import tool_registry
     filter_middleware = ToolFilterMiddleware(config, tool_registry)
-    mcp_server.add_middleware(filter_middleware)
+    mcp_server.add_middleware(middleware=filter_middleware)
     
     logger.info("Tool filtering middleware registered successfully")
 

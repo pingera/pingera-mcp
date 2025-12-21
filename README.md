@@ -51,15 +51,15 @@ Enables web-based access through HTTP with Server-Sent Events. Perfect for remot
 
 ```bash
 # Configure SSE mode
-export PINGERA_TRANSPORT_MODE=sse
-export PINGERA_HTTP_HOST=0.0.0.0
-export PINGERA_HTTP_PORT=5000
+export TRANSPORT_MODE=sse
+export HTTP_HOST=0.0.0.0
+export HTTP_PORT=5000
 
 # Run in SSE mode
 python -m pingera_mcp
 ```
 
-The server will be accessible at `http://0.0.0.0:5000/mcp/`
+The server will be accessible at `http://0.0.0.0:5000/sse`
 
 #### Authentication in SSE Mode
 
@@ -75,6 +75,28 @@ SSE mode supports two authentication methods via the `Authorization` header:
    Authorization: Bearer YOUR_JWT_TOKEN
    ```
 
+#### Selective Tool Exposure
+
+You can control which tools are available to clients using the `X-MCP-Tools` header in SSE mode. This is useful for limiting AI agents to specific operations or creating different access levels.
+
+**Example: Limiting to read-only page tools**:
+```python
+client = MultiServerMCPClient({
+    "pingera": {
+        "url": "http://0.0.0.0:5000/sse",
+        "transport": "sse",
+        "headers": {
+            "Authorization": "YOUR_API_KEY",
+            "X-MCP-Tools": "list_pages,get_page_details,list_component_groups"
+        }
+    }
+})
+```
+
+The `X-MCP-Tools` header accepts a comma-separated list of tool names. Only the specified tools will be exposed to the client. If the header is omitted, all tools compatible with the current server mode (read-only or read-write) will be available.
+
+**Note**: Tool filtering respects the server's operation mode. Write-operation tools will not be exposed in read-only mode, even if requested via the header.
+
 #### Example: Python Client for SSE Mode
 
 ```python
@@ -84,8 +106,8 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 async def main():
     client = MultiServerMCPClient({
         "pingera": {
-            "url": "http://0.0.0.0:5000/mcp/",
-            "transport": "streamable_http",
+            "url": "http://0.0.0.0:5000/sse",
+            "transport": "sse",
             "headers": {
                 "Authorization": "YOUR_API_KEY",  # or "Bearer YOUR_JWT_TOKEN"
             }

@@ -41,8 +41,7 @@ async def main():
                 "url": SERVER_URL,
                 "transport": "sse",
                 "headers": {
-                    "Authorization": PINGERA_API_KEY,
-                    "X-MCP-Tools": "list_pages,get_page_details,list_checks"
+                    "Authorization": PINGERA_API_KEY
                 },
             }
         }

@@ -123,10 +123,10 @@ asyncio.run(main())
 
 #### SSE Mode Configuration Options
 
-- **`PINGERA_TRANSPORT_MODE`** - Set to `sse` to enable HTTP/SSE mode (default: `stdio`)
-- **`PINGERA_HTTP_HOST`** - Host to bind to (default: `0.0.0.0`)
-- **`PINGERA_HTTP_PORT`** - Port to listen on (default: `5000`)
-- **`PINGERA_REQUIRE_AUTH_HEADER`** - Require Authorization header (default: `false`)
+- **`TRANSPORT_MODE`** - Set to `sse` to enable HTTP/SSE mode (default: `stdio`)
+- **`HTTP_HOST`** - Host to bind to (default: `0.0.0.0`)
+- **`HTTP_PORT`** - Port to listen on (default: `5000`)
+- **`REQUIRE_AUTH_HEADER`** - Require Authorization header (default: `false`)
 
 **Note**: In SSE mode, you can either:
 - Provide credentials via environment variables (PINGERA_API_KEY or PINGERA_JWT_TOKEN) as fallback
@@ -220,12 +220,12 @@ PINGERA_API_KEY=your_api_key_here
 PINGERA_JWT_TOKEN=your_jwt_token_here
 
 # Transport Mode
-PINGERA_TRANSPORT_MODE=stdio              # stdio (default) or sse
+TRANSPORT_MODE=stdio              # stdio (default) or sse
 
 # SSE Mode Configuration (only used when TRANSPORT_MODE=sse)
-PINGERA_HTTP_HOST=0.0.0.0                 # Host to bind to
-PINGERA_HTTP_PORT=5000                     # Port to listen on
-PINGERA_REQUIRE_AUTH_HEADER=false         # Require Authorization header
+HTTP_HOST=0.0.0.0                 # Host to bind to
+HTTP_PORT=5000                     # Port to listen on
+REQUIRE_AUTH_HEADER=false         # Require Authorization header
 
 # Optional
 PINGERA_MODE=read_only                    # read_only or read_write

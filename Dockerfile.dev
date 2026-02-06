@@ -1,0 +1,68 @@
+# Development Dockerfile - Builds from source
+# Use this if you're developing pingera-mcp locally
+# For production, use Dockerfile (installs from PyPI)
+
+FROM python:3.11-slim
+
+# Install build and runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv package manager for faster builds
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash mcpuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY pyproject.toml ./
+COPY MANIFEST.in ./
+COPY README.md ./
+COPY LICENSE ./
+
+# Copy source code
+COPY pingera_mcp/ ./pingera_mcp/
+
+# Install dependencies in development/editable mode
+RUN uv pip install --system --no-cache-dir -e .
+
+# Install development tools and production ASGI server
+RUN uv pip install --system --no-cache-dir \
+    uvicorn[standard]==0.27.0 \
+    pytest \
+    pytest-cov
+
+# Set ownership
+RUN chown -R mcpuser:mcpuser /app
+
+# Switch to non-root user
+USER mcpuser
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    TRANSPORT_MODE=sse \
+    HTTP_HOST=0.0.0.0 \
+    HTTP_PORT=8000 \
+    MCP_MODE=read-write
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1
+
+# Run with uvicorn for development (single worker, auto-reload)
+CMD ["uvicorn", "pingera_mcp.asgi:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8000", \
+     "--reload", \
+     "--log-level", "debug"]

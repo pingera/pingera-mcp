@@ -31,7 +31,7 @@ async def main():
     if "localhost" in SERVER_URL:
         print(f"\nWarning: Connecting to localhost ({SERVER_URL}).")
         print("If your server is hosted (e.g., on Replit), set the 'MCP_SERVER_URL' environment variable.")
-        print("Example: export MCP_SERVER_URL='https://your-replit-url/mcp/'")
+        print("Example: export MCP_SERVER_URL='https://your-url/mcp/'")
 
     # 2. Set up the MCP Client
     # The client is configured to send the API key in the Authorization header

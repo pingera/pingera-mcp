@@ -1,0 +1,70 @@
+# Development .dockerignore - used with Dockerfile.dev
+# This is more permissive than .dockerignore since we need source for development
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+dist/
+*.egg-info/
+*.egg
+*.whl
+
+# Virtual environments  
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Build artifacts
+build/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Documentation (keep for development)
+# docs/ - commented out, might need docs in dev
+
+# Environment files (security)
+.env
+.env.*
+!.env.example
+!.env.docker
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Docker files for other modes
+Dockerfile
+docker-compose.yml
+.dockerignore

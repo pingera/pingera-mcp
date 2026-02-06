@@ -34,6 +34,28 @@ python -m pingera_mcp
 
 The server will start in read-only mode by default and connect to the Pingera API.
 
+### Docker Deployment (Production)
+
+For production deployments, use Docker for better isolation and management:
+
+```bash
+# Quick start with docker-compose
+cp .env.docker .env
+# Edit .env if you need to customize settings (credentials optional for SSE mode)
+docker-compose up -d
+
+# Or build and run with Docker directly
+docker build -t pingera-mcp-server .
+docker run -d -p 8000:8000 \
+  -e TRANSPORT_MODE=sse \
+  -e REQUIRE_AUTH_HEADER=true \
+  pingera-mcp-server
+```
+
+**Note:** In SSE mode (default for Docker), clients provide their API credentials via `Authorization` headers in each request. Server-side credentials are only needed for STDIO mode or as a fallback.
+
+See [DOCKER.md](DOCKER.md) for comprehensive Docker deployment guide.
+
 ## Operation Modes
 
 The Pingera MCP Server supports two transport modes:

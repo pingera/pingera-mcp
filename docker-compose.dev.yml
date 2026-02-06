@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  pingera-mcp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: pingera-mcp-dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount source code for live reload
+      - ./pingera_mcp:/app/pingera_mcp:ro
+    environment:
+      # Transport mode
+      - TRANSPORT_MODE=sse
+      - HTTP_HOST=0.0.0.0
+      - HTTP_PORT=8000
+      
+      # Operation mode
+      - MCP_MODE=read-write
+      
+      # Development: Allow requests without auth header (optional)
+      - REQUIRE_AUTH_HEADER=${REQUIRE_AUTH_HEADER:-false}
+      
+      # Optional fallback credentials for testing
+      - PINGERA_API_KEY=${PINGERA_API_KEY:-}
+      - PINGERA_JWT_TOKEN=${PINGERA_JWT_TOKEN:-}
+      
+      # API configuration
+      - PINGERA_BASE_URL=${PINGERA_BASE_URL:-https://api.pingera.ru/v1}
+      - PINGERA_TIMEOUT=${PINGERA_TIMEOUT:-30}
+      - PINGERA_MAX_RETRIES=${PINGERA_MAX_RETRIES:-3}
+      
+      # Development settings
+      - LOG_LEVEL=debug
+      - PYTHONDONTWRITEBYTECODE=1
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

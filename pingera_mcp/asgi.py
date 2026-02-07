@@ -4,7 +4,6 @@ This module provides the ASGI app for running with uvicorn or other ASGI servers
 """
 import os
 import logging
-from typing import Any
 
 # Configure logging
 logging.basicConfig(
@@ -23,37 +22,26 @@ logger.info("Loading Pingera MCP Server in SSE mode for production")
 # Import the mcp server after setting environment variables
 from .mcp_server import mcp
 
-# FastMCP provides different ways to access the ASGI app
-# Try multiple approaches for compatibility
-app: Any = None
-
-# Approach 1: Direct app attribute (FastMCP 2.x)
-if hasattr(mcp, 'app'):
-    app = mcp.app
-    logger.info("Successfully loaded ASGI app from mcp.app")
-
-# Approach 2: Get app from _app attribute (some versions)
-elif hasattr(mcp, '_app'):
-    app = mcp._app
-    logger.info("Successfully loaded ASGI app from mcp._app")
-
-# Approach 3: Call get_app() method if available
-elif hasattr(mcp, 'get_app'):
-    app = mcp.get_app()
-    logger.info("Successfully loaded ASGI app from mcp.get_app()")
-
-# Approach 4: Create app explicitly with create_app()
-elif hasattr(mcp, 'create_app'):
-    app = mcp.create_app()
-    logger.info("Successfully loaded ASGI app from mcp.create_app()")
-
-if app is None:
-    logger.error("Unable to get ASGI app from FastMCP")
-    logger.error("Available FastMCP attributes: %s", dir(mcp))
+# FastMCP provides streamable_http_app() for SSE/HTTP transport
+# This returns the ASGI application
+try:
+    # Try streamable_http_app() first (preferred for SSE mode)
+    if hasattr(mcp, 'streamable_http_app'):
+        app = mcp.streamable_http_app()
+        logger.info("Successfully loaded ASGI app from mcp.streamable_http_app()")
+    # Fallback to sse_app() if available
+    elif hasattr(mcp, 'sse_app'):
+        app = mcp.sse_app()
+        logger.info("Successfully loaded ASGI app from mcp.sse_app()")
+    else:
+        raise AttributeError("Neither streamable_http_app nor sse_app found")
+except Exception as e:
+    logger.error(f"Failed to get ASGI app from FastMCP: {e}")
+    logger.error(f"Available FastMCP attributes: {dir(mcp)}")
     raise RuntimeError(
         "Unable to get ASGI app from FastMCP. "
         "Ensure FastMCP is properly initialized with SSE transport mode. "
         "You may need to run the server with: python -m pingera_mcp"
-    )
+    ) from e
 
 logger.info("ASGI app successfully loaded and ready for uvicorn")

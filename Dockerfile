@@ -15,7 +15,7 @@ WORKDIR /app
 
 # Install pingera-mcp-server from PyPI and production ASGI server
 RUN pip install --no-cache-dir \
-    pingera-mcp \
+    pingera-mcp-server \
     uvicorn[standard]==0.27.0
 
 # Set ownership

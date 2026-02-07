@@ -17,8 +17,31 @@ def test_health(base_url: str) -> bool:
         
         with urllib.request.urlopen(url, timeout=10) as response:
             data = response.read()
+            result = json.loads(data.decode('utf-8'))
             print(f"✅ Health check passed: {response.status}")
-            print(f"Response: {data.decode('utf-8')}")
+            print(f"Response: {json.dumps(result, indent=2)}")
+            return True
+    except urllib.error.HTTPError as e:
+        print(f"❌ HTTP Error {e.code}: {e.reason}")
+        return False
+    except urllib.error.URLError as e:
+        print(f"❌ URL Error: {e.reason}")
+        return False
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        return False
+
+def test_root(base_url: str) -> bool:
+    """Test the root endpoint."""
+    try:
+        url = f"{base_url}/"
+        print(f"\nTesting root endpoint: {url}")
+        
+        with urllib.request.urlopen(url, timeout=10) as response:
+            data = response.read()
+            result = json.loads(data.decode('utf-8'))
+            print(f"✅ Root endpoint accessible: {response.status}")
+            print(f"Response: {json.dumps(result, indent=2)}")
             return True
     except urllib.error.HTTPError as e:
         print(f"❌ HTTP Error {e.code}: {e.reason}")
@@ -77,12 +100,13 @@ def main():
     print()
     
     # Run tests
+    root_ok = test_root(base_url)
     health_ok = test_health(base_url)
     mcp_ok = test_mcp_endpoint(base_url, api_key)
     
     print()
     print("=" * 50)
-    if health_ok:
+    if health_ok and root_ok:
         print("✅ Overall Status: Server is running correctly!")
         print()
         print("Next steps:")

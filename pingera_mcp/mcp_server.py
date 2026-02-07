@@ -129,6 +129,35 @@ playwright_tools = PlaywrightGeneratorTools(pingera_client)
 check_groups_tools = CheckGroupsTools(pingera_client) # Initialize CheckGroupsTools
 secrets_tools = SecretsTools(pingera_client) # Initialize SecretsTools
 
+# Add health check endpoint for Docker/Kubernetes deployments
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(request):
+    """Health check endpoint for monitoring and load balancers."""
+    from datetime import datetime
+    from starlette.responses import JSONResponse
+    return JSONResponse({
+        "status": "healthy",
+        "service": "pingera-mcp-server",
+        "timestamp": datetime.utcnow().isoformat(),
+        "mode": config.mode.value,
+        "transport": config.transport_mode
+    })
+
+# Add root endpoint with service information
+@mcp.custom_route("/", methods=["GET"])
+async def root_info(request):
+    """Root endpoint providing basic service information."""
+    from starlette.responses import JSONResponse
+    from pingera_mcp import __version__
+    return JSONResponse({
+        "service": "Pingera MCP Server",
+        "version": __version__,
+        "transport": config.transport_mode,
+        "mode": config.mode.value,
+        "mcp_endpoint": "/mcp/v1" if config.transport_mode == "sse" else "stdio",
+        "health_check": "/health"
+    })
+
 # Register read-only tools
 @mcp.tool()
 async def list_pages(

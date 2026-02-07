@@ -186,8 +186,26 @@ services:
 
 ### Monitoring
 
+#### Available Endpoints
+The server exposes several HTTP endpoints:
+
+- **`/`** - Root endpoint with service information
+  ```bash
+  curl http://localhost:8000/
+  ```
+  Returns service name, version, mode, and available endpoints
+
+- **`/health`** - Health check endpoint for monitoring
+  ```bash
+  curl http://localhost:8000/health
+  ```
+  Returns detailed health status including timestamp and configuration
+
+- **`/mcp/`** - MCP protocol endpoint (for MCP clients)
+  This is where your MCP clients should connect
+
 #### Health Checks
-The container includes a health check endpoint:
+The container includes a built-in health check endpoint:
 ```bash
 curl http://localhost:8000/health
 ```

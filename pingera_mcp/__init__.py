@@ -1,24 +1,3 @@
-"""
-Pingera MCP client library for monitoring service integration.
-"""
+"""Model Context Protocol server for the Pingera monitoring platform."""
 
-__version__ = "0.1.10"
-
-from .sdk_client import PingeraSDKClient as PingeraClient
-
-from .exceptions import (
-    PingeraError,
-    PingeraAPIError,
-    PingeraAuthError,
-    PingeraConnectionError,
-    PingeraTimeoutError
-)
-
-__all__ = [
-    "PingeraClient",
-    "PingeraError",
-    "PingeraAPIError",
-    "PingeraAuthError",
-    "PingeraConnectionError",
-    "PingeraTimeoutError"
-]
+__version__ = "0.2.0"

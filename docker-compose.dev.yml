@@ -1,0 +1,17 @@
+# Development: the source is mounted and uvicorn reloads on changes.
+#   docker compose -f docker-compose.dev.yml up --build
+services:
+  pingera-mcp-dev:
+    build: .
+    image: pingera-mcp-server:dev
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./pingera_mcp:/app/pingera_mcp:ro
+    working_dir: /app
+    command: ["uvicorn", "pingera_mcp.asgi:app", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/pingera_mcp"]

@@ -1,478 +1,176 @@
 # Pingera MCP Server
 
-A Model Context Protocol (MCP) server for the [Pingera monitoring service](https://pingera.ru?utm_source=mcp_readme), providing seamless integration between AI models and monitoring data.
+A [Model Context Protocol](https://modelcontextprotocol.io) server for [Pingera](https://pingera.ru?utm_source=mcp_readme):
+let AI assistants investigate and manage uptime, API, SSL, DNS, port-scan and Playwright checks, alerts, heartbeat
+monitors and status pages.
 
-## Features
+It runs two ways:
 
-- **Modular Architecture**: Separate Pingera API client library with clean abstractions
-- **Flexible Operation Modes**: Run in read-only or read-write mode
-- **MCP Tools**: Execute monitoring operations through tools (list_pages, get_page_details, test_connection)
-- **Robust Error Handling**: Comprehensive error handling with custom exception hierarchy
-- **Real-time Data**: Direct integration with Pingera API v1 for live monitoring data
-- **Type Safety**: Pydantic models for data validation and serialization
-- **Configurable**: Environment-based configuration management
+- **Self-hosted** - on your machine over **stdio** (Claude Desktop, Cursor, VS Code, ...) or as your own HTTP server,
+  with your Pingera API key.
+- **Multi-tenant** - the hosted server at `https://mcp.app.pingera.ru/mcp` (or your own deployment): one HTTP server
+  for many users, where every request carries the user's own Pingera credentials.
 
-## Quick Start
+Built on the official [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) 2.x and the
+[Pingera Python SDK](https://pypi.org/project/pingera-sdk/).
 
-### Prerequisites
-- Python 3.10+
-- UV package manager
-- Pingera API key - get one at [app.pingera.ru](https://app.pingera.ru)
+## Quick start
 
-### Installation and Setup
+You need a Pingera API key: create one at [app.pingera.ru/settings/tokens](https://app.pingera.ru/settings/tokens).
 
-```bash
-# Install dependencies
-uv sync
+### Hosted server (nothing to install)
 
-# Set up your API key (required)
-# Add PINGERA_API_KEY to your environment 
-
-# Run the server
-python -m pingera_mcp
-```
-
-The server will start in read-only mode by default and connect to the Pingera API.
-
-## Operation Modes
-
-The Pingera MCP Server supports two transport modes:
-
-### 1. Stdio Mode (Default)
-Used for local integration with Claude Desktop and other stdio-based MCP clients. Authentication is configured via environment variables.
+Connect your MCP client to `https://mcp.app.pingera.ru/mcp` (streamable HTTP) and send your key in the
+`Authorization` header. Claude Code:
 
 ```bash
-# Run in stdio mode (default)
-python -m pingera_mcp
+claude mcp add --transport http pingera https://mcp.app.pingera.ru/mcp --header "Authorization: Bearer YOUR_PINGERA_API_KEY"
 ```
 
-### 2. HTTP/SSE Mode
-Enables web-based access through HTTP with Server-Sent Events. Perfect for remote clients, web applications, and programmatic access.
-
-```bash
-# Configure SSE mode
-export TRANSPORT_MODE=sse
-export HTTP_HOST=0.0.0.0
-export HTTP_PORT=5000
-
-# Run in SSE mode
-python -m pingera_mcp
-```
-
-The server will be accessible at `http://0.0.0.0:5000/sse`
-
-#### Authentication in SSE Mode
-
-SSE mode supports two authentication methods via the `Authorization` header:
-
-1. **API Key Authentication** (recommended for testing):
-   ```
-   Authorization: YOUR_API_KEY
-   ```
-
-2. **JWT Bearer Token Authentication**:
-   ```
-   Authorization: Bearer YOUR_JWT_TOKEN
-   ```
-
-#### Selective Tool Exposure
-
-You can control which tools are available to clients using the `X-MCP-Tools` header in SSE mode. This is useful for limiting AI agents to specific operations or creating different access levels.
-
-**Example: Limiting to read-only page tools**:
-```python
-client = MultiServerMCPClient({
-    "pingera": {
-        "url": "http://0.0.0.0:5000/sse",
-        "transport": "sse",
-        "headers": {
-            "Authorization": "YOUR_API_KEY",
-            "X-MCP-Tools": "list_pages,get_page_details,list_component_groups"
-        }
-    }
-})
-```
-
-The `X-MCP-Tools` header accepts a comma-separated list of tool names. Only the specified tools will be exposed to the client. If the header is omitted, all tools compatible with the current server mode (read-only or read-write) will be available.
-
-**Note**: Tool filtering respects the server's operation mode. Write-operation tools will not be exposed in read-only mode, even if requested via the header.
-
-#### Example: Python Client for SSE Mode
-
-```python
-import asyncio
-from langchain_mcp_adapters.client import MultiServerMCPClient
-
-async def main():
-    client = MultiServerMCPClient({
-        "pingera": {
-            "url": "http://0.0.0.0:5000/sse",
-            "transport": "sse",
-            "headers": {
-                "Authorization": "YOUR_API_KEY",  # or "Bearer YOUR_JWT_TOKEN"
-            }
-        }
-    })
-    
-    # Get available tools
-    tools = await client.get_tools()
-    print(f"Available tools: {len(tools)}")
-
-asyncio.run(main())
-```
-
-#### SSE Mode Configuration Options
-
-- **`TRANSPORT_MODE`** - Set to `sse` to enable HTTP/SSE mode (default: `stdio`)
-- **`HTTP_HOST`** - Host to bind to (default: `0.0.0.0`)
-- **`HTTP_PORT`** - Port to listen on (default: `5000`)
-- **`REQUIRE_AUTH_HEADER`** - Require Authorization header (default: `false`)
-
-**Note**: In SSE mode, you can either:
-- Provide credentials via environment variables (PINGERA_API_KEY or PINGERA_JWT_TOKEN) as fallback
-- Send credentials in the Authorization header with each request (recommended)
-
-When `REQUIRE_AUTH_HEADER=true`, the server will only accept requests with valid Authorization headers.
-
-## Claude Desktop Integration
-
-To use this MCP server with Claude Desktop, you need to configure it in your Claude Desktop settings.
-
-### Installation
-
-First, install the package globally using UV:
-
-```bash
-uv tool install pingera-mcp-server
-```
-
-### Configuration
-
-Open the Claude Desktop configuration file:
-
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
-
-Add the following configuration:
+Cursor (`.cursor/mcp.json`; VS Code's `.vscode/mcp.json` is the same under `"servers"` with `"type": "http"`):
 
 ```json
 {
   "mcpServers": {
     "pingera": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "pingera-mcp-server",
-        "--python",
-        "3.10",
-        "python",
-        "-m",
-        "pingera_mcp"
-      ],
+      "url": "https://mcp.app.pingera.ru/mcp",
+      "headers": { "Authorization": "Bearer YOUR_PINGERA_API_KEY" }
+    }
+  }
+}
+```
+
+### Local server over stdio
+
+Requires [uv](https://docs.astral.sh/uv/). Claude Desktop (`claude_desktop_config.json`), Cursor (`.cursor/mcp.json`)
+and similar clients:
+
+```json
+{
+  "mcpServers": {
+    "pingera": {
+      "command": "uvx",
+      "args": ["--from", "pingera-mcp-server", "pingera-mcp"],
       "env": {
-        "PINGERA_API_KEY": "your_api_key_here",
-        "PINGERA_MODE": "read_only",
-        "PINGERA_BASE_URL": "https://api.pingera.ru/v1",
-        "PINGERA_TIMEOUT": "30",
-        "PINGERA_MAX_RETRIES": "3",
-        "PINGERA_DEBUG": "false",
-        "PINGERA_SERVER_NAME": "Pingera MCP Server"
+        "PINGERA_API_KEY": "YOUR_PINGERA_API_KEY",
+        "PINGERA_MODE": "read_write"
       }
     }
   }
 }
 ```
 
-### Required Environment Variables
+Leave out `PINGERA_MODE` to start read-only. From a checkout: `uv sync && uv run pingera-mcp`.
 
-- **`PINGERA_API_KEY`** - Your Pingera API key (required)
+Then ask things like *"Which checks failed in the last 24 hours and why?"*, *"Create an API check for
+https://api.example.com/health from Moscow and Frankfurt and alert me in Telegram after 3 failures"* or *"Post an
+incident on our status page: payments are degraded"*.
 
-### Optional Environment Variables
+## Tools
 
-- **`PINGERA_MODE`** - Operation mode: `read_only` (default) or `read_write`
-- **`PINGERA_BASE_URL`** - API endpoint (default: `https://api.pingera.ru/v1`)
-- **`PINGERA_TIMEOUT`** - Request timeout in seconds (default: `30`)
-- **`PINGERA_MAX_RETRIES`** - Maximum retry attempts (default: `3`)
-- **`PINGERA_DEBUG`** - Enable debug logging (default: `false`)
-- **`PINGERA_SERVER_NAME`** - Server display name (default: `Pingera MCP Server`)
+Tools are grouped into **toolsets**. The default toolsets cover monitoring, alerting and status pages (78 tools in
+read-write mode); add others with `PINGERA_TOOLSETS` (e.g. `default,heartbeats,secrets` or `all`). Fewer toolsets
+means a smaller prompt and better tool choice, so enable only what you use.
 
-### Restart Claude Desktop
+| Toolset | What | Tools |
+| --- | --- | --- |
+| `core` (default) | Connection check and reference documentation (always enabled) | `check_connection`, `get_reference` |
+| `account` (default) | Organization details and usage | `get_organization`, `get_usage` |
+| `pages` (default) | Status pages | `list_status_pages`, `get_status_page`, `find_status_page_by_domain`, `list_page_templates`<br>changes: `create_status_page`, `update_status_page`, `delete_status_page` |
+| `components` (default) | Status page components, component groups and component uptime | `list_components`, `get_component`, `list_component_groups`, `get_component_group`, `list_component_statuses`, `get_component_uptime`, `get_page_uptime`<br>changes: `create_component`, `update_component`, `delete_component`, `create_component_group`, `update_component_group`, `delete_component_group` |
+| `incidents` (default) | Status page incidents, incident updates, scheduled maintenance and postmortems | `list_incidents`, `list_unresolved_incidents`, `list_maintenances`, `get_incident`, `list_incident_updates`, `get_incident_options`, `get_incident_postmortem`<br>changes: `create_incident`, `update_incident`, `delete_incident`, `add_incident_update`, `edit_incident_update`, `delete_incident_update`, `log_past_incident`, `save_incident_postmortem`, `publish_incident_postmortem` |
+| `checks` (default) | Monitoring checks: configuration, regions and on-demand runs | `list_checks`, `get_check`, `list_check_regions`, `get_check_job`, `list_check_jobs`<br>runs: `run_check`, `run_custom_check`<br>changes: `create_check`, `update_check`, `delete_check`, `move_check_to_group` |
+| `results` (default) | Check results, uptime, response times, status history and multi-region executions | `list_check_results`, `get_check_result`, `search_results`, `get_check_uptime`, `get_check_status_periods`, `get_response_times`, `get_status_counts`, `list_execution_groups`, `get_execution_group` |
+| `alerts` (default) | Alerts, alert rules and alert channels | `list_alerts`, `get_alert`, `list_alert_notifications`, `get_alert_stats`, `list_alert_rules`, `get_alert_rule`, `list_alert_channels`, `get_alert_channel`<br>runs: `test_alert_channel`, `test_alert_channel_settings`<br>changes: `acknowledge_alert`, `resolve_alert`, `create_alert_rule`, `update_alert_rule`, `delete_alert_rule`, `create_alert_channel`, `update_alert_channel`, `delete_alert_channel` |
+| `heartbeats` | Heartbeat (cron job) monitors and their pings | `list_heartbeats`, `get_heartbeat`, `list_heartbeat_pings`, `count_heartbeat_pings`, `list_heartbeat_channels`<br>runs: `send_heartbeat_ping`<br>changes: `create_heartbeat`, `update_heartbeat`, `delete_heartbeat`, `set_heartbeat_channels`, `remove_heartbeat_channel` |
+| `check_groups` | Check groups | `list_check_groups`, `get_check_group`, `list_group_checks`<br>changes: `create_check_group`, `update_check_group`, `delete_check_group` |
+| `secrets` | Organization secrets and the secrets injected into checks | `list_secrets`, `get_secret`, `list_check_secrets`<br>changes: `create_secret`, `update_secret`, `delete_secret`, `add_check_secret`, `remove_check_secret` |
+| `page_access` | Status page passwords and custom sender email domains | `list_page_passwords`, `get_page_email_domain`<br>runs: `verify_page_email_domain`<br>changes: `create_page_password`, `update_page_password`, `delete_page_password`, `generate_page_email_domain_records` |
+| `private_locations` | Private locations and runner tokens for self-hosted check runners | `list_private_locations`, `get_private_location`<br>changes: `create_private_location`, `update_private_location`, `delete_private_location`, `create_runner_token`, `revoke_runner_token` |
+| `reports` | PDF uptime reports | `list_reports`, `get_report`<br>runs: `request_report` |
+| `audit` | Organization audit log | `list_audit_events` |
 
-After updating the configuration file, restart Claude Desktop to load the new MCP server. You should now be able to access your Pingera monitoring data directly through Claude's interface.
+**Access levels.** Read tools only read. *Runs* execute something without changing configuration (run a check now,
+send a test notification, request a report); they are available in read-only mode. *Changes* create, update or delete
+data and are hidden in read-only mode. Tool annotations (`readOnlyHint`, `destructiveHint`, `idempotentHint`) tell
+clients which tools need confirmation.
 
-### Verify Installation
+**Arguments.** Create and update tools are generated from the Pingera SDK models, so their schemas carry the API's
+field descriptions, limits and allowed values. Update tools change only the fields you pass. Time arguments accept ISO
+8601 or relative values like `30m`, `24h`, `7d`.
 
-Once configured, you can ask Claude to:
-- "What are my status pages and their names?"
-- "Show details of a page with id ..."
-- "When was the last failed check for check ..."
-- "Run a simple synthetic check for the website with URL https://"
+**Also available:** resources `pingera://reference/check_types` and `pingera://reference/alerts` (also through the
+`get_reference` tool) and prompts `investigate_check`, `create_synthetic_check` and `communicate_incident`.
 
 ## Configuration
 
-Configure the server using environment variables:
+Environment variables (a `.env` file is read too; see [.env.example](.env.example)). Command line options
+(`pingera-mcp --help`) override them.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `PINGERA_API_KEY` / `PINGERA_JWT_TOKEN` | - | Credentials for stdio and for HTTP with `MCP_HTTP_AUTH=env` (the JWT wins if both are set) |
+| `PINGERA_BASE_URL` | `https://api.pingera.ru` | Pingera API (a trailing `/v1` is accepted) |
+| `PINGERA_MODE` (alias `MCP_MODE`) | `read_only` | `read_only` or `read_write` |
+| `PINGERA_TOOLSETS` | `default` | Comma-separated toolsets, `default` or `all` |
+| `PINGERA_TOOLS` | - | Comma-separated tool names to expose instead of toolsets, e.g. `list_checks,get_check,list_check_results` |
+| `PINGERA_TIMEOUT`, `PINGERA_MAX_RETRIES` | `30`, `3` | API request timeout (seconds) and retries |
+| `MCP_TRANSPORT` | `stdio` | `stdio` or `http` (streamable HTTP) |
+| `MCP_HOST`, `MCP_PORT`, `MCP_PATH` | `127.0.0.1`, `8000`, `/mcp` | HTTP listener and endpoint |
+| `MCP_HTTP_AUTH` | `request` | HTTP credentials: `request` (each request sends its own) or `env` (the server's key) |
+| `MCP_JSON_RESPONSE` | `true` | Answer HTTP requests with JSON instead of SSE streams |
+| `MCP_ALLOWED_HOSTS`, `MCP_ALLOWED_ORIGINS` | - | Only accept these Host / Origin values (DNS rebinding protection; `host:*` allows any port). Without them, only a loopback server with `MCP_HTTP_AUTH=env` checks them (localhost only) |
+| `LOG_LEVEL` | `INFO` | Logging level (`PINGERA_DEBUG=true` sets `DEBUG`) |
+
+## HTTP server
 
 ```bash
-# Required (for stdio mode or as fallback in SSE mode)
-PINGERA_API_KEY=your_api_key_here
-# OR
-PINGERA_JWT_TOKEN=your_jwt_token_here
-
-# Transport Mode
-TRANSPORT_MODE=stdio              # stdio (default) or sse
-
-# SSE Mode Configuration (only used when TRANSPORT_MODE=sse)
-HTTP_HOST=0.0.0.0                 # Host to bind to
-HTTP_PORT=5000                     # Port to listen on
-REQUIRE_AUTH_HEADER=false         # Require Authorization header
-
-# Optional
-PINGERA_MODE=read_only                    # read_only or read_write
-PINGERA_BASE_URL=https://api.pingera.ru/v1
-PINGERA_TIMEOUT=30
-PINGERA_MAX_RETRIES=3
-PINGERA_DEBUG=false
-PINGERA_SERVER_NAME=Pingera MCP Server
+pingera-mcp --transport http --mode read_write             # development, http://127.0.0.1:8000/mcp
+uvicorn pingera_mcp.asgi:app --host 0.0.0.0 --workers 4    # production (configured by environment)
+docker compose up                                          # the Docker image, see DOCKER.md
 ```
 
-## MCP Tools
+The endpoint is `/mcp`; `/health` is the health check and `/` describes the server. The server is **stateless**: it
+keeps no MCP sessions, so any worker or replica can answer any request and it scales horizontally without sticky
+sessions.
 
-Available tools for AI agents:
+### Credentials
 
-### Pages Management
-- **`list_pages`** - Get paginated list of monitored pages
-  - Parameters: `page`, `per_page`, `status`
-- **`get_page_details`** - Get detailed information about a specific page
-  - Parameters: `page_id`
+With the default `MCP_HTTP_AUTH=request` (multi-tenant), every request must carry Pingera credentials, otherwise the
+server answers `401`:
 
-### Component Management
-- **`list_component_groups`** - List all component groups for monitoring organization
-- **`get_component_details`** - Get detailed information about a specific component
-  - Parameters: `component_id`
+| Header | Meaning |
+| --- | --- |
+| `Authorization: Bearer <API key>` | API key (works with clients that only support bearer tokens) |
+| `Authorization: Bearer <JWT>` | Pingera JWT access token (recognized by its format) |
+| `Authorization: <API key>` or `X-API-KEY: <API key>` | API key, the way the Pingera API itself accepts it |
 
-### Monitoring Checks
-- **`list_checks`** - List all monitoring checks (HTTP, TCP, ping, etc.)
-  - Parameters: `page`, `page_size`, `status`, `check_type`
-- **`get_check_details`** - Get detailed information about a specific check
-  - Parameters: `check_id`
+Credentials are used only for that request's API calls; they are never stored or shared between requests.
 
-### Alert Rules
-- **`list_alert_rules`** - List all alert rules and their trigger conditions
+With `MCP_HTTP_AUTH=env` the server uses its own `PINGERA_API_KEY` for every client. Use it only for a private,
+single-account deployment.
 
-### Heartbeat Monitoring
-- **`list_heartbeats`** - List all heartbeat monitors for cron jobs and scheduled tasks
-  - Parameters: `page`, `page_size`, `status`
+### Per-request options
 
-### Incident Management
-- **`list_incidents`** - List all incidents and their current status
-  - Parameters: `page`, `page_size`, `status`
+| Header | Effect |
+| --- | --- |
+| `X-Pingera-Mode: read_only` | Hide and block tools that change data for this client (cannot lift a read-only server) |
+| `X-Pingera-Toolsets: checks,results,alerts` | Use these toolsets instead of the server default (`all` and `default` work too) |
+| `X-Pingera-Tools: list_checks,get_check` (alias `X-MCP-Tools`) | Expose exactly these tools |
 
-### Connection Testing
-- **`test_pingera_connection`** - Test API connectivity
-
-### Write Operations
-Available only in read-write mode (`PINGERA_MODE=read_write`):
-
-#### Pages Management
-- **`create_page`** - Create a new status page
-  - Parameters: `name` (required), `subdomain`, `domain`, `url`, `language`
-- **`update_page`** - Update existing status page configuration
-  - Parameters: `page_id` (required), `name`, `subdomain`, `domain`, `url`, `language`, additional kwargs
-- **`patch_page`** - Partially update specific page fields
-  - Parameters: `page_id` (required), kwargs for specific fields
-- **`delete_page`** - Permanently delete a status page
-  - Parameters: `page_id` (required)
-
-#### Component Management
-- **`create_component`** - Create new component or component group
-  - Parameters: `page_id` (required), `name` (required), `description`, `group`, `group_id`, `only_show_if_degraded`, `position`, `showcase`, `status`
-- **`update_component`** - Update existing component configuration
-  - Parameters: `page_id` (required), `component_id` (required), `name`, `description`, `group`, `group_id`, `only_show_if_degraded`, `position`, `showcase`, `status`, additional kwargs
-- **`patch_component`** - Partially update specific component fields
-  - Parameters: `page_id` (required), `component_id` (required), kwargs for specific fields
-- **`delete_component`** - Delete a component permanently
-  - Parameters: `page_id` (required), `component_id` (required)
-
-#### Monitoring Checks
-- **`create_check`** - Create new monitoring check
-  - Parameters: `check_data` (dict with check configuration)
-- **`update_check`** - Update existing monitoring check
-  - Parameters: `check_id` (required), `check_data` (dict with updated configuration)
-- **`delete_check`** - Delete monitoring check permanently
-  - Parameters: `check_id` (required)
-- **`pause_check`** - Temporarily pause monitoring check
-  - Parameters: `check_id` (required)
-- **`resume_check`** - Resume paused monitoring check
-  - Parameters: `check_id` (required)
-
-#### Alert Rules
-- **`create_alert`** - Create new alert rule
-  - Parameters: `alert_data` (dict with alert configuration)
-- **`update_alert`** - Update existing alert rule
-  - Parameters: `alert_id` (required), `alert_data` (dict with updated configuration)
-- **`delete_alert`** - Delete alert rule permanently
-  - Parameters: `alert_id` (required)
-
-#### Heartbeat Management
-- **`create_heartbeat`** - Create new heartbeat monitor
-  - Parameters: `heartbeat_data` (dict with heartbeat configuration)
-- **`update_heartbeat`** - Update existing heartbeat monitor
-  - Parameters: `heartbeat_id` (required), `heartbeat_data` (dict with updated configuration)
-- **`delete_heartbeat`** - Delete heartbeat monitor permanently
-  - Parameters: `heartbeat_id` (required)
-- **`send_heartbeat_ping`** - Manually send ping to heartbeat
-  - Parameters: `heartbeat_id` (required)
-
-#### Incident Management
-- **`create_incident`** - Create new incident on status page
-  - Parameters: `page_id` (required), `incident_data` (dict with incident details)
-- **`update_incident`** - Update existing incident details
-  - Parameters: `page_id` (required), `incident_id` (required), `incident_data` (dict with updated details)
-- **`delete_incident`** - Delete incident permanently
-  - Parameters: `page_id` (required), `incident_id` (required)
-- **`add_incident_update`** - Add status update to incident
-  - Parameters: `page_id` (required), `incident_id` (required), `update_data` (dict with update details)
-- **`update_incident_update`** - Edit existing incident update
-  - Parameters: `page_id` (required), `incident_id` (required), `update_id` (required), `update_data` (dict with updated content)
-- **`delete_incident_update`** - Delete specific incident update
-  - Parameters: `page_id` (required), `incident_id` (required), `update_id` (required)
-
-## Access Control Modes
-
-The server supports two levels of access control:
-
-### Read-Only Mode (Default)
-- Access monitoring data
-- View status pages and their configurations
-- Test API connectivity
-- No modification capabilities
-
-### Read-Write Mode
-- All read-only features
-- Create, update and delete resources: status pages, checks, alerts, heartbeats
-- Execute checks and get their results
-- Manage incidents and notifications
-
-Set `PINGERA_MODE=read_write` to enable write operations.
-
-**Note**: Access control mode is independent of transport mode. You can run the server in read-write mode with either stdio or SSE transport.
-
-## Architecture
-
-### Pingera API Client Library
-Located in `pingera/`, this modular library provides:
-
-- **PingeraClient**: Main API client with authentication and error handling
-- **Models**: Pydantic data models for type-safe API responses
-- **Exceptions**: Custom exception hierarchy for error handling
-
-### MCP Server Implementation
-- **FastMCP Framework**: Modern MCP server implementation
-- **Resource Management**: Structured access to monitoring data
-- **Tool Registration**: Executable operations for AI agents
-- **Configuration**: Environment-based settings management
-
-## Testing
-
-### Running the Test Suite
-
-Run all tests:
-```bash
-uv run pytest
-```
-
-Run tests with verbose output:
-```bash
-uv run pytest -v
-```
-
-Run specific test files:
-```bash
-uv run pytest tests/test_models.py
-uv run pytest tests/test_config.py
-uv run pytest tests/test_mcp_server.py
-```
-
-Run tests with coverage:
-```bash
-uv run pytest --cov=pingera --cov=config --cov=mcp_server
-```
-
-### Test Structure
-
-The test suite includes:
-- **Unit Tests**: Testing individual components (models, config, client)
-- **Integration Tests**: Testing MCP server functionality 
-- **Mock Tests**: Testing with simulated API responses
-
-### Testing with MCP Inspector
-
-The [MCP Inspector](https://github.com/modelcontextprotocol/inspector) is an official debugging tool that provides a web interface to test MCP servers interactively. It allows you to explore available resources, execute tools, and inspect the server's responses in real-time.
-
-#### Setup Inspector
-
-1. Create an `mcp.json` configuration file:
-
-```json
-{
-  "mcpServers": {
-    "pingera": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--with",
-        "pingera-mcp-server",
-        "--python",
-        "3.10",
-        "python",
-        "-m",
-        "pingera_mcp"
-      ],
-      "env": {
-        "PINGERA_API_KEY": "your_pingera_api_key",
-        "PINGERA_MODE": "read_only",
-        "PINGERA_BASE_URL": "https://api.pingera.ru/v1",
-        "PINGERA_TIMEOUT": "30",
-        "PINGERA_MAX_RETRIES": "3",
-        "PINGERA_DEBUG": "false"
-      }
-    }
-  }
-}
-```
-
-2. Run the inspector:
+## Development
 
 ```bash
-npx @modelcontextprotocol/inspector --config mcp.json
+uv sync --extra dev
+uv run pytest --ignore=tests/e2e     # unit and integration tests (fake Pingera API, no network)
+PINGERA_E2E_URL=http://localhost:8000/mcp PINGERA_E2E_API_KEY=... uv run pytest tests/e2e
 ```
 
-3. Open your browser to the provided URL (typically `http://localhost:6274`)
+The end-to-end tests run against a real server and API and create and delete objects in that organization, so use a
+test organization. [docs/architecture.md](docs/architecture.md) explains how the server is put together and how to
+add tools. [scripts/smoke_client.py](scripts/smoke_client.py) calls a tool on a running server, and
+[examples/langgraph_agent.py](examples/langgraph_agent.py) connects a LangGraph agent to it.
 
-#### Using Inspector
+## License
 
-The inspector provides:
-- **Resources Tab**: Browse available monitoring data resources
-- **Tools Tab**: Execute MCP tools like `list_pages`, `get_page_details`, etc.
-- **Logs Tab**: View detailed communication logs between the inspector and server
-- **Interactive Testing**: Test tool parameters and see real-time responses
-
-This is the recommended way to test your MCP server integration before deploying with Claude Desktop or other MCP clients.
-
-### Manual Testing with `mcp_client.py`
-
-`mcp_client.py` uses Gemini models and integrates with the MCP server to execute various tools. It is just an example and can be easly modified to use any other Large Language Model.
-
-```bash
-python mcp_client.py "Show me my status pages"
-```
-
-## Error Handling
-
-The system includes comprehensive error handling:
-- `PingeraError`: Base exception for all client errors
-- `PingeraAPIError`: API response errors with status codes
-- `PingeraAuthError`: Authentication failures
-- `PingeraConnectionError`: Network connectivity issues
-- `PingeraTimeoutError`: Request timeout handling
+MIT - see [LICENSE](LICENSE).

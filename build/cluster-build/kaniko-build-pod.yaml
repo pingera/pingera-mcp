@@ -1,0 +1,62 @@
+# Kaniko one-shot build pod. Placeholders (__NAME__, __REPO_URL__, __TAG__, __REGISTRY__,
+# __IMAGE_NAME__) are substituted by build-in-cluster.sh at apply time. Builds the Dockerfile
+# from a pushed git tag and pushes the image to the registry. Build only, no deploy.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: __NAME__
+  namespace: builds
+  labels:
+    app: kaniko-build
+    image: __IMAGE_NAME__
+spec:
+  restartPolicy: Never
+  # Pin builds to the dedicated supporting-apps nodes (amd64) and tolerate their taint.
+  nodeSelector:
+    kubernetes.io/arch: amd64
+    node-type: supporting-apps
+  tolerations:
+  - key: dedicated
+    operator: Equal
+    value: supporting-apps
+    effect: NoSchedule
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:latest
+    args:
+    - --context=git://__REPO_URL__#refs/tags/__TAG__
+    - --dockerfile=Dockerfile
+    - --destination=__REGISTRY__/__IMAGE_NAME__:__TAG__
+    - --destination=__REGISTRY__/__IMAGE_NAME__:latest
+    - --cache=true
+    env:
+    # Clone auth (shared with the backend builds); harmless for the public pingera-mcp repo.
+    - name: GIT_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: git-pat
+          key: GIT_USERNAME
+    - name: GIT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: git-pat
+          key: GIT_PASSWORD
+    resources:
+      requests:
+        cpu: "1"
+        memory: "1Gi"
+      limits:
+        cpu: "2"
+        memory: "2Gi"
+    volumeMounts:
+    - name: registry-push
+      mountPath: /kaniko/.docker
+      readOnly: true
+  volumes:
+  # dockerconfigjson stored under the .dockerconfigjson key; project it as config.json.
+  - name: registry-push
+    secret:
+      secretName: kaniko-registry-push
+      items:
+      - key: .dockerconfigjson
+        path: config.json

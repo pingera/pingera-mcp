@@ -34,11 +34,17 @@ Cursor (`.cursor/mcp.json`; VS Code's `.vscode/mcp.json` is the same under `"ser
   "mcpServers": {
     "pingera": {
       "url": "https://mcp.app.pingera.ru/mcp",
-      "headers": { "Authorization": "Bearer YOUR_PINGERA_API_KEY" }
+      "headers": {
+        "Authorization": "Bearer YOUR_PINGERA_API_KEY",
+        "X-Pingera-Toolsets": "default,heartbeats"
+      }
     }
   }
 }
 ```
+
+The optional `X-Pingera-Toolsets`, `X-Pingera-Tools` and `X-Pingera-Mode: read_only` headers choose which tools this
+client gets (see [Tools](#tools) and [Per-request options](#per-request-options)).
 
 ### Local server over stdio
 
@@ -69,8 +75,17 @@ incident on our status page: payments are degraded"*.
 ## Tools
 
 Tools are grouped into **toolsets**. The default toolsets cover monitoring, alerting and status pages (78 tools in
-read-write mode); add others with `PINGERA_TOOLSETS` (e.g. `default,heartbeats,secrets` or `all`). Fewer toolsets
-means a smaller prompt and better tool choice, so enable only what you use.
+read-write mode, 48 read-only; 121 with all toolsets). Fewer tools means a smaller prompt and better tool choice, so
+enable only what you use:
+
+| Where | Choose toolsets | Choose exact tools |
+| --- | --- | --- |
+| Hosted or any HTTP server, per client | `X-Pingera-Toolsets: default,heartbeats` header | `X-Pingera-Tools: list_checks,get_check` header (alias `X-MCP-Tools`) |
+| Your own server (stdio or HTTP default) | `PINGERA_TOOLSETS` or `--toolsets` | `PINGERA_TOOLS` or `--tools` |
+
+Toolset names are listed below; `default` and `all` work everywhere. A header overrides the server's default for that
+client; exact tools override toolsets. Selection is per connection (headers or server settings), not per tool call:
+clients load the tool list once, before the model uses any tool.
 
 | Toolset | What | Tools |
 | --- | --- | --- |

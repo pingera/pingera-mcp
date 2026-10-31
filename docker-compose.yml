@@ -1,0 +1,19 @@
+# Pingera MCP server over streamable HTTP on http://localhost:8000/mcp
+#
+# Multi-tenant (default): clients send their own credentials with every request,
+#   Authorization: Bearer <Pingera API key or JWT>   (or X-API-KEY: <API key>)
+# Self-hosted for one account: set MCP_HTTP_AUTH=env and PINGERA_API_KEY in .env,
+#   and keep the port private - everyone who can reach it acts with that key.
+services:
+  pingera-mcp:
+    build: .
+    image: pingera-mcp-server:local
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      WORKERS: ${WORKERS:-2}
+    read_only: true

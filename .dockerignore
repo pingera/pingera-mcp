@@ -1,0 +1,8 @@
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!pingera_mcp/
+**/__pycache__
+**/*.pyc

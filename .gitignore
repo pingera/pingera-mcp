@@ -30,3 +30,7 @@ cover/
 # Translations
 *.mo
 *.pot
+.env
+# Local virtualenvs
+.venv*/
+dist/

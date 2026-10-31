@@ -1,103 +1,141 @@
-"""
-Pytest configuration and shared fixtures.
-"""
+"""Shared fixtures: a fake Pingera API and a Pingera MCP server running over HTTP."""
+
+from __future__ import annotations
+
+import json
+import socket
+import threading
+import time
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, field
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from typing import Any, Callable
+
+import httpx2
 import pytest
-import os
-from unittest.mock import Mock, patch
+import uvicorn
+from mcp import Client
+from mcp.client.streamable_http import streamable_http_client
 
-from pingera_mcp.config import Config, OperationMode
-from pingera_mcp.sdk_client import PingeraSDKClient as PingeraClient
-
-
-@pytest.fixture
-def mock_config():
-    """Create a mock configuration for testing."""
-    config = Config()
-    config.api_key = "test_api_key"
-    config.base_url = "https://api.test.com/v1"
-    config.mode = OperationMode.READ_ONLY
-    config.timeout = 30
-    config.max_retries = 3
-    config.debug = False
-    config.server_name = "Test MCP Server"
-    return config
+from pingera_mcp.config import Mode, Settings, Transport
 
 
-@pytest.fixture
-def mock_page():
-    """Create a mock page object for testing."""
-    return {
-        "id": "123",
-        "name": "Test Page",
-        "url": "https://example.com",
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z",
-        "organization_id": "org123"
-    }
+@dataclass
+class RecordedRequest:
+    method: str
+    path: str
+    headers: dict[str, str]
+    body: Any
 
 
-@pytest.fixture
-def mock_page_list():
-    """Mock page list response."""
-    from unittest.mock import Mock
+@dataclass
+class FakePingeraApi:
+    """Answers Pingera API calls from `routes` and records every request."""
 
-    # Create a mock page object directly
-    page = Mock()
-    page.id = 1
-    page.name = "Test Page"
-    page.subdomain = "test"
-    page.url = "https://example.com"
-    page.language = "en"
-    page.created_at = "2024-01-01T00:00:00Z"
-    page.dict.return_value = {
-        "id": 1,
-        "name": "Test Page",
-        "subdomain": "test",
-        "url": "https://example.com",
-        "language": "en",
-        "created_at": "2024-01-01T00:00:00Z"
-    }
+    url: str = ""
+    requests: list[RecordedRequest] = field(default_factory=list)
+    routes: dict[tuple[str, str], Callable[[RecordedRequest], tuple[int, Any]]] = field(default_factory=dict)
+    lock: threading.Lock = field(default_factory=threading.Lock)
 
-    # Create a mock response object that matches the SDK structure
-    mock_response = Mock()
-    mock_response.pages = [page]
-    mock_response.total = 1
-    mock_response.page = 1
-    mock_response.per_page = 10
-    return mock_response
+    def route(self, method: str, path: str, status: int = 200, body: Any = None, handler=None) -> None:
+        self.routes[(method, path)] = handler or (lambda request: (status, body))
+
+    def last(self, path: str | None = None) -> RecordedRequest:
+        matching = [r for r in self.requests if path is None or r.path.split("?")[0] == path]
+        assert matching, f"no request to {path}"
+        return matching[-1]
+
+
+def _free_port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
 
 
 @pytest.fixture
-def mock_component():
-    """Create a mock component object for testing."""
-    return {
-        "id": "comp123",
-        "name": "Test Component",
-        "description": "Test component description",
-        "status": "operational",
-        "page_id": "page123",
-        "group": False,
-        "showcase": True,
-        "position": 1
-    }
+def fake_api():
+    api = FakePingeraApi()
+
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, *args):  # silence the default stderr logging
+            pass
+
+        def _handle(self):
+            length = int(self.headers.get("Content-Length") or 0)
+            raw = self.rfile.read(length) if length else b""
+            request = RecordedRequest(
+                method=self.command,
+                path=self.path,
+                headers={key.lower(): value for key, value in self.headers.items()},
+                body=json.loads(raw) if raw else None,
+            )
+            with api.lock:
+                api.requests.append(request)
+            handler = api.routes.get((self.command, self.path.split("?")[0]))
+            status, body = handler(request) if handler else (404, {"message": f"no route for {self.path}"})
+            payload = b"" if body is None else json.dumps(body).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        do_GET = do_POST = do_PATCH = do_PUT = do_DELETE = _handle
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    api.url = f"http://127.0.0.1:{server.server_address[1]}"
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    yield api
+    server.shutdown()
 
 
 @pytest.fixture
-def mock_pingera_client():
-    """Create a mock Pingera client for testing."""
-    # Create mock without spec to avoid attribute errors for methods that may not exist
-    client = Mock()
-    client.test_connection.return_value = True
-    client.get_api_info.return_value = {
-        "connected": True,
-        "version": "v1",
-        "status": "ok"
-    }
+def settings(fake_api) -> Settings:
+    return Settings(base_url=fake_api.url, max_retries=0, timeout=10, mode=Mode.READ_WRITE)
 
-    # Mock basic client properties
-    client.api_key = "test_api_key"
-    client.base_url = "https://api.test.com/v1"
-    client.timeout = 30
-    client.max_retries = 3
 
-    return client
+class RunningServer:
+    def __init__(self, url: str):
+        self.url = url
+        self.base = url.rsplit("/", 1)[0]
+
+    @asynccontextmanager
+    async def client(self, headers: dict[str, str] | None = None):
+        async with httpx2.AsyncClient(headers=headers or {}, timeout=30) as http:
+            async with Client(streamable_http_client(self.url, http_client=http)) as client:
+                yield client
+
+
+@pytest.fixture
+def http_server(settings):
+    """Start the HTTP app (per-request credentials unless the test changes `settings`) on a free port."""
+    from pingera_mcp.server import create_http_app
+
+    def start(**overrides) -> RunningServer:
+        for key, value in overrides.items():
+            setattr(settings, key, value)
+        settings.transport = Transport.HTTP
+        port = _free_port()
+        config = uvicorn.Config(create_http_app(settings), host="127.0.0.1", port=port, log_level="warning")
+        server = uvicorn.Server(config)
+        thread = threading.Thread(target=server.run, daemon=True)
+        thread.start()
+        deadline = time.time() + 10
+        while not server.started:
+            if time.time() > deadline:
+                raise RuntimeError("MCP server did not start")
+            time.sleep(0.05)
+        servers.append((server, thread))
+        return RunningServer(f"http://127.0.0.1:{port}{settings.path}")
+
+    servers: list[tuple[uvicorn.Server, threading.Thread]] = []
+    yield start
+    for server, thread in servers:
+        server.should_exit = True
+        thread.join(timeout=10)
+
+
+async def call(client: Client, tool: str, **arguments: Any) -> tuple[bool, str]:
+    result = await client.call_tool(tool, arguments)
+    return bool(result.is_error), "".join(getattr(block, "text", "") for block in result.content)

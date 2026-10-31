@@ -43,6 +43,9 @@ docker run --rm -p 127.0.0.1:8000:8000 \
   (`MCP_JSON_RESPONSE=false`); with the default JSON responses ordinary proxy settings work.
 - **Resources.** Each uvicorn worker needs roughly 100-150 MiB of memory.
 
+For `mcp.app.pingera.ru` the image is built inside the cluster with Kaniko, like the backend image:
+`build/cluster-build/build-in-cluster.sh <version>` (see [build/cluster-build/README.md](build/cluster-build/README.md)).
+
 Example manifests used for `mcp.app.pingera.ru` live in the backend repository
 (`build_and_deploy/deploy_app/mcp/`), and its Tilt setup (`build_and_deploy/deploy_tilt/`) runs this server in a
 local k3d cluster against a local backend.

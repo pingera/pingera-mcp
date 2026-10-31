@@ -181,6 +181,19 @@ uv run pytest --ignore=tests/e2e     # unit and integration tests (fake Pingera 
 PINGERA_E2E_URL=http://localhost:8000/mcp PINGERA_E2E_API_KEY=... uv run pytest tests/e2e
 ```
 
+### Releasing
+
+Bump `__version__` in `pingera_mcp/__init__.py` and add a `## <version>` section to `CHANGELOG.md`, merge to `main`,
+then push a matching tag:
+
+```bash
+git tag 0.2.0 && git push origin 0.2.0
+```
+
+The [release workflow](.github/workflows/release.yml) runs the tests, builds and smoke-tests the package, publishes it
+to PyPI (Trusted Publishing) and creates a GitHub release with the changelog section as notes. The Docker image is
+built from the same tag with [build/cluster-build](build/cluster-build/README.md).
+
 The end-to-end tests run against a real server and API and create and delete objects in that organization, so use a
 test organization. [docs/architecture.md](docs/architecture.md) explains how the server is put together and how to
 add tools. [scripts/smoke_client.py](scripts/smoke_client.py) calls a tool on a running server, and

@@ -36,6 +36,8 @@ changed; see **Migrating from 0.1.x** below.
 
 - Tool results are the API's JSON without null fields, and errors are returned as MCP tool errors with the API status
   and message.
+- Releases are published by a tag-triggered GitHub workflow (PyPI Trusted Publishing and a GitHub release); the
+  manual `build/build.sh` script is gone.
 - The Docker image is built from source, runs `WORKERS` uvicorn workers and works with a read-only root filesystem.
 - Python 3.10+; dependencies trimmed to `mcp`, `pingera-sdk`, `pydantic`, `python-dotenv`, `starlette`, `urllib3`
   and `uvicorn`.

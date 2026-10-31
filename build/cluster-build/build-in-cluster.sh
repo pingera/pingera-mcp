@@ -7,8 +7,9 @@
 #   VERSION    image tag / git tag to build (required); must match pingera_mcp.__version__
 #   --no-tag   don't create the git tag (build a tag that is already pushed)
 #
-# If the git tag already exists on origin (for example created by build/build.sh for the PyPI
-# release), it is built as is. Uses the current kubectl context; set KUBE_CONTEXT to choose another.
+# If the git tag already exists on origin (for example pushed to release the package), it is built
+# as is. Pushing a new tag also triggers the PyPI release workflow (.github/workflows/release.yml).
+# Uses the current kubectl context; set KUBE_CONTEXT to choose another.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

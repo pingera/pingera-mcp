@@ -1,0 +1,116 @@
+name: Release
+
+# Push a tag like 0.2.0 (or v0.2.0) to publish that version to PyPI and create a GitHub release.
+# The tag must match pingera_mcp.__version__; release notes come from the version's CHANGELOG.md section.
+on:
+  push:
+    tags: ["v*.*.*", "[0-9]*.*.*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Check tag matches the package version
+        id: version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          package_version="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' pingera_mcp/__init__.py)"
+          if [ "$tag_version" != "$package_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pingera_mcp.__version__ ($package_version)"
+            exit 1
+          fi
+          echo "version=$package_version" >> "$GITHUB_OUTPUT"
+
+      - name: Run tests
+        run: |
+          python -m pip install -e ".[dev]"
+          python -m pytest --ignore=tests/e2e
+
+      - name: Build
+        run: |
+          python -m pip install build twine
+          rm -rf dist
+          python -m build
+          python -m twine check --strict dist/*
+
+      - name: Smoke-test the wheel
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python -m venv /tmp/wheel-test
+          /tmp/wheel-test/bin/pip install dist/*.whl
+          test "$(/tmp/wheel-test/bin/pingera-mcp --version)" = "pingera-mcp $VERSION"
+          cd /tmp && /tmp/wheel-test/bin/python -c "import pingera_mcp.asgi"
+
+      - name: Extract release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v heading="## $VERSION" '$0 == heading {found=1; next} /^## / {found=0} found' CHANGELOG.md > release-notes.md
+          if [ -z "$(tr -d '[:space:]' < release-notes.md)" ]; then
+            echo "::warning::No '## $VERSION' section in CHANGELOG.md; GitHub will generate the release notes"
+            rm release-notes.md
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: |
+            dist/
+            release-notes.md
+          if-no-files-found: error
+
+  pypi:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pingera-mcp-server/${{ needs.build.outputs.version }}/
+    permissions:
+      id-token: write  # PyPI Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Create GitHub release
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f release-notes.md ]; then
+            notes=(--notes-file release-notes.md)
+          else
+            notes=(--generate-notes)
+          fi
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --verify-tag \
+            "${notes[@]}"

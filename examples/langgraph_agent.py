@@ -67,7 +67,7 @@ async def main():
         return
 
     # 4. Set up the Gemini LLM
-    llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0)
+    llm = ChatGoogleGenerativeAI(model="gemini-3.5-flash-lite", temperature=0)
     print("\nInitialized Google Gemini LLM.")
 
     # 5. Create the LangGraph ReAct Agent

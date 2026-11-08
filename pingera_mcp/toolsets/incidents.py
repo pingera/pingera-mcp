@@ -1,13 +1,15 @@
-"""Status page incidents, incident updates, scheduled maintenance and postmortems."""
+"""Status page incidents, incident updates, scheduled maintenance, postmortems and incident templates."""
 
 from __future__ import annotations
 
 from typing import Annotated, Any
 
-from pingera.api import StatusPagesIncidentsApi
+from pingera.api import StatusPagesIncidentsApi, StatusPagesIncidentTemplatesApi
 from pingera.models import (
     IncidentCreate,
     IncidentPostmortem,
+    IncidentTemplate,
+    IncidentTemplate1,
     IncidentUpdateCreate,
     IncidentUpdateEdit,
     IncidentUpdateSchemaEdit,
@@ -20,10 +22,19 @@ from ..registry import model_tool, tool
 from ._types import IncidentId, PageId
 
 UpdateId = Annotated[str, Field(description="Incident update ID (see list_incident_updates).")]
+TemplateId = Annotated[str, Field(description="Incident template ID (see list_incident_templates).")]
 
 _COMPONENTS = (
     "Affected components and their status, e.g. {'<component_id>': 'major_outage'} "
     "(statuses: see list_component_statuses)."
+)
+_TEMPLATE_COMPONENTS = (
+    "Components to pre-select, e.g. {'<component_id>': 'major_outage'}. For maintenance templates the status is "
+    "always stored as under_maintenance."
+)
+_FROM_TEMPLATE = (
+    " To start from a saved template (list_incident_templates), copy its `title` to `name` and its `body`, `status` "
+    "and `components`, then adjust them."
 )
 _SYSTEM_FIELDS = {"scheduled_reminded_at"}
 _INCIDENT_PATH = [("page_id", "Status page ID."), ("incident_id", "Incident ID.")]
@@ -31,6 +42,10 @@ _INCIDENT_PATH = [("page_id", "Status page ID."), ("incident_id", "Incident ID."
 
 def _incidents():
     return api(StatusPagesIncidentsApi)
+
+
+def _templates():
+    return api(StatusPagesIncidentTemplatesApi)
 
 
 @tool("incidents")
@@ -99,6 +114,8 @@ model_tool(
     description=(
         "Open an incident on a status page, or schedule maintenance (status 'scheduled', impact 'maintenance', "
         "`scheduled_for` and `scheduled_until`). `body` is the first public update. Valid values: get_incident_options."
+        + _FROM_TEMPLATE
+        + " For maintenance templates, set `scheduled_until` to `scheduled_for` plus `duration_minutes`."
     ),
 )
 
@@ -135,7 +152,10 @@ model_tool(
     call=lambda body, page_id, incident_id: _incidents().v1_pages_page_id_incidents_incident_id_incident_updates_post(
         page_id=page_id, incident_id=incident_id, incident_update_create=body
     ),
-    description="Post a timeline update to an incident (e.g. identified, monitoring, resolved) and notify subscribers.",
+    description=(
+        "Post a timeline update to an incident (e.g. identified, monitoring, resolved) and notify subscribers. "
+        "To use a saved incident template, copy its `body` and `status` (the incident title is not changed)."
+    ),
 )
 
 model_tool(
@@ -196,4 +216,55 @@ def publish_incident_postmortem(page_id: PageId, incident_id: IncidentId) -> Any
     return _incidents().v1_pages_page_id_incidents_incident_id_postmortem_publish_put(
         page_id=page_id, incident_id=incident_id
     )
+
+
+@tool("incidents")
+def list_incident_templates(
+    page_id: PageId,
+    type: Annotated[str | None, Field(description="Only 'incident' or only 'maintenance' templates.")] = None,
+) -> Any:
+    """List a status page's saved incident and maintenance templates (title, message, status, components, duration)."""
+    return _templates().v1_pages_page_id_incident_templates_get(page_id=page_id, type=type)
+
+
+@tool("incidents")
+def get_incident_template(page_id: PageId, template_id: TemplateId) -> Any:
+    """Get one incident or maintenance template with its full message."""
+    return _templates().v1_pages_page_id_incident_templates_template_id_get(page_id=page_id, template_id=template_id)
+
+
+model_tool(
+    "incidents",
+    "create_incident_template",
+    model=IncidentTemplate,
+    descriptions={"components": _TEMPLATE_COMPONENTS},
+    path=[("page_id", "Status page ID.")],
+    call=lambda body, page_id: _templates().v1_pages_page_id_incident_templates_post(
+        page_id=page_id, incident_template=body
+    ),
+    description=(
+        "Save a reusable incident or maintenance template on a status page (max 50 per page). `status` is only for "
+        "incident templates, `duration_minutes` only for maintenance templates."
+    ),
+)
+
+model_tool(
+    "incidents",
+    "update_incident_template",
+    model=IncidentTemplate1,
+    partial=True,
+    descriptions={"components": _TEMPLATE_COMPONENTS},
+    path=[("page_id", "Status page ID."), ("template_id", "Incident template ID.")],
+    call=lambda body, page_id, template_id: _templates().v1_pages_page_id_incident_templates_template_id_patch(
+        page_id=page_id, template_id=template_id, incident_template1=body
+    ),
+    idempotent=True,
+    description="Change an incident or maintenance template; only the fields passed are updated.",
+)
+
+
+@tool("incidents", access="write", destructive=True, idempotent=True)
+def delete_incident_template(page_id: PageId, template_id: TemplateId) -> Any:
+    """Delete an incident or maintenance template; incidents created from it are not affected."""
+    return _templates().v1_pages_page_id_incident_templates_template_id_delete(page_id=page_id, template_id=template_id)
 

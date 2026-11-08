@@ -3,6 +3,17 @@
 All notable changes to this project are documented in this file. The project follows
 [Semantic Versioning](https://semver.org/).
 
+## 0.3.0
+
+Requires pingera-sdk 1.3.0.
+
+### Added
+
+- Incident and maintenance templates in the `incidents` toolset: `list_incident_templates`, `get_incident_template`,
+  `create_incident_template`, `update_incident_template` and `delete_incident_template` (126 tools in total).
+- `create_incident` and `add_incident_update` explain how to start from a template, and the `communicate_incident`
+  prompt checks for a suitable template first.
+
 ## 0.2.0
 
 A rewrite on the MCP Python SDK 2.x (`MCPServer`) and pingera-sdk 1.2.0. Tool names, arguments and configuration

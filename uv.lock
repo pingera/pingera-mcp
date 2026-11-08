@@ -412,7 +412,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "mcp", specifier = ">=2.3,<3" },
-    { name = "pingera-sdk", specifier = ">=1.2.0,<2" },
+    { name = "pingera-sdk", specifier = ">=1.3.0,<2" },
     { name = "pydantic", specifier = ">=2.11" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
@@ -425,7 +425,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "pingera-sdk"
-version = "1.2.0"
+version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
@@ -433,9 +433,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/1f/6fda3592894bee2086b7a099c45b48a3394eb88f868462b2a1824b362e7f/pingera_sdk-1.2.0.tar.gz", hash = "sha256:2ff9966d0cb1e0e3588b967309d26779b83c20d775f59b795c766b642beb0555", size = 174183, upload-time = "2026-10-28T16:02:20.796Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f6/f7/9b3a1601e5ee6ba2aa7e5e1c984d7ad8b72876b4c652a150252074189026/pingera_sdk-1.3.0.tar.gz", hash = "sha256:fadf78d458792a59a9247d2a5e159ba41f158b81fcdd4118ae448dc8881cac77", size = 177419, upload-time = "2026-11-08T14:43:19.9Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8b/01/71848eeb1a2cede017b2076a9ae232bd4f23ec071bffa9989f44fd70dd6d/pingera_sdk-1.2.0-py3-none-any.whl", hash = "sha256:0ec5348c59237d4fb5db5d10e3bacf68d9c66f835d8af38aa02fc765d8b8a7db", size = 421306, upload-time = "2026-10-28T16:02:19.177Z" },
+    { url = "https://files.pythonhosted.org/packages/72/4f/a80b207c16d34da27b4d960065f0ffd2b3467f85ed8663a9b58586b0bf2a/pingera_sdk-1.3.0-py3-none-any.whl", hash = "sha256:7c357ca4f0de937e6687992fd2c9d16c22213ea3a4c068c67be923cc4b1d2615", size = 429684, upload-time = "2026-11-08T14:43:17.996Z" },
 ]
 
 [[package]]

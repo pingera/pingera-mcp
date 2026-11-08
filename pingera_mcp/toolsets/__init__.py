@@ -12,7 +12,7 @@ TOOLSETS: dict[str, str] = {
     "account": "Organization details and usage",
     "pages": "Status pages",
     "components": "Status page components, component groups and component uptime",
-    "incidents": "Status page incidents, incident updates, scheduled maintenance and postmortems",
+    "incidents": "Status page incidents, incident updates, scheduled maintenance, postmortems and incident templates",
     "checks": "Monitoring checks: configuration, regions and on-demand runs",
     "results": "Check results, uptime, response times, status history and multi-region executions",
     "alerts": "Alerts, alert rules and alert channels",

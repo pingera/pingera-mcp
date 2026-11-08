@@ -74,8 +74,8 @@ incident on our status page: payments are degraded"*.
 
 ## Tools
 
-Tools are grouped into **toolsets**. The default toolsets cover monitoring, alerting and status pages (78 tools in
-read-write mode, 48 read-only; 121 with all toolsets). Fewer tools means a smaller prompt and better tool choice, so
+Tools are grouped into **toolsets**. The default toolsets cover monitoring, alerting and status pages (83 tools in
+read-write mode, 50 read-only; 126 with all toolsets). Fewer tools means a smaller prompt and better tool choice, so
 enable only what you use:
 
 | Where | Choose toolsets | Choose exact tools |
@@ -93,7 +93,7 @@ clients load the tool list once, before the model uses any tool.
 | `account` (default) | Organization details and usage | `get_organization`, `get_usage` |
 | `pages` (default) | Status pages | `list_status_pages`, `get_status_page`, `find_status_page_by_domain`, `list_page_templates`<br>changes: `create_status_page`, `update_status_page`, `delete_status_page` |
 | `components` (default) | Status page components, component groups and component uptime | `list_components`, `get_component`, `list_component_groups`, `get_component_group`, `list_component_statuses`, `get_component_uptime`, `get_page_uptime`<br>changes: `create_component`, `update_component`, `delete_component`, `create_component_group`, `update_component_group`, `delete_component_group` |
-| `incidents` (default) | Status page incidents, incident updates, scheduled maintenance and postmortems | `list_incidents`, `list_unresolved_incidents`, `list_maintenances`, `get_incident`, `list_incident_updates`, `get_incident_options`, `get_incident_postmortem`<br>changes: `create_incident`, `update_incident`, `delete_incident`, `add_incident_update`, `edit_incident_update`, `delete_incident_update`, `log_past_incident`, `save_incident_postmortem`, `publish_incident_postmortem` |
+| `incidents` (default) | Status page incidents, incident updates, scheduled maintenance, postmortems and incident templates | `list_incidents`, `list_unresolved_incidents`, `list_maintenances`, `get_incident`, `list_incident_updates`, `get_incident_options`, `get_incident_postmortem`, `list_incident_templates`, `get_incident_template`<br>changes: `create_incident`, `update_incident`, `delete_incident`, `add_incident_update`, `edit_incident_update`, `delete_incident_update`, `log_past_incident`, `save_incident_postmortem`, `publish_incident_postmortem`, `create_incident_template`, `update_incident_template`, `delete_incident_template` |
 | `checks` (default) | Monitoring checks: configuration, regions and on-demand runs | `list_checks`, `get_check`, `list_check_regions`, `get_check_job`, `list_check_jobs`<br>runs: `run_check`, `run_custom_check`<br>changes: `create_check`, `update_check`, `delete_check`, `move_check_to_group` |
 | `results` (default) | Check results, uptime, response times, status history and multi-region executions | `list_check_results`, `get_check_result`, `search_results`, `get_check_uptime`, `get_check_status_periods`, `get_response_times`, `get_status_counts`, `list_execution_groups`, `get_execution_group` |
 | `alerts` (default) | Alerts, alert rules and alert channels | `list_alerts`, `get_alert`, `list_alert_notifications`, `get_alert_stats`, `list_alert_rules`, `get_alert_rule`, `list_alert_channels`, `get_alert_channel`<br>runs: `test_alert_channel`, `test_alert_channel_settings`<br>changes: `acknowledge_alert`, `resolve_alert`, `create_alert_rule`, `update_alert_rule`, `delete_alert_rule`, `create_alert_channel`, `update_alert_channel`, `delete_alert_channel` |

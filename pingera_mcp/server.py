@@ -210,7 +210,8 @@ def _register_prompts(server: MCPServer) -> None:
         return (
             f"Open an incident on Pingera status page {page_id}: {summary}\n\n"
             "Use list_components to pick the affected components and their status, get_incident_options for valid "
-            "statuses and impacts, then create_incident with a clear customer-facing title and first update. "
+            "statuses and impacts, and list_incident_templates for saved templates that fit (start from one if it "
+            "does), then create_incident with a clear customer-facing title and first update. "
             "Show me the draft before creating it."
         )
 

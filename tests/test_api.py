@@ -83,3 +83,41 @@ def test_unreachable_api(scope):
     scope(Credentials("api_key", "key"))
     with pytest.raises(PingeraToolError, match="Could not reach"):
         api.api(ChecksApi).v1_checks_get()
+
+
+def test_incident_template_tools(fake_api, settings):
+    from pingera_mcp import toolsets
+    from pingera_mcp.registry import TOOLS
+
+    toolsets.load_all()
+    api.configure(settings)
+    token = set_scope(RequestScope(credentials=Credentials("api_key", "key-1"), read_only=False,
+                                   toolsets=frozenset({"incidents"})))
+    try:
+        _exercise_incident_template_tools(fake_api, TOOLS)
+    finally:
+        reset_scope(token)
+
+
+def _exercise_incident_template_tools(fake_api, tools):
+    base = "/v1/pages/pg1/incident-templates"
+    template = {"id": "t1", "page_id": "pg1", "type": "incident", "name": "API down", "title": "API is unavailable",
+                "body": "", "status": "investigating", "components": {"c1": "major_outage"}}
+
+    fake_api.route("GET", base, body=[template])
+    tools["list_incident_templates"].fn(page_id="pg1", type="incident")
+    assert fake_api.last(base).path == f"{base}?type=incident"
+
+    fake_api.route("POST", base, status=201, body=template)
+    tools["create_incident_template"].fn(page_id="pg1", type="incident", name="API down", title="API is unavailable",
+                                         status="investigating", components={"c1": "major_outage"})
+    assert fake_api.last(base).body == {"type": "incident", "name": "API down", "title": "API is unavailable",
+                                        "status": "investigating", "components": {"c1": "major_outage"}}
+
+    fake_api.route("PATCH", f"{base}/t1", body={**template, "name": "Renamed"})
+    tools["update_incident_template"].fn(page_id="pg1", template_id="t1", name="Renamed")
+    assert fake_api.last(f"{base}/t1").body == {"name": "Renamed"}
+
+    fake_api.route("DELETE", f"{base}/t1", status=204)
+    tools["delete_incident_template"].fn(page_id="pg1", template_id="t1")
+    assert fake_api.last(f"{base}/t1").method == "DELETE"
